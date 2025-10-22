@@ -29,6 +29,7 @@ target
 *.class
 *.jar
 cache
+*.tsbuildinfo
 
 # Logs
 logs

@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    include: ['**/*.spec.ts', '**/*.test.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
@@ -15,6 +16,7 @@ export default defineConfig({
         '**/index.ts',
         '**/*.spec.ts',
         '**/*.test.ts',
+        '**/*tsdown.config.js',
       ],
     },
   },

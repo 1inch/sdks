@@ -16,7 +16,7 @@
       "outputs": ["{projectRoot}/dist"]
     },
     "test": {
-      "inputs": ["default", "^production", "{workspaceRoot}/jest.preset.js"],
+      "inputs": ["default", "^production", "{workspaceRoot}/vitest.preset.js"],
       "dependsOn": ["^build"]
     },
     "lint": {
@@ -36,7 +36,7 @@
       "default",
       "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
       "!{projectRoot}/tsconfig.spec.json",
-      "!{projectRoot}/jest.config.[jt]s",
+      "!{projectRoot}/vitest.config.[jt]s",
       "!{projectRoot}/.eslintrc.json",
       "!{projectRoot}/**/*.md"
     ]
@@ -51,7 +51,7 @@
     "analytics": false
   },
   "affected": {
-    "defaultBase": "main"
+    "defaultBase": "master"
   },
   "generators": {
     "@nx/js": {
