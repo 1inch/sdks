@@ -8,23 +8,23 @@
       "dynamicImport": true
     },
     "transform": {
-      "decoratorMetadata": true
+      "decoratorMetadata": true,
+      "legacyDecorator": true
     },
     "target": "es2021",
     "loose": false,
     "externalHelpers": false,
-    "keepClassNames": true,
-    "baseUrl": "./src"
+    "keepClassNames": true
   },
   "module": {
-    "type": "es6"
+    "type": "es6",
+    "strict": false,
+    "strictMode": true,
+    "lazy": false,
+    "noInterop": false
   },
   "minify": false,
+  "isModule": true,
   "sourceMaps": true,
-  "exclude": [
-    "**/*.spec.ts",
-    "**/*.test.ts",
-    "**/test/**/*",
-    "**/tests/**/*"
-  ]
+  "inlineSourcesContent": true
 }
