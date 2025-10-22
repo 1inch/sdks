@@ -16,11 +16,12 @@
       }
     },
     "test": {
-      "executor": "@nx/jest:jest",
+      "executor": "@nx/vite:test",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
-        "jestConfig": "typescript/limit-order/jest.config.ts",
-        "passWithNoTests": true
+        "passWithNoTests": true,
+        "coverage": true,
+        "reportsDirectory": "../../coverage/typescript/limit-order"
       }
     },
     "lint": {

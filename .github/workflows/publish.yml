@@ -13,11 +13,11 @@ jobs:
   determine-sdk:
     runs-on: ubuntu-latest
     outputs:
-      sdk: ${{ steps.determine.outputs.sdk }}
-      sdk_path: ${{ steps.determine.outputs.sdk_path }}
+      sdk: ${{ steps.determine-sdk.outputs.sdk }}
+      sdk_path: ${{ steps.determine-sdk.outputs.sdk_path }}
     steps:
       - name: Determine SDK from tag
-        id: determine
+        id: determine-sdk
         run: |
           TAG=${GITHUB_REF_NAME}
           if [[ "$TAG" == aqua-v* ]]; then

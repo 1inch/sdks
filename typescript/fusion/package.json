@@ -11,8 +11,7 @@
       "types": "./dist/types/index.d.ts",
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.js",
-      "node": "./dist/cjs/index.js",
-      "default": "./dist/cjs/index.js"
+      "default": "./dist/esm/index.js"
     }
   },
   "files": [
@@ -27,9 +26,9 @@
     "build:esm": "swc src -d dist/esm --config-file ../../esm.swcrc",
     "build:cjs": "swc src -d dist/cjs --config-file ../../cjs.swcrc",
     "build:types": "tsc --project tsconfig.types.json",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
