@@ -45,6 +45,9 @@ pnpm aqua:test
 
 # Lint
 pnpm aqua:lint
+
+# Lint with auto-fix
+pnpm aqua:lint:fix
 ```
 
 ### @1inch/cross-chain-sdk
@@ -59,6 +62,9 @@ pnpm cross-chain:test
 
 # Lint
 pnpm cross-chain:lint
+
+# Lint with auto-fix
+pnpm cross-chain:lint:fix
 ```
 
 ### @1inch/fusion-sdk
@@ -73,6 +79,9 @@ pnpm fusion:test
 
 # Lint
 pnpm fusion:lint
+
+# Lint with auto-fix
+pnpm fusion:lint:fix
 ```
 
 ### @1inch/limit-order-sdk
@@ -87,6 +96,9 @@ pnpm limit-order:test
 
 # Lint
 pnpm limit-order:lint
+
+# Lint with auto-fix
+pnpm limit-order:lint:fix
 ```
 
 ## 🛠️ Development
@@ -102,6 +114,9 @@ pnpm test
 
 # Lint all SDKs
 pnpm lint
+
+# Lint and auto-fix all SDKs
+pnpm lint:fix
 
 # Type check
 pnpm lint:types
@@ -121,10 +136,11 @@ pnpm graph
 # Clean up generated graph files
 pnpm clean:graph
 
-# Work with affected packages only (useful for PRs)
-pnpm affected:build
-pnpm affected:test
-pnpm affected:lint
+# Work with affected packages only (used in CI for PRs)
+pnpm affected:build      # Builds only changed SDKs
+pnpm affected:test       # Tests only changed SDKs  
+pnpm affected:lint       # Lints only changed SDKs
+pnpm affected:lint:fix   # Lints and fixes only changed SDKs
 ```
 
 ### Individual SDK Development
