@@ -11,7 +11,7 @@ sdks/
 │   ├── cross-chain/    # Cross-chain Protocol SDK
 │   ├── fusion/         # Fusion Protocol SDK
 │   └── limit-order/    # Limit Order Protocol SDK
-├── java/               # Java SDKs (future)
+├── rust/               # Rust SDKs (future)
 └── python/             # Python SDKs (future)
 ```
 

@@ -13,6 +13,7 @@
     "affected:lint": "nx affected -t lint",
     "affected:lint:fix": "nx affected -t lint --fix",
     "build": "nx run-many -t build",
+    "build:contracts": "forge build",
     "test": "nx run-many -t test",
     "lint": "nx run-many -t lint",
     "lint:fix": "nx run-many -t lint --fix",

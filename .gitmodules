@@ -1,0 +1,6 @@
+[submodule "lib/forge-std"]
+	path = lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "contracts/lib/aqua-protocol"]
+	path = contracts/lib/aqua-protocol
+	url = https://github.com/1inch/aqua-protocol

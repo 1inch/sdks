@@ -28,6 +28,7 @@ __pycache__
 target
 *.class
 *.jar
+cache
 
 # Logs
 logs
