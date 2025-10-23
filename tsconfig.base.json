@@ -12,6 +12,7 @@
     "resolveJsonModule": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+    "types": ["vitest/globals", "node"],
     "baseUrl": ".",
     "paths": {
       "@1inch/aqua-sdk": ["typescript/aqua/src/index.ts"],

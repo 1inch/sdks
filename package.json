@@ -25,6 +25,7 @@
     "changelog:generate": "changelog generate -a",
     "aqua:build": "nx build aqua",
     "aqua:test": "nx test aqua",
+    "aqua:test:e2e": "nx test:e2e aqua",
     "aqua:lint": "nx lint aqua",
     "aqua:lint:fix": "nx lint aqua --fix",
     "cross-chain:build": "nx build cross-chain",
@@ -61,7 +62,7 @@
     "node": ">=22.0.0",
     "pnpm": ">=8.0.0"
   },
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@10.0.0",
   "volta": {
     "node": "22.13.1"
   },

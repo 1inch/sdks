@@ -28,6 +28,7 @@
   "scripts": {
     "build": "tsdown",
     "test": "vitest run",
+    "test:e2e": "vitest run --config vitest.e2e.config.mts",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts",
@@ -46,7 +47,8 @@
     "@types/node": "^22.13.0",
     "generate-changelog": "^1.8.0",
     "rimraf": "^5.0.5",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "viem": "2.38.3"
   },
   "peerDependencies": {
     "axios": ">=1 <2"
