@@ -1,4 +1,7 @@
 {
+  "contracts/lib/aqua-protocol": {
+    "rev": "a64fbd1c481935f6d04b0d1665cc44ce775e368a"
+  },
   "lib/forge-std": {
     "tag": {
       "name": "v1.11.0",

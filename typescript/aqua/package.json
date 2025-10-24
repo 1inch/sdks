@@ -47,8 +47,9 @@
     "@types/node": "^22.13.0",
     "generate-changelog": "^1.8.0",
     "rimraf": "^5.0.5",
+    "testcontainers": "^11.7.2",
     "typescript": "^5.7.3",
-    "viem": "2.38.3"
+    "viem": "^2.38.3"
   },
   "peerDependencies": {
     "axios": ">=1 <2"

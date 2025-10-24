@@ -18,7 +18,8 @@
       "@1inch/aqua-sdk": ["typescript/aqua/src/index.ts"],
       "@1inch/cross-chain-sdk": ["typescript/cross-chain/src/index.ts"],
       "@1inch/fusion-sdk": ["typescript/fusion/src/index.ts"],
-      "@1inch/limit-order-sdk": ["typescript/limit-order/src/index.ts"]
+      "@1inch/limit-order-sdk": ["typescript/limit-order/src/index.ts"],
+      "@contracts": ["dist/contracts"]
     }
   },
   "exclude": ["node_modules", "tmp", "dist", "build", ".nx"]

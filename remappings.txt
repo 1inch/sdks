@@ -1,0 +1,4 @@
+@1inch/aqua/=contracts/lib/aqua-protocol/src/
+@1inch/solidity-utils/=contracts/lib/aqua-protocol/node_modules/@1inch/solidity-utils/
+@openzeppelin/contracts/=contracts/lib/aqua-protocol/node_modules/@openzeppelin/contracts/
+forge-std/=contracts/lib/aqua-protocol/lib/forge-std/src/
