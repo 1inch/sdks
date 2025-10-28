@@ -1,37 +1,37 @@
-import {shouldBeHexString} from './should-be-hex-string'
+import {assertHexString} from './should-be-hex-string'
 
-describe('Unit Test shouldBeHexString ', () => {
+describe('Unit Test assertHexString ', () => {
     test('should throw error because value has length less than 3', async () => {
-        expect(() => shouldBeHexString('0x')).toThrow()
+        expect(() => assertHexString('0x')).toThrow()
     })
 
     test('should throw error because value not start from 0x', async () => {
         expect(() =>
-            shouldBeHexString('fffffffffffffffffffffffffffffffffffffffff')
+            assertHexString('fffffffffffffffffffffffffffffffffffffffff')
         ).toThrow()
     })
 
     test('should throw error because value is not valid hex string', async () => {
         expect(() =>
-            shouldBeHexString('0xfffffffffffffffffffffffffffffffffffffffg')
+            assertHexString('0xfffffffffffffffffffffffffffffffffffffffg')
         ).toThrow()
     })
 
     test('should ok because value is valid hex string', async () => {
         expect(() =>
-            shouldBeHexString('0xfffffffffffffffffffffffffffffffffffffffff')
+            assertHexString('0xfffffffffffffffffffffffffffffffffffffffff')
         ).not.toThrow()
     })
 
     test('should not be ok because value 00 not start from 0x', async () => {
-        expect(() => shouldBeHexString('00')).toThrow()
+        expect(() => assertHexString('00')).toThrow()
     })
 
     test('should not be ok because value aa not start from 0x', async () => {
-        expect(() => shouldBeHexString('aa')).toThrow()
+        expect(() => assertHexString('aa')).toThrow()
     })
 
     test('should ok because value is valid hex string 0xaa', async () => {
-        expect(() => shouldBeHexString('0xaa')).not.toThrow()
+        expect(() => assertHexString('0xaa')).not.toThrow()
     })
 })

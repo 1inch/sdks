@@ -2,6 +2,7 @@ import {describe, it, expect} from 'vitest'
 import {Address, HexString} from '@1inch/sdk-shared'
 import {SwapVMContract} from './swap-vm-contract'
 import {MakerTraits, TakerTraits} from '../swap-vm'
+import {SwapVmProgram} from '../swap-vm/programs/swap-vm-program'
 
 describe('SwapVMContract', () => {
     const mockMaker = new Address('0x1234567890123456789012345678901234567890')
@@ -11,7 +12,7 @@ describe('SwapVMContract', () => {
     const mockTokenOut = new Address(
         '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
     ) // WETH
-    const mockProgram = new HexString('0x01020304')
+    const mockProgram = new SwapVmProgram('0x01020304')
 
     describe('encodeSwapCallData', () => {
         it('should encode swap call with signature', () => {
@@ -45,7 +46,7 @@ describe('SwapVMContract', () => {
         it('should encode swap call without signature (using Aqua)', () => {
             const order = {
                 maker: mockMaker,
-                traits: MakerTraits.build({
+                traits: MakerTraits.fromParams({
                     useAquaInsteadOfSignature: true
                 }),
                 program: mockProgram

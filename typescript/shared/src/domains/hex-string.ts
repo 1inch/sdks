@@ -1,17 +1,16 @@
-import {trim0x} from '@1inch/byte-utils'
-import {shouldBeString} from '../validators/should-be-string'
-import {shouldNotBeEmpty} from '../validators/should-not-be-empty'
-import {shouldBeHexString} from '../validators/should-be-hex-string'
+import {assertString} from '../validators/should-be-string'
+import {assertNotEmpty} from '../validators/should-not-be-empty'
+import {assertHexString} from '../validators/should-be-hex-string'
 
 export class HexString {
-    private readonly hexString: string
+    private readonly hexString: `0x${string}`
 
-    constructor(hex: string, name = '') {
-        this.hexString = String(hex)
+    constructor(hex: unknown, name = '') {
+        assertString(hex, `hexString ${name}`)
+        assertNotEmpty(hex, `hexString ${name}`)
+        assertHexString(hex, `hexString ${name}`)
 
-        shouldBeString(this.hexString, `hexString ${name}`)
-        shouldNotBeEmpty(this.hexString, `hexString ${name}`)
-        shouldBeHexString(this.hexString, `hexString ${name}`)
+        this.hexString = hex
     }
 
     static fromBigInt(bigInt: bigint, name?: string): HexString {
@@ -34,8 +33,8 @@ export class HexString {
         return BigInt(this.hexString)
     }
 
-    toString(): `0x${string}` {
-        return `0x${trim0x(this.hexString)}`
+    toString(): string {
+        return this.hexString
     }
 
     toJSON(): string {

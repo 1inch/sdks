@@ -7,8 +7,12 @@ import {Address, HexString} from '@1inch/sdk-shared'
 export type ShipArgs = {
     app: Address
     strategy: HexString
-    tokens: Address[]
-    amounts: bigint[]
+    amountsAndTokens: AmountsAndTokens[]
+}
+
+export type AmountsAndTokens = {
+    amount: bigint
+    token: Address
 }
 
 export type DockArgs = {

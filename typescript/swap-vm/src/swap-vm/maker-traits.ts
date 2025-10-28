@@ -51,7 +51,7 @@ export class MakerTraits {
     /**
      * Build MakerTraits from individual components
      */
-    static build(args: MakerTraitsBuildArgs): MakerTraits {
+    static fromParams(args: MakerTraitsBuildArgs): MakerTraits {
         const traits = new MakerTraits(0n)
 
         if (args.shouldUnwrapWeth) {
@@ -79,7 +79,7 @@ export class MakerTraits {
         }
 
         if (args.receiver) {
-            traits.withReceiver(args.receiver)
+            traits.withCustomReceiver(args.receiver)
         }
 
         if (args.preTransferOutDataLength !== undefined) {
@@ -284,7 +284,7 @@ export class MakerTraits {
     /**
      * Get receiver address
      */
-    public receiver(): Address | null {
+    public customReceiver(): Address | null {
         const receiver = this.value.getMask(MakerTraits.RECEIVER_MASK)
 
         if (receiver.isZero()) {
@@ -297,7 +297,7 @@ export class MakerTraits {
     /**
      * Set custom receiver address
      */
-    public withReceiver(receiver: Address): this {
+    public withCustomReceiver(receiver: Address): this {
         const addressBigInt = BigInt(receiver.toString())
         this.value = this.value.setMask(
             MakerTraits.RECEIVER_MASK,

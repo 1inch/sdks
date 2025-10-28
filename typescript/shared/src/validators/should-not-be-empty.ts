@@ -1,19 +1,21 @@
-export function shouldNotBeEmpty(value: unknown, name = 'value'): void {
-    if (typeof value === 'number') {
+import assert from 'node:assert'
+
+export function assertNotEmpty<T>(
+    value: T,
+    name = 'value'
+): asserts value is NonNullable<T> {
+    if (typeof value === 'number' || typeof value === 'boolean') {
         return
     }
 
-    if (typeof value === 'boolean') {
-        return
-    }
-
-    if (
+    const isEmpty =
         value === undefined ||
         value === null ||
         value === '' ||
-        Object.keys(value).length === 0 ||
-        (value as {length?: number}).length === 0
-    ) {
-        throw new Error(`${name} should not be empty, but ${name}: ${value}`)
-    }
+        (Array.isArray(value) && value.length === 0) ||
+        (typeof value === 'object' &&
+            value !== null &&
+            Object.keys(value).length === 0)
+
+    assert(!isEmpty, `${name} should not be empty, but ${name}: ${value}`)
 }

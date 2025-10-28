@@ -74,7 +74,6 @@
     "node": "22.13.1"
   },
   "dependencies": {
-    "viem": "^2.21.0",
     "@1inch/byte-utils": "3.0.0"
   },
   "devDependencies": {

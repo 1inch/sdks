@@ -22,38 +22,15 @@ describe('AquaProtocolContract', () => {
             const args: ShipArgs = {
                 app: mockApp,
                 strategy: mockStrategy,
-                tokens: mockTokens,
-                amounts: mockAmounts
+                amountsAndTokens: [
+                    {token: mockTokens[0], amount: mockAmounts[0]},
+                    {token: mockTokens[1], amount: mockAmounts[1]}
+                ]
             }
 
             const result = AquaProtocolContract.encodeShipCallData(args)
 
             expect(result).toBeInstanceOf(HexString)
-        })
-    })
-
-    describe('decodeShipResult', () => {
-        it('encodes and decodes ship calldata correctly', () => {
-            const args: ShipArgs = {
-                app: mockApp,
-                strategy: mockStrategy,
-                tokens: mockTokens,
-                amounts: mockAmounts
-            }
-
-            const encoded = AquaProtocolContract.encodeShipCallData(args)
-            const {functionName, decodedArgs} =
-                AquaProtocolContract.decodeShipResult(encoded)
-
-            expect(functionName).toBe('ship')
-            expect(decodedArgs.app.toString()).toEqual(args.app.toString())
-            expect(decodedArgs.strategy.toString()).toEqual(
-                args.strategy.toString()
-            )
-            expect(decodedArgs.tokens.map((t) => t.toString())).toEqual(
-                args.tokens.map((t) => t.toString())
-            )
-            expect(decodedArgs.amounts).toEqual(args.amounts)
         })
     })
 
@@ -111,8 +88,10 @@ describe('AquaProtocolContract', () => {
             const args: ShipArgs = {
                 app: mockApp,
                 strategy: mockStrategy,
-                tokens: mockTokens,
-                amounts: mockAmounts
+                amountsAndTokens: [
+                    {token: mockTokens[0], amount: mockAmounts[0]},
+                    {token: mockTokens[1], amount: mockAmounts[1]}
+                ]
             }
 
             const tx = AquaProtocolContract.buildShipTx(

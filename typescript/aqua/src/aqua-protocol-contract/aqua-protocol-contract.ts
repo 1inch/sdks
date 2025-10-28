@@ -1,12 +1,6 @@
-import {encodeFunctionData, keccak256, decodeFunctionData} from 'viem'
+import {encodeFunctionData, keccak256} from 'viem'
 import {CallInfo, Address, HexString} from '@1inch/sdk-shared'
-import {
-    ShipArgs,
-    DockArgs,
-    PullArgs,
-    PushArgs,
-    ShipDecodedResult
-} from './types'
+import {ShipArgs, DockArgs, PullArgs, PushArgs} from './types'
 import AQUA_PROTOCOL_ABI from '../abi/Aqua.abi.json' with {type: 'json'}
 
 /**
@@ -22,9 +16,8 @@ export class AquaProtocolContract {
      * @returns Encoded calldata as HexString
      * @see https://github.com/1inch/aqua-protocol/blob/master/src/Aqua.sol#L34
      */
-    // todo: in args, tokens and amounts length should be equal validation, so ind of merged
     static encodeShipCallData(args: ShipArgs): HexString {
-        const {app, strategy, tokens, amounts} = args
+        const {app, strategy, amountsAndTokens} = args
 
         const result = encodeFunctionData({
             abi: AQUA_PROTOCOL_ABI,
@@ -32,42 +25,12 @@ export class AquaProtocolContract {
             args: [
                 app.toString(),
                 strategy.toString(),
-                tokens.map((t) => t.toString()),
-                amounts
+                amountsAndTokens.map(({token}) => token.toString()),
+                amountsAndTokens.map(({amount}) => amount)
             ]
         })
 
         return new HexString(result)
-    }
-
-    /**
-     * Decodes ship function calldata
-     * @param data - The encoded calldata for ship function
-     * @returns Decoded function name and arguments
-     */
-    static decodeShipResult(data: HexString): ShipDecodedResult {
-        const decoded = decodeFunctionData({
-            abi: AQUA_PROTOCOL_ABI,
-            data: data.toString()
-        })
-
-        const args = decoded.args as readonly [
-            string,
-            string,
-            readonly string[],
-            readonly bigint[]
-        ]
-        const [app, strategy, tokens, amounts] = args
-
-        return {
-            functionName: decoded.functionName,
-            decodedArgs: {
-                app: new Address(app),
-                strategy: new HexString(strategy),
-                tokens: tokens.map((t) => new Address(t)),
-                amounts: [...amounts]
-            }
-        }
     }
 
     /**

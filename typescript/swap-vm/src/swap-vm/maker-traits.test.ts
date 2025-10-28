@@ -13,7 +13,7 @@ describe('MakerTraits', () => {
             expect(traits.isUseOfAquaInsteadOfSignatureEnabled()).toBe(false)
             expect(traits.isIgnoreOfAquaForTransferInEnabled()).toBe(false)
             expect(traits.expiration()).toBe(null)
-            expect(traits.receiver()).toBe(null)
+            expect(traits.customReceiver()).toBe(null)
             expect(traits.preTransferOutDataLength()).toBe(0n)
             expect(traits.postTransferInDataLength()).toBe(0n)
         })
@@ -23,7 +23,7 @@ describe('MakerTraits', () => {
         it('should build traits with specified flags', () => {
             const receiver = Address.fromBigInt(1n)
 
-            const traits = MakerTraits.build({
+            const traits = MakerTraits.fromParams({
                 shouldUnwrapWeth: true,
                 hasPreTransferOutHook: true,
                 hasPostTransferInHook: false,
@@ -41,7 +41,9 @@ describe('MakerTraits', () => {
             expect(traits.isUseOfAquaInsteadOfSignatureEnabled()).toBe(true)
             expect(traits.isIgnoreOfAquaForTransferInEnabled()).toBe(false)
             expect(traits.expiration()).toBe(1234567890n)
-            expect(traits.receiver()?.toString()).toBe(receiver.toString())
+            expect(traits.customReceiver()?.toString()).toBe(
+                receiver.toString()
+            )
             expect(traits.preTransferOutDataLength()).toBe(100n)
             expect(traits.postTransferInDataLength()).toBe(200n)
         })
@@ -114,8 +116,10 @@ describe('MakerTraits', () => {
             const traits = MakerTraits.default()
             const receiver = Address.fromBigInt(1n)
 
-            traits.withReceiver(receiver)
-            expect(traits.receiver()?.toString()).toBe(receiver.toString())
+            traits.withCustomReceiver(receiver)
+            expect(traits.customReceiver()?.toString()).toBe(
+                receiver.toString()
+            )
         })
     })
 

@@ -1,6 +1,7 @@
 import {Address, HexString} from '@1inch/sdk-shared'
 import {MakerTraits} from '../swap-vm/maker-traits'
 import {TakerTraits} from '../swap-vm'
+import {SwapVmProgram} from '../swap-vm/programs/swap-vm-program'
 
 /**
  * SwapVM Protocol types for the core methods
@@ -12,7 +13,7 @@ export type Order = {
     /**
      * List of instructions to be executed (8 bit index, 8 bit args length, args)
      */
-    program: HexString
+    program: SwapVmProgram
 }
 
 export type QuoteArgs = {
