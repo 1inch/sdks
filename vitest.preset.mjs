@@ -16,7 +16,7 @@ export default defineConfig({
         '**/index.ts',
         '**/*.spec.ts',
         '**/*.test.ts',
-        '**/*tsdown.config.js',
+        '**/tsdown.config.js',
       ],
     },
   },

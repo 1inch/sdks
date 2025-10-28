@@ -1,0 +1,59 @@
+{
+  "name": "@1inch/swap-vm-sdk",
+  "version": "0.1.0",
+  "description": "1inch Swap VM SDK",
+  "author": "@1inch",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "package.json"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsdown",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "type-check": "tsc --noEmit",
+    "clean": "rimraf dist node_modules",
+    "changelog:generate": "changelog generate -a"
+  },
+  "keywords": [
+    "1inch",
+    "swap-vm",
+    "sdk",
+    "defi",
+    "swap",
+    "virtual-machine"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "viem": "^2.21.0"
+  },
+  "dependencies": {
+    "@1inch/sdk-shared": "workspace:*",
+    "@1inch/byte-utils": "^3.0.0",
+    "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "tsdown": "^0.2.17",
+    "typescript": "^5.7.3",
+    "vitest": "^3.2.4"
+  }
+}

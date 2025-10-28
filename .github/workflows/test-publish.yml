@@ -12,6 +12,7 @@ on:
           - cross-chain
           - fusion
           - limit-order
+          - swap-vm
       dry_run:
         type: boolean
         description: 'Dry run (do not actually publish)'

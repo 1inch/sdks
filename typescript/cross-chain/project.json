@@ -6,13 +6,10 @@
   "tags": ["typescript", "sdk"],
   "targets": {
     "build": {
-      "executor": "@nx/js:tsc",
-      "outputs": ["{options.outputPath}"],
+      "executor": "nx:run-commands",
       "options": {
-        "outputPath": "typescript/cross-chain/dist",
-        "main": "typescript/cross-chain/src/index.ts",
-        "tsConfig": "typescript/cross-chain/tsconfig.lib.json",
-        "assets": ["typescript/cross-chain/*.md"]
+        "cwd": "typescript/cross-chain",
+        "commands": ["tsdown"]
       }
     },
     "test": {

@@ -16,7 +16,7 @@
       "outputs": ["{projectRoot}/dist"]
     },
     "test": {
-      "inputs": ["default", "^production", "{workspaceRoot}/vitest.preset.js"],
+      "inputs": ["default", "^production", "{workspaceRoot}/vitest.preset.js", "{projectRoot}/vitest.config.{j,t}s"],
       "dependsOn": ["^build"]
     },
     "lint": {

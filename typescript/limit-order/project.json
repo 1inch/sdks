@@ -6,13 +6,10 @@
   "tags": ["typescript", "sdk"],
   "targets": {
     "build": {
-      "executor": "@nx/js:tsc",
-      "outputs": ["{options.outputPath}"],
+      "executor": "nx:run-commands",
       "options": {
-        "outputPath": "typescript/limit-order/dist",
-        "main": "typescript/limit-order/src/index.ts",
-        "tsConfig": "typescript/limit-order/tsconfig.lib.json",
-        "assets": ["typescript/limit-order/*.md"]
+        "cwd": "typescript/limit-order",
+        "commands": ["tsdown"]
       }
     },
     "test": {

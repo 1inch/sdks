@@ -1,3 +1,3 @@
-import oneInchEslintConfig from '@1inch/eslint-config';
+import oneInchEslintConfig from '@1inch/eslint-config'
 
-export default [...oneInchEslintConfig];
+export default [...oneInchEslintConfig]

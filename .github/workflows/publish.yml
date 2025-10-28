@@ -7,6 +7,7 @@ on:
       - 'cross-chain-v*.*.*'
       - 'fusion-v*.*.*'
       - 'limit-order-v*.*.*'
+      - 'swap-vm-v*.*.*'
   workflow_dispatch:
 
 jobs:
@@ -32,6 +33,9 @@ jobs:
           elif [[ "$TAG" == limit-order-v* ]]; then
             echo "sdk=limit-order" >> "$GITHUB_OUTPUT"
             echo "sdk_path=typescript/limit-order" >> "$GITHUB_OUTPUT"
+          elif [[ "$TAG" == swap-vm-v* ]]; then
+            echo "sdk=swap-vm" >> "$GITHUB_OUTPUT"
+            echo "sdk_path=typescript/swap-vm" >> "$GITHUB_OUTPUT"
           else
             echo "Unknown tag pattern: $TAG" >&2
             exit 1

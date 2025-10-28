@@ -12,6 +12,7 @@ on:
           - cross-chain
           - fusion
           - limit-order
+          - swap-vm
       version:
         type: choice
         description: Version bump type
