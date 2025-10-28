@@ -1,6 +1,6 @@
 {
   "contracts/lib/aqua-protocol": {
-    "rev": "a64fbd1c481935f6d04b0d1665cc44ce775e368a"
+    "rev": "f8f0d2a333eb3aa03b9306306a435b61fa47d1d5"
   },
   "lib/forge-std": {
     "tag": {
