@@ -9,12 +9,12 @@ describe('TakerTraits', () => {
         it('should create default traits with all flags off', () => {
             const traits = TakerTraits.default()
 
-            expect(traits.isExactIn()).toBe(false)
+            expect(traits.isExactIn()).toBe(true)
             expect(traits.shouldUnwrapWeth()).toBe(false)
             expect(traits.hasPreTransferInHook()).toBe(false)
             expect(traits.isStrictThresholdAmount()).toBe(false)
             expect(traits.hasThreshold()).toBe(false)
-            expect(traits.hasTo()).toBe(false)
+            expect(traits.hasCustomReceiver()).toBe(false)
             expect(traits.isFirstTransferFromTaker()).toBe(false)
             expect(traits.isUseTransferFromAndAquaPush()).toBe(false)
             expect(traits.getThreshold()).toBe(undefined)
@@ -22,7 +22,7 @@ describe('TakerTraits', () => {
         })
     })
 
-    describe('build', () => {
+    describe('fromParams', () => {
         it('should build traits with specified flags', () => {
             const threshold = 1000000n
             const traits = TakerTraits.fromParams({
@@ -44,7 +44,7 @@ describe('TakerTraits', () => {
             expect(traits.isUseTransferFromAndAquaPush()).toBe(false)
             expect(traits.hasThreshold()).toBe(true)
             expect(traits.getThreshold()).toBe(threshold)
-            expect(traits.hasTo()).toBe(true)
+            expect(traits.hasCustomReceiver()).toBe(true)
             expect(traits.getTo()?.toString()).toBe(mockReceiver.toString())
         })
     })
@@ -130,12 +130,12 @@ describe('TakerTraits', () => {
         it('should set and get receiver', () => {
             const traits = TakerTraits.default()
 
-            traits.withTo(mockReceiver)
-            expect(traits.hasTo()).toBe(true)
+            traits.withCustomReceiver(mockReceiver)
+            expect(traits.hasCustomReceiver()).toBe(true)
             expect(traits.getTo()?.toString()).toBe(mockReceiver.toString())
 
-            traits.disableCustomDestination()
-            expect(traits.hasTo()).toBe(false)
+            traits.withoutCustomReceiver()
+            expect(traits.hasCustomReceiver()).toBe(false)
             expect(traits.getTo()).toBe(undefined)
         })
     })
@@ -173,7 +173,7 @@ describe('TakerTraits', () => {
             expect(decoded.isExactIn()).toBe(true)
             expect(decoded.hasPreTransferInHook()).toBe(true)
             expect(decoded.hasThreshold()).toBe(false)
-            expect(decoded.hasTo()).toBe(false)
+            expect(decoded.hasCustomReceiver()).toBe(false)
             expect(decoded.getTo()).toBeUndefined()
         })
     })
@@ -210,9 +210,11 @@ describe('TakerTraits', () => {
         it('should validate exact output with maximum input threshold', () => {
             const threshold = 1000n
             const traits = TakerTraits.fromParams({
-                isExactIn: false,
                 threshold
             })
+
+            // by default exact in is a true, so we need to switch to exact out
+            traits.withExactOut()
 
             expect(() => traits.validate(1000n, 500n)).not.toThrow()
             expect(() => traits.validate(900n, 500n)).not.toThrow()

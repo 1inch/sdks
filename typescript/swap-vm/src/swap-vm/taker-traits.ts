@@ -465,10 +465,7 @@ export class TakerTraits {
     }
 
     private setThresholdBit(val: boolean): this {
-        this.flags = this.flags.setBit(
-            TakerTraits.HAS_THRESHOLD_BIT_FLAG,
-            Number(val)
-        )
+        this.flags = this.flags.setBit(TakerTraits.HAS_THRESHOLD_BIT_FLAG, val)
 
         return this
     }
@@ -476,7 +473,7 @@ export class TakerTraits {
     private setCustomReceiverBit(val: boolean): this {
         this.flags = this.flags.setBit(
             TakerTraits.HAS_CUSTOM_RECEIVER_BIT_FLAG,
-            Number(val)
+            val
         )
 
         return this
