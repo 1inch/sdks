@@ -1,44 +1,23 @@
-import {Address} from '@1inch/sdk-shared'
-import {SwapVmProgram} from './swap-vm-program'
 import {ProgramBuilder} from './program-builder'
-import {aquaInstruction, BalancesArgs, setBalancesXD} from '../instructions'
+import {SwapVmProgram} from './swap-vm-program'
+import {aquaInstructions, IInstruction} from '../instructions'
 
 export class AquaProgramBuilder extends ProgramBuilder {
     constructor() {
-        super([...aquaInstruction])
+        super([...aquaInstructions])
     }
 
-    static decode(program: SwapVmProgram): AquaProgramBuilder {}
-
-    public setBalancesXD(data: BalancesArgs): this {
-        super.add(setBalancesXD, data)
-
-        return this
+    static decode(program: SwapVmProgram): AquaProgramBuilder {
+        return new AquaProgramBuilder().decode(program)
     }
-}
 
-const buidler = ProgramBuilder.AQUA
-
-buidler
-    .add(setBalancesXD, new BalancesArgs([{token: '', value: 0}]))
-    .add(setBalancesXD, new BalancesArgs([{token: '', value: 0}]))
-    .add(setBalancesXD, new BalancesArgs([{token: '', value: 0}]))
-    .add(setBalancesXD, new BalancesArgs([{token: '', value: 0}]))
-
-const program = buidler.build()
-
-export const AMM_APSPDF_STRATEGY = new AquaProgramBuilder()
-    .setBalancesXD(new BalancesArgs([{token: '', value: 0}]))
-    .build()
-
-class AmmStrategy {
-    constructor(token: Address, amount: bigint) {}
-
-    public build(): SwapVmProgram {
-        new AquaProgramBuilder()
-            .setBalancesXD(
-                new BalancesArgs([{token: this.token, value: this.value}])
-            )
-            .build()
+    protected decodeInstruction(
+        opcodeId: number,
+        argsHex: string
+    ): IInstruction {
+        switch (opcodeId) {
+            default:
+                throw new Error(`Unknown Aqua opcode: ${opcodeId}`)
+        }
     }
 }

@@ -1,3 +1,4 @@
+import {describe, expect, test} from 'vitest'
 import {HexString} from './hex-string'
 
 describe('HexString Unit Test', () => {
