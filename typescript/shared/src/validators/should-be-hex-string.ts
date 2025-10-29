@@ -8,6 +8,6 @@ export function assertHexString(
 
     assert(
         hexRegex.test(value.toLowerCase()),
-        `${name} should be a valid hex string, ${name}: ${value}`
+        `${name} should be a valid hex string, got: ${value}`
     )
 }

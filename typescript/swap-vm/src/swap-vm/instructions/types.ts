@@ -6,7 +6,7 @@ export interface IArgsCoder<T> {
 }
 
 export interface IArgsData {
-    toJSON(): Record<string | number, unknown>
+    toJSON(): Record<string | number, unknown> | null
 }
 
 export interface IOpcode<T extends IArgsData = IArgsData> {

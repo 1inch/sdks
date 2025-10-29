@@ -1,5 +1,4 @@
 import {assertString} from '../validators/should-be-string'
-import {assertNotEmpty} from '../validators/should-not-be-empty'
 import {assertHexString} from '../validators/should-be-hex-string'
 
 export class HexString {
@@ -7,10 +6,9 @@ export class HexString {
 
     private readonly hexString: `0x${string}`
 
-    constructor(hex: unknown, name = '') {
-        assertString(hex, `hexString ${name}`)
-        assertNotEmpty(hex, `hexString ${name}`)
-        assertHexString(hex, `hexString ${name}`)
+    constructor(hex: unknown, name = 'HexString') {
+        assertString(hex, name)
+        assertHexString(hex, name)
 
         this.hexString = hex
     }

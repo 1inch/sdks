@@ -1,5 +1,5 @@
 import {HexString} from '@1inch/sdk-shared'
-import {IArgsCoder} from './types'
+import {IArgsCoder, IArgsData} from './types'
 import {Opcode} from './opcode'
 
 class EmptyCoder implements IArgsCoder<EmptyArgs> {
@@ -7,18 +7,16 @@ class EmptyCoder implements IArgsCoder<EmptyArgs> {
         return HexString.EMPTY
     }
 
-    decode(): EmptyArgs {
+    decode(_: HexString): EmptyArgs {
         return new EmptyArgs()
     }
 }
 
-class EmptyArgs {
+class EmptyArgs implements IArgsData {
     public static readonly CODER = new EmptyCoder()
 
-    toJSON(): Record<string | number, unknown> {
-        return {
-            data: 'no args'
-        }
+    toJSON(): null {
+        return null
     }
 }
 
