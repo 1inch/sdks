@@ -22,16 +22,4 @@ class EmptyArgs {
     }
 }
 
-export class EmptyOpcode extends Opcode<EmptyArgs> {
-    static INSTANCE = new EmptyOpcode()
-
-    static OPCODE = Symbol('empty')
-
-    id = EmptyOpcode.OPCODE
-
-    constructor() {
-        super(EmptyArgs.CODER)
-    }
-}
-
-export const opcode = new EmptyOpcode()
+export const EMPTY_OPCODE = new Opcode(Symbol('empty'), EmptyArgs.CODER)

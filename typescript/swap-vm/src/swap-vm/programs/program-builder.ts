@@ -2,7 +2,7 @@ import {BytesBuilder, BytesIter, trim0x, add0x} from '@1inch/byte-utils'
 import {HexString} from '@1inch/sdk-shared'
 import {SwapVmProgram} from './swap-vm-program'
 import {IArgsData, IInstruction, IOpcode} from '../instructions'
-import {EmptyOpcode} from '../instructions/empty'
+import {EMPTY_OPCODE} from '../instructions/empty'
 
 export abstract class ProgramBuilder {
     protected program: IInstruction<IArgsData>[] = []
@@ -70,7 +70,7 @@ export abstract class ProgramBuilder {
         if (opcodeId === -1) {
             const opcodes = this.ixsSet
                 .map((i) => String(i.id))
-                .filter((s) => s !== EmptyOpcode.OPCODE.toString())
+                .filter((s) => s !== EMPTY_OPCODE.toString())
                 .join(', ')
 
             throw new Error(

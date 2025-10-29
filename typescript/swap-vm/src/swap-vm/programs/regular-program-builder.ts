@@ -1,11 +1,6 @@
 import {ProgramBuilder} from './program-builder'
 import {SwapVmProgram} from './swap-vm-program'
-import {
-    allInstructions,
-    BalancesArgs,
-    BalancesXDOpcode,
-    SetBalancesXDOpcode
-} from '../instructions'
+import {allInstructions, balances} from '../instructions'
 
 export class RegularProgramBuilder extends ProgramBuilder {
     constructor() {
@@ -16,14 +11,14 @@ export class RegularProgramBuilder extends ProgramBuilder {
         return new RegularProgramBuilder().decode(program)
     }
 
-    public setBalancesXD(data: BalancesArgs): this {
-        super.add(new SetBalancesXDOpcode().createIx(data))
+    public setBalancesXD(data: balances.BalancesArgs): this {
+        super.add(balances.SET_BALANCES_XD_OPCODE.createIx(data))
 
         return this
     }
 
-    public balancesXD(data: BalancesArgs): this {
-        super.add(new BalancesXDOpcode().createIx(data))
+    public balancesXD(data: balances.BalancesArgs): this {
+        super.add(balances.BALANCES_XD_OPCODE.createIx(data))
 
         return this
     }

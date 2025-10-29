@@ -1,6 +1,6 @@
 import {describe, it, expect} from 'vitest'
 import {Address, AddressHalf} from '@1inch/sdk-shared'
-import {BalancesArgs} from '../instructions'
+import {balances} from '../instructions'
 import {RegularProgramBuilder} from './'
 
 describe('ProgramBuilder', () => {
@@ -13,7 +13,7 @@ describe('ProgramBuilder', () => {
     it('should encode and decode program correctly for REGULAR', () => {
         const originalBuilder = new RegularProgramBuilder()
 
-        const balancesArgs = new BalancesArgs([
+        const balancesArgs = new balances.BalancesArgs([
             {tokenHalf: USDC_HALF, value: 2000n * 10n ** 6n},
             {tokenHalf: WETH_HALF, value: 1n * 10n ** 18n}
         ])
@@ -26,6 +26,8 @@ describe('ProgramBuilder', () => {
         const ixs = decodedBuilder.getInstructions()
         expect(ixs).toHaveLength(1)
         expect(ixs[0].opcode.id.toString()).toContain('setBalancesXD')
-        expect((ixs[0].args as BalancesArgs).tokenBalances).toHaveLength(2)
+        expect(
+            (ixs[0].args as balances.BalancesArgs).tokenBalances
+        ).toHaveLength(2)
     })
 })
