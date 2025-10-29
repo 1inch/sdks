@@ -1,3 +1,3 @@
-export {setBalancesXD, balancesXD} from './instructions'
+export {BalancesXDOpcode, SetBalancesXDOpcode} from './instructions'
 export {BalancesArgs} from './balances-args'
-export {TokenBalance} from './types'
+export type {TokenBalance} from './types'

@@ -1,31 +1,37 @@
 import {BytesBuilder, BytesIter, trim0x, add0x} from '@1inch/byte-utils'
+import {HexString} from '@1inch/sdk-shared'
 import {SwapVmProgram} from './swap-vm-program'
-import {IInstruction} from '../instructions'
-import {emptyInstruction} from '../instructions/empty'
+import {IArgsData, IInstruction, IOpcode} from '../instructions'
+import {EmptyOpcode} from '../instructions/empty'
 
 export abstract class ProgramBuilder {
-    protected program: Array<{
-        opcodeId: number
-        data: IInstruction
-    }> = []
+    protected program: IInstruction<IArgsData>[] = []
 
-    protected constructor(public readonly opcodes: readonly symbol[]) {}
+    protected constructor(public readonly ixsSet: IOpcode[]) {}
 
     public decode(program: SwapVmProgram): this {
         const iter = BytesIter.HexString(program.toString())
 
         while (!iter.isEmpty()) {
-            const opcodeId = Number(iter.nextByte())
+            const opcodeIdx = Number(iter.nextByte())
             const argsLength = Number(iter.nextByte())
             const argsHex = argsLength ? iter.nextBytes(argsLength) : ''
 
-            if (opcodeId === 0) {
+            if (opcodeIdx === 0) {
                 throw new Error('Invalid opcode: 0 (NOT_INSTRUCTION)')
             }
 
-            const instruction = this.decodeInstruction(opcodeId, add0x(argsHex))
+            const opcode = this.ixsSet[opcodeIdx]
 
-            this.program.push({opcodeId, data: instruction})
+            if (!opcode) {
+                throw new Error(`Opcode at index ${opcodeIdx} is missing`)
+            }
+
+            this.program.push(
+                opcode.createIx(
+                    opcode.argsCoder().decode(new HexString(argsHex))
+                )
+            )
         }
 
         return this
@@ -34,14 +40,16 @@ export abstract class ProgramBuilder {
     public build(): SwapVmProgram {
         const builder = new BytesBuilder()
 
-        for (const {opcodeId, data} of this.program) {
-            const coder = data.coder()
-            const encoded = coder.encode(data)
+        for (const ix of this.program) {
+            const {args, opcode} = ix
+            const opcodeIdx = this.ixsSet.findIndex((o) => o.id === opcode.id)
+            const coder = opcode.argsCoder()
+            const encoded = coder.encode(args)
 
             const encodedBytes = trim0x(encoded.toString())
 
             builder
-                .addByte(BigInt(opcodeId))
+                .addByte(BigInt(opcodeIdx))
                 .addByte(BigInt(encodedBytes.length / 2))
 
             if (encodedBytes.length) {
@@ -52,35 +60,26 @@ export abstract class ProgramBuilder {
         return new SwapVmProgram(builder.asHex())
     }
 
-    public toJSON(): Array<{
-        opcode: string
-        data: ReturnType<IInstruction['toJSON']>
-    }> {
-        return this.program.map(({opcodeId, data}) => ({
-            opcode: String(this.opcodes[opcodeId]),
-            data: data.toJSON()
-        }))
+    public getInstructions(): Array<IInstruction> {
+        return this.program
     }
 
-    protected add(opcode: symbol, data: IInstruction): this {
-        const opcodeId = this.opcodes.findIndex((o) => o === opcode)
+    protected add(ix: IInstruction): this {
+        const opcodeId = this.ixsSet.findIndex((o) => o.id === ix.opcode.id)
 
         if (opcodeId === -1) {
+            const opcodes = this.ixsSet
+                .map((i) => String(i.id))
+                .filter((s) => s !== EmptyOpcode.OPCODE.toString())
+                .join(', ')
+
             throw new Error(
-                `Invalid opcode ${String(opcode)}: Supported opcodes: ${this.opcodes
-                    .map((o) => String(o))
-                    .filter((s) => s !== String(emptyInstruction))
-                    .join(', ')}`
+                `Invalid opcode ${String(ix.opcode.id)}: Supported opcodes: ${opcodes}`
             )
         }
 
-        this.program.push({opcodeId, data})
+        this.program.push(ix)
 
         return this
     }
-
-    protected abstract decodeInstruction(
-        opcodeId: number,
-        argsHex: string
-    ): IInstruction
 }

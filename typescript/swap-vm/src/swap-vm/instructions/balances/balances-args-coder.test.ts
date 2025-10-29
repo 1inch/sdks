@@ -37,7 +37,7 @@ describe('BalancesArgsCoder', () => {
     it('should use coder through BalancesArgs methods', () => {
         const args = new BalancesArgs([{tokenHalf: USDC_HALF, value: 2000n}])
 
-        const coder = args.coder()
+        const coder = BalancesArgs.CODER
         expect(coder).toBeDefined()
 
         const encoded = coder.encode(args)
@@ -51,7 +51,7 @@ describe('BalancesArgsCoder', () => {
     it('should encode token halves correctly', () => {
         const args = new BalancesArgs([{tokenHalf: USDC_HALF, value: 100n}])
 
-        const encoded = args.coder().encode(args)
+        const encoded = BalancesArgs.CODER.encode(args)
         const hex = encoded.toString()
 
         expect(hex.substring(0, 6)).toBe('0x0001') // Count

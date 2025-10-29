@@ -18,8 +18,11 @@ export default defineConfig({
     unbundle: true,
     dts: {
         build: true,
-        compilerOptions: {
-            isolatedDeclarations: false
+        ignoreErrors: true,
+        transformOptions: {
+            compilerOptions: {
+                isolatedDeclarations: false
+            }
         }
     },
     outDir: './dist',

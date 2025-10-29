@@ -5,7 +5,18 @@ export interface IArgsCoder<T> {
     encode(data: T): HexString
 }
 
-export interface IInstruction {
-    coder(): IArgsCoder<IInstruction>
+export interface IArgsData {
+    toJSON(): Record<string | number, unknown>
+}
+
+export interface IOpcode<T extends IArgsData = IArgsData> {
+    id: symbol
+    argsCoder(): IArgsCoder<T>
+    createIx(args: T): IInstruction<T>
+}
+
+export interface IInstruction<T extends IArgsData = IArgsData> {
+    args: T
+    opcode: IOpcode<T>
     toJSON(): Record<string | number, unknown>
 }

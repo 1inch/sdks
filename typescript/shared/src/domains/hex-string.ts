@@ -3,6 +3,8 @@ import {assertNotEmpty} from '../validators/should-not-be-empty'
 import {assertHexString} from '../validators/should-be-hex-string'
 
 export class HexString {
+    static EMPTY: HexString = new HexString('0x')
+
     private readonly hexString: `0x${string}`
 
     constructor(hex: unknown, name = '') {

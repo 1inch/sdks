@@ -1,6 +1,6 @@
 import {ProgramBuilder} from './program-builder'
 import {SwapVmProgram} from './swap-vm-program'
-import {aquaInstructions, IInstruction} from '../instructions'
+import {aquaInstructions, IOpcode} from '../instructions'
 
 export class AquaProgramBuilder extends ProgramBuilder {
     constructor() {
@@ -14,7 +14,7 @@ export class AquaProgramBuilder extends ProgramBuilder {
     protected decodeInstruction(
         opcodeId: number,
         argsHex: string
-    ): IInstruction {
+    ): IOpcode {
         switch (opcodeId) {
             default:
                 throw new Error(`Unknown Aqua opcode: ${opcodeId}`)

@@ -23,9 +23,9 @@ describe('ProgramBuilder', () => {
         const decodedProgram = decodedBuilder.build()
         expect(decodedProgram.toString()).toBe(program.toString())
 
-        const json = decodedBuilder.toJSON()
-        expect(json).toHaveLength(1)
-        expect(json[0].opcode).toContain('setBalancesXD')
-        expect(json[0].data.tokenBalances).toHaveLength(2)
+        const ixs = decodedBuilder.getInstructions()
+        expect(ixs).toHaveLength(1)
+        expect(ixs[0].opcode.id.toString()).toContain('setBalancesXD')
+        expect((ixs[0].args as BalancesArgs).tokenBalances).toHaveLength(2)
     })
 })
