@@ -1,10 +1,12 @@
 import {EMPTY_OPCODE} from './empty'
 import * as balances from './balances'
 import * as controls from './controls'
+import * as invalidators from './invalidators'
 
 export * from './types'
 export * from './balances'
 export * from './controls'
+export * from './invalidators'
 
 /**
  * Regular opcodes array - matching SwapVM contract exactly (44 opcodes)
@@ -49,9 +51,9 @@ export const allInstructions = [
     /**
      * Invalidators (19-21)
      */
-    EMPTY_OPCODE, // 19 - INVALIDATE_BIT_1D
-    EMPTY_OPCODE, // 20 - INVALIDATE_TOKEN_IN_1D
-    EMPTY_OPCODE, // 21 - INVALIDATE_TOKEN_OUT_1D
+    invalidators.invalidateBit1D, // 19 - INVALIDATE_BIT_1D
+    invalidators.invalidateTokenIn1D, // 20 - INVALIDATE_TOKEN_IN_1D
+    invalidators.invalidateTokenOut1D, // 21 - INVALIDATE_TOKEN_OUT_1D
 
     /**
      * Trading instructions (22+)

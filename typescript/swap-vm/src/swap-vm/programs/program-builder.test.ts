@@ -2,6 +2,7 @@ import {describe, it, expect} from 'vitest'
 import {Address, AddressHalf} from '@1inch/sdk-shared'
 import * as balances from '../instructions/balances'
 import * as controls from '../instructions/controls'
+import * as invalidators from '../instructions/invalidators'
 import {RegularProgramBuilder} from './'
 
 describe('ProgramBuilder', () => {
@@ -167,5 +168,156 @@ describe('ProgramBuilder', () => {
 
         expect(ixs[6].opcode.id.toString()).toContain('jump')
         expect((ixs[6].args as controls.JumpArgs).nextPC).toBe(25n)
+    })
+
+    it('should handle invalidator instructions', () => {
+        const originalBuilder = new RegularProgramBuilder()
+
+        const program = originalBuilder
+            .invalidateBit1D({bitIndex: 42n})
+            .invalidateTokenIn1D({tokenInHalf: USDC_HALF})
+            .invalidateTokenOut1D({tokenOutHalf: WETH_HALF})
+            .invalidateBit1D({bitIndex: 256n})
+            .invalidateTokenIn1D({tokenInHalf: AddressHalf.fromAddress(DAI)})
+            .build()
+
+        const decodedBuilder = RegularProgramBuilder.decode(program)
+        const decodedProgram = decodedBuilder.build()
+        expect(decodedProgram.toString()).toBe(program.toString())
+
+        const ixs = decodedBuilder.getInstructions()
+        expect(ixs).toHaveLength(5)
+
+        expect(ixs[0].opcode.id.toString()).toContain('invalidateBit1D')
+        expect((ixs[0].args as invalidators.InvalidateBit1DArgs).bitIndex).toBe(
+            42n
+        )
+
+        expect(ixs[1].opcode.id.toString()).toContain('invalidateTokenIn1D')
+        expect(
+            (
+                ixs[1].args as invalidators.InvalidateTokenIn1DArgs
+            ).tokenInHalf.toString()
+        ).toBe(USDC_HALF.toString())
+
+        expect(ixs[2].opcode.id.toString()).toContain('invalidateTokenOut1D')
+        expect(
+            (
+                ixs[2].args as invalidators.InvalidateTokenOut1DArgs
+            ).tokenOutHalf.toString()
+        ).toBe(WETH_HALF.toString())
+
+        expect(ixs[3].opcode.id.toString()).toContain('invalidateBit1D')
+        expect((ixs[3].args as invalidators.InvalidateBit1DArgs).bitIndex).toBe(
+            256n
+        )
+
+        expect(ixs[4].opcode.id.toString()).toContain('invalidateTokenIn1D')
+        const daiHalf = AddressHalf.fromAddress(DAI)
+        expect(
+            (
+                ixs[4].args as invalidators.InvalidateTokenIn1DArgs
+            ).tokenInHalf.toString()
+        ).toBe(daiHalf.toString())
+    })
+
+    it('should combine all instruction types in complex program', () => {
+        const originalBuilder = new RegularProgramBuilder()
+
+        const program = originalBuilder
+            .salt({salt: 99n})
+            .invalidateBit1D({bitIndex: 1024n})
+            .setBalancesXD({
+                tokenBalances: [
+                    {tokenHalf: USDC_HALF, value: 10000n * 10n ** 6n},
+                    {tokenHalf: WETH_HALF, value: 5n * 10n ** 18n}
+                ]
+            })
+            .onlyTakerTokenBalanceNonZero({token: WETH})
+            .invalidateTokenIn1D({tokenInHalf: USDC_HALF})
+            .jumpIfExactIn({nextPC: 20n})
+            .balancesXD({
+                tokenBalances: [{tokenHalf: LINK_HALF, value: 50n * 10n ** 18n}]
+            })
+            .onlyTakerTokenBalanceGte({
+                token: DAI,
+                minAmount: 500n * 10n ** 18n
+            })
+            .invalidateTokenOut1D({tokenOutHalf: LINK_HALF})
+            .onlyTakerTokenSupplyShareGte({
+                token: USDC,
+                minShareE18: 10n ** 16n
+            })
+            .jump({nextPC: 30n})
+            .build()
+
+        const decodedBuilder = RegularProgramBuilder.decode(program)
+        const decodedProgram = decodedBuilder.build()
+        expect(decodedProgram.toString()).toBe(program.toString())
+
+        const ixs = decodedBuilder.getInstructions()
+        expect(ixs).toHaveLength(11)
+
+        expect(ixs[0].opcode.id.toString()).toContain('salt')
+        expect((ixs[0].args as controls.SaltArgs).salt).toBe(99n)
+
+        expect(ixs[1].opcode.id.toString()).toContain('invalidateBit1D')
+        expect((ixs[1].args as invalidators.InvalidateBit1DArgs).bitIndex).toBe(
+            1024n
+        )
+
+        expect(ixs[2].opcode.id.toString()).toContain('setBalancesXD')
+        const setBalances = ixs[2].args as balances.BalancesArgs
+        expect(setBalances.tokenBalances).toHaveLength(2)
+        expect(setBalances.tokenBalances[0].value).toBe(10000n * 10n ** 6n)
+
+        expect(ixs[3].opcode.id.toString()).toContain(
+            'onlyTakerTokenBalanceNonZero'
+        )
+        expect(
+            (
+                ixs[3].args as controls.OnlyTakerTokenBalanceNonZeroArgs
+            ).token.toString()
+        ).toBe(WETH.toString())
+
+        expect(ixs[4].opcode.id.toString()).toContain('invalidateTokenIn1D')
+        expect(
+            (
+                ixs[4].args as invalidators.InvalidateTokenIn1DArgs
+            ).tokenInHalf.toString()
+        ).toBe(USDC_HALF.toString())
+
+        expect(ixs[5].opcode.id.toString()).toContain('jumpIfExactIn')
+        expect((ixs[5].args as controls.JumpArgs).nextPC).toBe(20n)
+
+        expect(ixs[6].opcode.id.toString()).toContain('balancesXD')
+        const readBalances = ixs[6].args as balances.BalancesArgs
+        expect(readBalances.tokenBalances).toHaveLength(1)
+        expect(readBalances.tokenBalances[0].value).toBe(50n * 10n ** 18n)
+
+        expect(ixs[7].opcode.id.toString()).toContain(
+            'onlyTakerTokenBalanceGte'
+        )
+        const balanceGte = ixs[7].args as controls.OnlyTakerTokenBalanceGteArgs
+        expect(balanceGte.token.toString()).toBe(DAI.toString())
+        expect(balanceGte.minAmount).toBe(500n * 10n ** 18n)
+
+        expect(ixs[8].opcode.id.toString()).toContain('invalidateTokenOut1D')
+        expect(
+            (
+                ixs[8].args as invalidators.InvalidateTokenOut1DArgs
+            ).tokenOutHalf.toString()
+        ).toBe(LINK_HALF.toString())
+
+        expect(ixs[9].opcode.id.toString()).toContain(
+            'onlyTakerTokenSupplyShareGte'
+        )
+        const supplyShare = ixs[9]
+            .args as controls.OnlyTakerTokenSupplyShareGteArgs
+        expect(supplyShare.token.toString()).toBe(USDC.toString())
+        expect(supplyShare.minShareE18).toBe(10n ** 16n)
+
+        expect(ixs[10].opcode.id.toString()).toContain('jump')
+        expect((ixs[10].args as controls.JumpArgs).nextPC).toBe(30n)
     })
 })

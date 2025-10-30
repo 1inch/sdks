@@ -4,6 +4,7 @@ import {SwapVmProgram} from './swap-vm-program'
 import {allInstructions} from '../instructions'
 import * as balances from '../instructions/balances'
 import * as controls from '../instructions/controls'
+import * as invalidators from '../instructions/invalidators'
 
 export class RegularProgramBuilder extends ProgramBuilder {
     constructor() {
@@ -127,6 +128,51 @@ export class RegularProgramBuilder extends ProgramBuilder {
      **/
     public salt(data: DataFor<controls.SaltArgs>): this {
         super.add(controls.salt.createIx(new controls.SaltArgs(data.salt)))
+
+        return this
+    }
+
+    /**
+     * Invalidates a specific bit index for order uniqueness
+     **/
+    public invalidateBit1D(
+        data: DataFor<invalidators.InvalidateBit1DArgs>
+    ): this {
+        super.add(
+            invalidators.invalidateBit1D.createIx(
+                new invalidators.InvalidateBit1DArgs(data.bitIndex)
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Invalidates order by token input to prevent re-use
+     **/
+    public invalidateTokenIn1D(
+        data: DataFor<invalidators.InvalidateTokenIn1DArgs>
+    ): this {
+        super.add(
+            invalidators.invalidateTokenIn1D.createIx(
+                new invalidators.InvalidateTokenIn1DArgs(data.tokenInHalf)
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Invalidates order by token output to prevent re-use
+     **/
+    public invalidateTokenOut1D(
+        data: DataFor<invalidators.InvalidateTokenOut1DArgs>
+    ): this {
+        super.add(
+            invalidators.invalidateTokenOut1D.createIx(
+                new invalidators.InvalidateTokenOut1DArgs(data.tokenOutHalf)
+            )
+        )
 
         return this
     }
