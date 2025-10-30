@@ -24,20 +24,20 @@ export class BalancesArgsCoder implements IArgsCoder<BalancesArgs> {
     decode(data: HexString): BalancesArgs {
         const iter = BytesIter.HexString(data.toString())
         const tokenCount = Number(iter.nextUint16())
-        const tokenHalves: AddressHalf[] = []
+        const tokenHalfs: AddressHalf[] = []
 
         for (let i = 0; i < tokenCount; i++) {
             const bytes = iter.nextBytes(10)
 
             const hexString = add0x(bytes)
-            tokenHalves.push(AddressHalf.fromHex(hexString))
+            tokenHalfs.push(AddressHalf.fromHex(hexString))
         }
 
         const tokenBalances: TokenBalance[] = []
 
         for (let i = 0; i < tokenCount; i++) {
             tokenBalances.push({
-                tokenHalf: tokenHalves[i],
+                tokenHalf: tokenHalfs[i],
                 value: BigInt(iter.nextUint256())
             })
         }

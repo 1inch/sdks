@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@1inch/byte-utils':
-        specifier: 3.0.0
-        version: 3.0.0
+        specifier: 3.1.3
+        version: 3.1.3
     devDependencies:
       '@1inch/eslint-config':
         specifier: ^3.0.6
@@ -231,8 +231,8 @@ importers:
   typescript/swap-vm:
     dependencies:
       '@1inch/byte-utils':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.3
+        version: 3.1.3
       '@1inch/sdk-shared':
         specifier: workspace:*
         version: link:../shared
@@ -258,9 +258,9 @@ importers:
 
 packages:
 
-  '@1inch/byte-utils@3.0.0':
-    resolution: {integrity: sha512-CuX4E0z/pzo9hKGzFsMi3vPVgHRRh14ZwNEZ5TY1svnKF8PjxWx3t0CjXCW4dyqKGe6TKAzgYqzzxrMrWPDy5Q==}
-    engines: {node: '>=18.16.0'}
+  '@1inch/byte-utils@3.1.3':
+    resolution: {integrity: sha512-tkiKgymegKoI3BuQpIR5XNw0QU2nCozCdpc1Tze3A/8SWPwoVJWgMEk61SiCOYJTMwXOhjN24Euza/YsJd7gYA==}
+    engines: {node: '>=22'}
     peerDependencies:
       assert: ^2.0.0
     peerDependenciesMeta:
@@ -4257,7 +4257,7 @@ packages:
 
 snapshots:
 
-  '@1inch/byte-utils@3.0.0': {}
+  '@1inch/byte-utils@3.1.3': {}
 
   ? '@1inch/eslint-config@3.0.8(@eslint/compat@1.4.0(eslint@9.18.0(jiti@2.6.1)))(@eslint/eslintrc@3.3.1)(@eslint/js@9.38.0)(@stylistic/eslint-plugin@2.13.0(eslint@9.18.0(jiti@2.6.1))(typescript@5.9.3))(@typescript-eslint/eslint-plugin@8.46.2(@typescript-eslint/parser@8.46.2(eslint@9.18.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.18.0(jiti@2.6.1))(typescript@5.9.3))(@typescript-eslint/parser@8.46.2(eslint@9.18.0(jiti@2.6.1))(typescript@5.9.3))(eslint-config-prettier@10.1.8(eslint@9.18.0(jiti@2.6.1)))(eslint-config-standard@17.1.0(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.46.2(eslint@9.18.0(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.18.0(jiti@2.6.1)))(eslint-plugin-n@17.23.1(eslint@9.18.0(jiti@2.6.1))(typescript@5.9.3))(eslint-plugin-promise@7.2.1(eslint@9.18.0(jiti@2.6.1)))(eslint@9.18.0(jiti@2.6.1)))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@9.18.0(jiti@2.6.1)))(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.46.2(eslint@9.18.0(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.18.0(jiti@2.6.1)))(eslint-plugin-n@17.23.1(eslint@9.18.0(jiti@2.6.1))(typescript@5.9.3))(eslint-plugin-prettier@5.5.4(eslint-config-prettier@10.1.8(eslint@9.18.0(jiti@2.6.1)))(eslint@9.18.0(jiti@2.6.1))(prettier@3.6.2))(eslint-plugin-promise@7.2.1(eslint@9.18.0(jiti@2.6.1)))(eslint-plugin-unused-imports@4.3.0(@typescript-eslint/eslint-plugin@8.46.2(@typescript-eslint/parser@8.46.2(eslint@9.18.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.18.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.18.0(jiti@2.6.1)))(eslint@9.18.0(jiti@2.6.1))(globals@16.4.0)(prettier@3.6.2)(typescript@5.9.3)'
   : dependencies:

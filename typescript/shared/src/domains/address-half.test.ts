@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest'
+import {add0x} from '@1inch/byte-utils'
 import {Address} from '@1inch/sdk-shared'
 import {AddressHalf} from './address-half'
-import { add0x } from '@1inch/byte-utils';
 
 describe('AddressHalf', () => {
     it('should extract last 10 bytes (80 bits) from address', () => {

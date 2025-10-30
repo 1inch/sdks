@@ -4,11 +4,17 @@ import {SwapVmProgram} from './swap-vm-program'
 import {IArgsData, IInstruction, IOpcode} from '../instructions'
 import {EMPTY_OPCODE} from '../instructions/empty'
 
+/**
+ * Abstract base class for building SwapVM programs with type-safe instruction handling
+ **/
 export abstract class ProgramBuilder {
     protected program: IInstruction<IArgsData>[] = []
 
     protected constructor(public readonly ixsSet: IOpcode[]) {}
 
+    /**
+     * Decodes a SwapVM program into builder instructions
+     **/
     public decode(program: SwapVmProgram): this {
         const iter = BytesIter.HexString(program.toString())
 
@@ -37,6 +43,9 @@ export abstract class ProgramBuilder {
         return this
     }
 
+    /**
+     * Builds the SwapVM program bytecode from accumulated instructions
+     **/
     public build(): SwapVmProgram {
         const builder = new BytesBuilder()
 
@@ -60,10 +69,16 @@ export abstract class ProgramBuilder {
         return new SwapVmProgram(builder.asHex())
     }
 
+    /**
+     * Returns the current list of instructions in the program
+     **/
     public getInstructions(): Array<IInstruction> {
         return this.program
     }
 
+    /**
+     * Adds an instruction to the program with validation
+     **/
     protected add(ix: IInstruction): this {
         const opcodeId = this.ixsSet.findIndex((o) => o.id === ix.opcode.id)
 

@@ -1,8 +1,10 @@
 import {EMPTY_OPCODE} from './empty'
 import * as balances from './balances'
+import * as controls from './controls'
 
-export * as balances from './balances'
 export * from './types'
+export * from './balances'
+export * from './controls'
 
 /**
  * Regular opcodes array - matching SwapVM contract exactly (44 opcodes)
@@ -31,12 +33,12 @@ export const allInstructions = [
     /**
      * Controls (11-16)
      */
-    EMPTY_OPCODE, // 11 - JUMP
-    EMPTY_OPCODE, // 12 - JUMP_IF_EXACT_IN
-    EMPTY_OPCODE, // 13 - JUMP_IF_EXACT_OUT
-    EMPTY_OPCODE, // 14 - ONLY_TAKER_TOKEN_BALANCE_NON_ZERO
-    EMPTY_OPCODE, // 15 - ONLY_TAKER_TOKEN_BALANCE_GTE
-    EMPTY_OPCODE, // 16 - ONLY_TAKER_TOKEN_SUPPLY_SHARE_GTE
+    controls.jump, // 11 - JUMP
+    controls.jumpIfExactIn, // 12 - JUMP_IF_EXACT_IN
+    controls.jumpIfExactOut, // 13 - JUMP_IF_EXACT_OUT
+    controls.onlyTakerTokenBalanceNonZero, // 14 - ONLY_TAKER_TOKEN_BALANCE_NON_ZERO
+    controls.onlyTakerTokenBalanceGte, // 15 - ONLY_TAKER_TOKEN_BALANCE_GTE
+    controls.onlyTakerTokenSupplyShareGte, // 16 - ONLY_TAKER_TOKEN_SUPPLY_SHARE_GTE
 
     /**
      * Balances (17-18)
@@ -69,7 +71,7 @@ export const allInstructions = [
     EMPTY_OPCODE, // 34 - TWAP
     EMPTY_OPCODE, // 35 - STABLE_SWAP_2D
     EMPTY_OPCODE, // 36 - EXTRUCTION
-    EMPTY_OPCODE, // 37 - SALT
+    controls.salt, // 37 - SALT
     EMPTY_OPCODE, // 38 - FLAT_FEE_XD
     EMPTY_OPCODE, // 39 - FLAT_FEE_AMOUNT_IN_XD
     EMPTY_OPCODE, // 40 - FLAT_FEE_AMOUNT_OUT_XD
@@ -105,12 +107,12 @@ export const aquaInstructions = [
     /**
      * Controls (11-16)
      */
-    EMPTY_OPCODE, // 11 - JUMP
-    EMPTY_OPCODE, // 12 - JUMP_IF_EXACT_IN
-    EMPTY_OPCODE, // 13 - JUMP_IF_EXACT_OUT
-    EMPTY_OPCODE, // 14 - ONLY_TAKER_TOKEN_BALANCE_NON_ZERO
-    EMPTY_OPCODE, // 15 - ONLY_TAKER_TOKEN_BALANCE_GTE
-    EMPTY_OPCODE, // 16 - ONLY_TAKER_TOKEN_SUPPLY_SHARE_GTE
+    controls.jump, // 11 - JUMP
+    controls.jumpIfExactIn, // 12 - JUMP_IF_EXACT_IN
+    controls.jumpIfExactOut, // 13 - JUMP_IF_EXACT_OUT
+    controls.onlyTakerTokenBalanceNonZero, // 14 - ONLY_TAKER_TOKEN_BALANCE_NON_ZERO
+    controls.onlyTakerTokenBalanceGte, // 15 - ONLY_TAKER_TOKEN_BALANCE_GTE
+    controls.onlyTakerTokenSupplyShareGte, // 16 - ONLY_TAKER_TOKEN_SUPPLY_SHARE_GTE
 
     /**
      * Trading instructions (17+)
@@ -120,7 +122,7 @@ export const aquaInstructions = [
     EMPTY_OPCODE, // 19 - CONCENTRATE_GROW_LIQUIDITY_2D
     EMPTY_OPCODE, // 20 - DECAY_XD
     EMPTY_OPCODE, // 21 - STABLE_SWAP_2D
-    EMPTY_OPCODE, // 22 - SALT
+    controls.salt, // 22 - SALT
     EMPTY_OPCODE, // 23 - FLAT_FEE_XD
     EMPTY_OPCODE, // 24 - FLAT_FEE_AMOUNT_IN_XD
     EMPTY_OPCODE, // 25 - FLAT_FEE_AMOUNT_OUT_XD

@@ -74,7 +74,7 @@
     "node": "22.13.1"
   },
   "dependencies": {
-    "@1inch/byte-utils": "3.0.0"
+    "@1inch/byte-utils": "3.1.3"
   },
   "devDependencies": {
     "@1inch/eslint-config": "^3.0.6",
