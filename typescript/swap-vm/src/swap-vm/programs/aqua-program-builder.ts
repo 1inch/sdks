@@ -3,6 +3,11 @@ import {ProgramBuilder} from './program-builder'
 import {SwapVmProgram} from './swap-vm-program'
 import {aquaInstructions} from '../instructions'
 import * as controls from '../instructions/controls'
+import * as xycSwap from '../instructions/xyc-swap'
+import * as concentrate from '../instructions/concentrate'
+import * as decay from '../instructions/decay'
+import * as stableSwap from '../instructions/stable-swap'
+import * as fee from '../instructions/fee'
 
 export class AquaProgramBuilder extends ProgramBuilder {
     constructor() {
@@ -100,6 +105,147 @@ export class AquaProgramBuilder extends ProgramBuilder {
      **/
     public salt(data: DataFor<controls.SaltArgs>): this {
         super.add(controls.salt.createIx(new controls.SaltArgs(data.salt)))
+
+        return this
+    }
+
+    /**
+     * Basic swap using constant product formula (x*y=k)
+     **/
+    public xycSwapXD(): this {
+        super.add(xycSwap.xycSwapXD.createIx(new xycSwap.XycSwapXDArgs()))
+
+        return this
+    }
+
+    /**
+     * Concentrates liquidity within price bounds for multiple tokens
+     **/
+    public concentrateGrowLiquidityXD(
+        data: DataFor<concentrate.ConcentrateGrowLiquidityXDArgs>
+    ): this {
+        super.add(
+            concentrate.concentrateGrowLiquidityXD.createIx(
+                new concentrate.ConcentrateGrowLiquidityXDArgs(data.tokenDeltas)
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Concentrates liquidity within price bounds for two tokens
+     **/
+    public concentrateGrowLiquidity2D(
+        data: DataFor<concentrate.ConcentrateGrowLiquidity2DArgs>
+    ): this {
+        super.add(
+            concentrate.concentrateGrowLiquidity2D.createIx(
+                new concentrate.ConcentrateGrowLiquidity2DArgs(
+                    data.deltaLt,
+                    data.deltaGt
+                )
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Applies time-based decay to balance adjustments
+     **/
+    public decayXD(data: DataFor<decay.DecayXDArgs>): this {
+        super.add(
+            decay.decayXD.createIx(new decay.DecayXDArgs(data.decayPeriod))
+        )
+
+        return this
+    }
+
+    /**
+     * Stablecoin optimized swap using StableSwap algorithm (Curve-style)
+     **/
+    public stableSwap2D(data: DataFor<stableSwap.StableSwap2DArgs>): this {
+        super.add(
+            stableSwap.stableSwap2D.createIx(
+                new stableSwap.StableSwap2DArgs(
+                    data.fee,
+                    data.A,
+                    data.rateLt,
+                    data.rateGt
+                )
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Applies flat fee to computed swap amount
+     **/
+    public flatFeeXD(data: DataFor<fee.FlatFeeArgs>): this {
+        super.add(fee.flatFeeXD.createIx(new fee.FlatFeeArgs(data.feeBps)))
+
+        return this
+    }
+
+    /**
+     * Applies fee to amountIn
+     **/
+    public flatFeeAmountInXD(data: DataFor<fee.FlatFeeArgs>): this {
+        super.add(
+            fee.flatFeeAmountInXD.createIx(new fee.FlatFeeArgs(data.feeBps))
+        )
+
+        return this
+    }
+
+    /**
+     * Applies fee to amountOut
+     **/
+    public flatFeeAmountOutXD(data: DataFor<fee.FlatFeeArgs>): this {
+        super.add(
+            fee.flatFeeAmountOutXD.createIx(new fee.FlatFeeArgs(data.feeBps))
+        )
+
+        return this
+    }
+
+    /**
+     * Applies progressive fee based on price impact
+     **/
+    public progressiveFeeXD(data: DataFor<fee.FlatFeeArgs>): this {
+        super.add(
+            fee.progressiveFeeXD.createIx(new fee.FlatFeeArgs(data.feeBps))
+        )
+
+        return this
+    }
+
+    /**
+     * Applies protocol fee to amountOut with direct transfer
+     **/
+    public protocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
+        super.add(
+            fee.protocolFeeAmountOutXD.createIx(
+                new fee.ProtocolFeeArgs(data.feeBps, data.to)
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Applies protocol fee to amountOut through Aqua protocol
+     **/
+    public aquaProtocolFeeAmountOutXD(
+        data: DataFor<fee.ProtocolFeeArgs>
+    ): this {
+        super.add(
+            fee.aquaProtocolFeeAmountOutXD.createIx(
+                new fee.ProtocolFeeArgs(data.feeBps, data.to)
+            )
+        )
 
         return this
     }

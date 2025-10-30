@@ -1,11 +1,20 @@
 import {describe, it, expect} from 'vitest'
-import {Address, AddressHalf} from '@1inch/sdk-shared'
+import {Address, AddressHalf, HexString} from '@1inch/sdk-shared'
 import * as balances from '../instructions/balances'
 import * as controls from '../instructions/controls'
 import * as invalidators from '../instructions/invalidators'
 import * as xycSwap from '../instructions/xyc-swap'
 import * as concentrate from '../instructions/concentrate'
 import * as decay from '../instructions/decay'
+import * as limitSwap from '../instructions/limit-swap'
+import * as minRate from '../instructions/min-rate'
+import * as dutchAuction from '../instructions/dutch-auction'
+import * as oraclePriceAdjuster from '../instructions/oracle-price-adjuster'
+import * as baseFeeAdjuster from '../instructions/base-fee-adjuster'
+import * as twapSwap from '../instructions/twap-swap'
+import * as stableSwap from '../instructions/stable-swap'
+import * as fee from '../instructions/fee'
+import * as extruction from '../instructions/extruction'
 import {RegularProgramBuilder} from './'
 
 // eslint-disable-next-line max-lines-per-function
@@ -463,5 +472,329 @@ describe('ProgramBuilder', () => {
 
         expect(ixs[10].opcode.id.toString()).toContain('jump')
         expect((ixs[10].args as controls.JumpArgs).nextPC).toBe(50n)
+    })
+
+    it('should handle limit swap and min rate instructions', () => {
+        const originalBuilder = new RegularProgramBuilder()
+
+        const program = originalBuilder
+            .setBalancesXD({
+                tokenBalances: [
+                    {tokenHalf: USDC_HALF, value: 3000n * 10n ** 6n},
+                    {tokenHalf: WETH_HALF, value: 1n * 10n ** 18n}
+                ]
+            })
+            .limitSwap1D({makerDirectionLt: true})
+            .requireMinRate1D({rateLt: 2900n, rateGt: 1n})
+            .limitSwapOnlyFull1D({makerDirectionLt: false})
+            .adjustMinRate1D({rateLt: 3100n, rateGt: 1n})
+            .build()
+
+        const decodedBuilder = RegularProgramBuilder.decode(program)
+        const decodedProgram = decodedBuilder.build()
+        expect(decodedProgram.toString()).toBe(program.toString())
+
+        const ixs = decodedBuilder.getInstructions()
+        expect(ixs).toHaveLength(5)
+
+        expect(ixs[0].opcode.id.toString()).toContain('setBalancesXD')
+
+        expect(ixs[1].opcode.id.toString()).toContain('limitSwap1D')
+        expect(
+            (ixs[1].args as limitSwap.LimitSwapDirectionArgs).makerDirectionLt
+        ).toBe(true)
+
+        expect(ixs[2].opcode.id.toString()).toContain('requireMinRate1D')
+        const minRate1 = ixs[2].args as minRate.MinRateArgs
+        expect(minRate1.rateLt).toBe(2900n)
+        expect(minRate1.rateGt).toBe(1n)
+
+        expect(ixs[3].opcode.id.toString()).toContain('limitSwapOnlyFull1D')
+        expect(
+            (ixs[3].args as limitSwap.LimitSwapDirectionArgs).makerDirectionLt
+        ).toBe(false)
+
+        expect(ixs[4].opcode.id.toString()).toContain('adjustMinRate1D')
+        const minRate2 = ixs[4].args as minRate.MinRateArgs
+        expect(minRate2.rateLt).toBe(3100n)
+        expect(minRate2.rateGt).toBe(1n)
+    })
+
+    it('should handle dutch auction instructions', () => {
+        const originalBuilder = new RegularProgramBuilder()
+        const startTime = 1700000000n
+        const duration = 3600n
+        const decayFactor = 999000000n
+
+        const program = originalBuilder
+            .setBalancesXD({
+                tokenBalances: [
+                    {tokenHalf: USDC_HALF, value: 1000n * 10n ** 6n}
+                ]
+            })
+            .dutchAuctionAmountIn1D({
+                startTime,
+                duration,
+                decayFactor
+            })
+            .dutchAuctionAmountOut1D({
+                startTime: startTime + 100n,
+                duration: 7200n,
+                decayFactor: 995000000n
+            })
+            .build()
+
+        const decodedBuilder = RegularProgramBuilder.decode(program)
+        const decodedProgram = decodedBuilder.build()
+        expect(decodedProgram.toString()).toBe(program.toString())
+
+        const ixs = decodedBuilder.getInstructions()
+        expect(ixs).toHaveLength(3)
+
+        expect(ixs[1].opcode.id.toString()).toContain('dutchAuctionAmountIn1D')
+        const dutchIn = ixs[1].args as dutchAuction.DutchAuctionArgs
+        expect(dutchIn.startTime).toBe(startTime)
+        expect(dutchIn.duration).toBe(duration)
+        expect(dutchIn.decayFactor).toBe(decayFactor)
+
+        expect(ixs[2].opcode.id.toString()).toContain('dutchAuctionAmountOut1D')
+        const dutchOut = ixs[2].args as dutchAuction.DutchAuctionArgs
+        expect(dutchOut.startTime).toBe(startTime + 100n)
+        expect(dutchOut.duration).toBe(7200n)
+        expect(dutchOut.decayFactor).toBe(995000000n)
+    })
+
+    it('should handle oracle and base fee adjusters', () => {
+        const originalBuilder = new RegularProgramBuilder()
+        const oracle = new Address('0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419')
+
+        const program = originalBuilder
+            .limitSwap1D({makerDirectionLt: true})
+            .oraclePriceAdjuster1D({
+                maxPriceDecay: 950000000000000000n,
+                maxStaleness: 3600n,
+                oracleDecimals: 8n,
+                oracleAddress: oracle
+            })
+            .baseFeeAdjuster1D({
+                baseGasPrice: 20000000000n,
+                ethToToken1Price: 3000n * 10n ** 18n,
+                gasAmount: 150000n,
+                maxPriceDecay: 990000000000000000n
+            })
+            .build()
+
+        const decodedBuilder = RegularProgramBuilder.decode(program)
+        const decodedProgram = decodedBuilder.build()
+        expect(decodedProgram.toString()).toBe(program.toString())
+
+        const ixs = decodedBuilder.getInstructions()
+        expect(ixs).toHaveLength(3)
+
+        expect(ixs[1].opcode.id.toString()).toContain('oraclePriceAdjuster1D')
+        const oracleArgs = ixs[1]
+            .args as oraclePriceAdjuster.OraclePriceAdjusterArgs
+        expect(oracleArgs.maxPriceDecay).toBe(950000000000000000n)
+        expect(oracleArgs.maxStaleness).toBe(3600n)
+        expect(oracleArgs.oracleDecimals).toBe(8n)
+        expect(oracleArgs.oracleAddress.toString()).toBe(oracle.toString())
+
+        expect(ixs[2].opcode.id.toString()).toContain('baseFeeAdjuster1D')
+        const baseFeeArgs = ixs[2].args as baseFeeAdjuster.BaseFeeAdjusterArgs
+        expect(baseFeeArgs.baseGasPrice).toBe(20000000000n)
+        expect(baseFeeArgs.ethToToken1Price).toBe(3000n * 10n ** 18n)
+        expect(baseFeeArgs.gasAmount).toBe(150000n)
+        expect(baseFeeArgs.maxPriceDecay).toBe(990000000000000000n)
+    })
+
+    it('should handle TWAP swap instruction', () => {
+        const originalBuilder = new RegularProgramBuilder()
+        const startTime = 1700000000n
+
+        const program = originalBuilder
+            .twap({
+                balanceIn: 3000n * 10n ** 6n,
+                balanceOut: 1n * 10n ** 18n,
+                startTime,
+                duration: 86400n,
+                priceBumpAfterIlliquidity: 1100000000000000000n,
+                minTradeAmountOut: 10n ** 16n
+            })
+            .build()
+
+        const decodedBuilder = RegularProgramBuilder.decode(program)
+        const decodedProgram = decodedBuilder.build()
+        expect(decodedProgram.toString()).toBe(program.toString())
+
+        const ixs = decodedBuilder.getInstructions()
+        expect(ixs).toHaveLength(1)
+
+        expect(ixs[0].opcode.id.toString()).toContain('twap')
+        const twapArgs = ixs[0].args as twapSwap.TWAPSwapArgs
+        expect(twapArgs.balanceIn).toBe(3000n * 10n ** 6n)
+        expect(twapArgs.balanceOut).toBe(1n * 10n ** 18n)
+        expect(twapArgs.startTime).toBe(startTime)
+        expect(twapArgs.duration).toBe(86400n)
+        expect(twapArgs.priceBumpAfterIlliquidity).toBe(1100000000000000000n)
+        expect(twapArgs.minTradeAmountOut).toBe(10n ** 16n)
+    })
+
+    it('should handle stable swap instruction', () => {
+        const originalBuilder = new RegularProgramBuilder()
+
+        const program = originalBuilder
+            .stableSwap2D({
+                fee: 3000000n,
+                A: 100n,
+                rateLt: 1000000000000000000n,
+                rateGt: 1000000000000000000n
+            })
+            .build()
+
+        const decodedBuilder = RegularProgramBuilder.decode(program)
+        const decodedProgram = decodedBuilder.build()
+        expect(decodedProgram.toString()).toBe(program.toString())
+
+        const ixs = decodedBuilder.getInstructions()
+        expect(ixs).toHaveLength(1)
+
+        expect(ixs[0].opcode.id.toString()).toContain('stableSwap2D')
+        const stableArgs = ixs[0].args as stableSwap.StableSwap2DArgs
+        expect(stableArgs.fee).toBe(3000000n)
+        expect(stableArgs.A).toBe(100n)
+        expect(stableArgs.rateLt).toBe(1000000000000000000n)
+        expect(stableArgs.rateGt).toBe(1000000000000000000n)
+    })
+
+    it('should handle extruction instruction', () => {
+        const originalBuilder = new RegularProgramBuilder()
+        const targetContract = new Address(
+            '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+        )
+        const extructionData = new HexString(
+            '0xabcdef1234567890abcdef1234567890'
+        )
+
+        const program = originalBuilder
+            .extruction({
+                target: targetContract,
+                extructionArgs: extructionData
+            })
+            .build()
+
+        const decodedBuilder = RegularProgramBuilder.decode(program)
+        const decodedProgram = decodedBuilder.build()
+        expect(decodedProgram.toString()).toBe(program.toString())
+
+        const ixs = decodedBuilder.getInstructions()
+        expect(ixs).toHaveLength(1)
+
+        expect(ixs[0].opcode.id.toString()).toContain('extruction')
+        const extructionArgs = ixs[0].args as extruction.ExtructionArgs
+        expect(extructionArgs.target.toString()).toBe(targetContract.toString())
+        expect(extructionArgs.extructionArgs.toString()).toBe(
+            extructionData.toString()
+        )
+    })
+
+    it('should handle all fee instructions', () => {
+        const originalBuilder = new RegularProgramBuilder()
+        const feeRecipient = new Address(
+            '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'
+        )
+
+        const program = originalBuilder
+            .flatFeeXD({feeBps: 30000000n})
+            .flatFeeAmountInXD({feeBps: 25000000n})
+            .flatFeeAmountOutXD({feeBps: 20000000n})
+            .progressiveFeeXD({feeBps: 15000000n})
+            .protocolFeeAmountOutXD({
+                feeBps: 10000000n,
+                to: feeRecipient
+            })
+            .aquaProtocolFeeAmountOutXD({
+                feeBps: 5000000n,
+                to: feeRecipient
+            })
+            .build()
+
+        const decodedBuilder = RegularProgramBuilder.decode(program)
+        const decodedProgram = decodedBuilder.build()
+        expect(decodedProgram.toString()).toBe(program.toString())
+
+        const ixs = decodedBuilder.getInstructions()
+        expect(ixs).toHaveLength(6)
+
+        expect(ixs[0].opcode.id.toString()).toContain('flatFeeXD')
+        expect((ixs[0].args as fee.FlatFeeArgs).feeBps).toBe(30000000n)
+
+        expect(ixs[1].opcode.id.toString()).toContain('flatFeeAmountInXD')
+        expect((ixs[1].args as fee.FlatFeeArgs).feeBps).toBe(25000000n)
+
+        expect(ixs[2].opcode.id.toString()).toContain('flatFeeAmountOutXD')
+        expect((ixs[2].args as fee.FlatFeeArgs).feeBps).toBe(20000000n)
+
+        expect(ixs[3].opcode.id.toString()).toContain('progressiveFeeXD')
+        expect((ixs[3].args as fee.FlatFeeArgs).feeBps).toBe(15000000n)
+
+        expect(ixs[4].opcode.id.toString()).toContain('protocolFeeAmountOutXD')
+        const protocolFee = ixs[4].args as fee.ProtocolFeeArgs
+        expect(protocolFee.feeBps).toBe(10000000n)
+        expect(protocolFee.to.toString()).toBe(feeRecipient.toString())
+
+        expect(ixs[5].opcode.id.toString()).toContain(
+            'aquaProtocolFeeAmountOutXD'
+        )
+        const aquaFee = ixs[5].args as fee.ProtocolFeeArgs
+        expect(aquaFee.feeBps).toBe(5000000n)
+        expect(aquaFee.to.toString()).toBe(feeRecipient.toString())
+    })
+
+    it('should handle complex program with new instructions', () => {
+        const originalBuilder = new RegularProgramBuilder()
+        const oracle = new Address('0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419')
+        const feeRecipient = new Address(
+            '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'
+        )
+
+        const program = originalBuilder
+            .salt({salt: 12345n})
+            .setBalancesXD({
+                tokenBalances: [
+                    {tokenHalf: USDC_HALF, value: 10000n * 10n ** 6n},
+                    {tokenHalf: WETH_HALF, value: 3n * 10n ** 18n}
+                ]
+            })
+            .limitSwap1D({makerDirectionLt: true})
+            .progressiveFeeXD({feeBps: 3000000n})
+            .oraclePriceAdjuster1D({
+                maxPriceDecay: 950000000000000000n,
+                maxStaleness: 3600n,
+                oracleDecimals: 8n,
+                oracleAddress: oracle
+            })
+            .requireMinRate1D({rateLt: 3000n, rateGt: 1n})
+            .protocolFeeAmountOutXD({
+                feeBps: 1000000n,
+                to: feeRecipient
+            })
+            .invalidateBit1D({bitIndex: 999n})
+            .build()
+
+        const decodedBuilder = RegularProgramBuilder.decode(program)
+        const decodedProgram = decodedBuilder.build()
+        expect(decodedProgram.toString()).toBe(program.toString())
+
+        const ixs = decodedBuilder.getInstructions()
+        expect(ixs).toHaveLength(8)
+
+        expect(ixs[0].opcode.id.toString()).toContain('salt')
+        expect(ixs[1].opcode.id.toString()).toContain('setBalancesXD')
+        expect(ixs[2].opcode.id.toString()).toContain('limitSwap1D')
+        expect(ixs[3].opcode.id.toString()).toContain('progressiveFeeXD')
+        expect(ixs[4].opcode.id.toString()).toContain('oraclePriceAdjuster1D')
+        expect(ixs[5].opcode.id.toString()).toContain('requireMinRate1D')
+        expect(ixs[6].opcode.id.toString()).toContain('protocolFeeAmountOutXD')
+        expect(ixs[7].opcode.id.toString()).toContain('invalidateBit1D')
     })
 })

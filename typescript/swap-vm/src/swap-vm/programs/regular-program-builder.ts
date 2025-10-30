@@ -8,6 +8,15 @@ import * as invalidators from '../instructions/invalidators'
 import * as xycSwap from '../instructions/xyc-swap'
 import * as concentrate from '../instructions/concentrate'
 import * as decay from '../instructions/decay'
+import * as limitSwap from '../instructions/limit-swap'
+import * as minRate from '../instructions/min-rate'
+import * as dutchAuction from '../instructions/dutch-auction'
+import * as oraclePriceAdjuster from '../instructions/oracle-price-adjuster'
+import * as baseFeeAdjuster from '../instructions/base-fee-adjuster'
+import * as twapSwap from '../instructions/twap-swap'
+import * as stableSwap from '../instructions/stable-swap'
+import * as fee from '../instructions/fee'
+import * as extruction from '../instructions/extruction'
 
 export class RegularProgramBuilder extends ProgramBuilder {
     constructor() {
@@ -228,6 +237,259 @@ export class RegularProgramBuilder extends ProgramBuilder {
     public decayXD(data: DataFor<decay.DecayXDArgs>): this {
         super.add(
             decay.decayXD.createIx(new decay.DecayXDArgs(data.decayPeriod))
+        )
+
+        return this
+    }
+
+    /**
+     * Limit order swap with proportional execution
+     **/
+    public limitSwap1D(data: DataFor<limitSwap.LimitSwapDirectionArgs>): this {
+        super.add(
+            limitSwap.limitSwap1D.createIx(
+                new limitSwap.LimitSwapDirectionArgs(data.makerDirectionLt)
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Limit order swap requiring full amount execution
+     **/
+    public limitSwapOnlyFull1D(
+        data: DataFor<limitSwap.LimitSwapDirectionArgs>
+    ): this {
+        super.add(
+            limitSwap.limitSwapOnlyFull1D.createIx(
+                new limitSwap.LimitSwapDirectionArgs(data.makerDirectionLt)
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Enforces minimum exchange rate or reverts
+     **/
+    public requireMinRate1D(data: DataFor<minRate.MinRateArgs>): this {
+        super.add(
+            minRate.requireMinRate1D.createIx(
+                new minRate.MinRateArgs(data.rateLt, data.rateGt)
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Adjusts swap amounts to meet minimum rate if needed
+     **/
+    public adjustMinRate1D(data: DataFor<minRate.MinRateArgs>): this {
+        super.add(
+            minRate.adjustMinRate1D.createIx(
+                new minRate.MinRateArgs(data.rateLt, data.rateGt)
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Dutch auction with time-based decay on amountIn
+     **/
+    public dutchAuctionAmountIn1D(
+        data: DataFor<dutchAuction.DutchAuctionArgs>
+    ): this {
+        super.add(
+            dutchAuction.dutchAuctionAmountIn1D.createIx(
+                new dutchAuction.DutchAuctionArgs(
+                    data.startTime,
+                    data.duration,
+                    data.decayFactor
+                )
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Dutch auction with time-based decay on amountOut
+     **/
+    public dutchAuctionAmountOut1D(
+        data: DataFor<dutchAuction.DutchAuctionArgs>
+    ): this {
+        super.add(
+            dutchAuction.dutchAuctionAmountOut1D.createIx(
+                new dutchAuction.DutchAuctionArgs(
+                    data.startTime,
+                    data.duration,
+                    data.decayFactor
+                )
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Adjusts swap prices based on Chainlink oracle feeds
+     **/
+    public oraclePriceAdjuster1D(
+        data: DataFor<oraclePriceAdjuster.OraclePriceAdjusterArgs>
+    ): this {
+        super.add(
+            oraclePriceAdjuster.oraclePriceAdjuster1D.createIx(
+                new oraclePriceAdjuster.OraclePriceAdjusterArgs(
+                    data.maxPriceDecay,
+                    data.maxStaleness,
+                    data.oracleDecimals,
+                    data.oracleAddress
+                )
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Adjusts swap prices based on network gas costs
+     **/
+    public baseFeeAdjuster1D(
+        data: DataFor<baseFeeAdjuster.BaseFeeAdjusterArgs>
+    ): this {
+        super.add(
+            baseFeeAdjuster.baseFeeAdjuster1D.createIx(
+                new baseFeeAdjuster.BaseFeeAdjusterArgs(
+                    data.baseGasPrice,
+                    data.ethToToken1Price,
+                    data.gasAmount,
+                    data.maxPriceDecay
+                )
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * TWAP trading with exponential dutch auction and illiquidity handling
+     **/
+    public twap(data: DataFor<twapSwap.TWAPSwapArgs>): this {
+        super.add(
+            twapSwap.twap.createIx(
+                new twapSwap.TWAPSwapArgs(
+                    data.balanceIn,
+                    data.balanceOut,
+                    data.startTime,
+                    data.duration,
+                    data.priceBumpAfterIlliquidity,
+                    data.minTradeAmountOut
+                )
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Stablecoin optimized swap using StableSwap algorithm (Curve-style)
+     **/
+    public stableSwap2D(data: DataFor<stableSwap.StableSwap2DArgs>): this {
+        super.add(
+            stableSwap.stableSwap2D.createIx(
+                new stableSwap.StableSwap2DArgs(
+                    data.fee,
+                    data.A,
+                    data.rateLt,
+                    data.rateGt
+                )
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Calls external contract to perform custom logic
+     **/
+    public extruction(data: DataFor<extruction.ExtructionArgs>): this {
+        super.add(
+            extruction.extruction.createIx(
+                new extruction.ExtructionArgs(data.target, data.extructionArgs)
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Applies flat fee to computed swap amount
+     **/
+    public flatFeeXD(data: DataFor<fee.FlatFeeArgs>): this {
+        super.add(fee.flatFeeXD.createIx(new fee.FlatFeeArgs(data.feeBps)))
+
+        return this
+    }
+
+    /**
+     * Applies fee to amountIn
+     **/
+    public flatFeeAmountInXD(data: DataFor<fee.FlatFeeArgs>): this {
+        super.add(
+            fee.flatFeeAmountInXD.createIx(new fee.FlatFeeArgs(data.feeBps))
+        )
+
+        return this
+    }
+
+    /**
+     * Applies fee to amountOut
+     **/
+    public flatFeeAmountOutXD(data: DataFor<fee.FlatFeeArgs>): this {
+        super.add(
+            fee.flatFeeAmountOutXD.createIx(new fee.FlatFeeArgs(data.feeBps))
+        )
+
+        return this
+    }
+
+    /**
+     * Applies progressive fee based on price impact
+     **/
+    public progressiveFeeXD(data: DataFor<fee.FlatFeeArgs>): this {
+        super.add(
+            fee.progressiveFeeXD.createIx(new fee.FlatFeeArgs(data.feeBps))
+        )
+
+        return this
+    }
+
+    /**
+     * Applies protocol fee to amountOut with direct transfer
+     **/
+    public protocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
+        super.add(
+            fee.protocolFeeAmountOutXD.createIx(
+                new fee.ProtocolFeeArgs(data.feeBps, data.to)
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Applies protocol fee to amountOut through Aqua protocol
+     **/
+    public aquaProtocolFeeAmountOutXD(
+        data: DataFor<fee.ProtocolFeeArgs>
+    ): this {
+        super.add(
+            fee.aquaProtocolFeeAmountOutXD.createIx(
+                new fee.ProtocolFeeArgs(data.feeBps, data.to)
+            )
         )
 
         return this

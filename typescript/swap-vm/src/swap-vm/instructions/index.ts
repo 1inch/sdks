@@ -5,6 +5,15 @@ import * as invalidators from './invalidators'
 import * as xycSwap from './xyc-swap'
 import * as concentrate from './concentrate'
 import * as decay from './decay'
+import * as limitSwap from './limit-swap'
+import * as minRate from './min-rate'
+import * as dutchAuction from './dutch-auction'
+import * as oraclePriceAdjuster from './oracle-price-adjuster'
+import * as baseFeeAdjuster from './base-fee-adjuster'
+import * as twapSwap from './twap-swap'
+import * as stableSwap from './stable-swap'
+import * as fee from './fee'
+import * as extruction from './extruction'
 
 export * from './types'
 export * from './balances'
@@ -13,6 +22,15 @@ export * from './invalidators'
 export * from './xyc-swap'
 export * from './concentrate'
 export * from './decay'
+export * from './limit-swap'
+export * from './min-rate'
+export * from './dutch-auction'
+export * from './oracle-price-adjuster'
+export * from './base-fee-adjuster'
+export * from './twap-swap'
+export * from './stable-swap'
+export * from './fee'
+export * from './extruction'
 
 /**
  * Regular opcodes array - matching SwapVM contract exactly (44 opcodes)
@@ -68,24 +86,24 @@ export const allInstructions = [
     concentrate.concentrateGrowLiquidityXD, // 23 - CONCENTRATE_GROW_LIQUIDITY_XD
     concentrate.concentrateGrowLiquidity2D, // 24 - CONCENTRATE_GROW_LIQUIDITY_2D
     decay.decayXD, // 25 - DECAY_XD
-    EMPTY_OPCODE, // 26 - LIMIT_SWAP_1D
-    EMPTY_OPCODE, // 27 - LIMIT_SWAP_ONLY_FULL_1D
-    EMPTY_OPCODE, // 28 - REQUIRE_MIN_RATE_1D
-    EMPTY_OPCODE, // 29 - ADJUST_MIN_RATE_1D
-    EMPTY_OPCODE, // 30 - DUTCH_AUCTION_AMOUNT_IN_1D
-    EMPTY_OPCODE, // 31 - DUTCH_AUCTION_AMOUNT_OUT_1D
-    EMPTY_OPCODE, // 32 - ORACLE_PRICE_ADJUSTER_1D
-    EMPTY_OPCODE, // 33 - BASE_FEE_ADJUSTER_1D
-    EMPTY_OPCODE, // 34 - TWAP
-    EMPTY_OPCODE, // 35 - STABLE_SWAP_2D
-    EMPTY_OPCODE, // 36 - EXTRUCTION
+    limitSwap.limitSwap1D, // 26 - LIMIT_SWAP_1D
+    limitSwap.limitSwapOnlyFull1D, // 27 - LIMIT_SWAP_ONLY_FULL_1D
+    minRate.requireMinRate1D, // 28 - REQUIRE_MIN_RATE_1D
+    minRate.adjustMinRate1D, // 29 - ADJUST_MIN_RATE_1D
+    dutchAuction.dutchAuctionAmountIn1D, // 30 - DUTCH_AUCTION_AMOUNT_IN_1D
+    dutchAuction.dutchAuctionAmountOut1D, // 31 - DUTCH_AUCTION_AMOUNT_OUT_1D
+    oraclePriceAdjuster.oraclePriceAdjuster1D, // 32 - ORACLE_PRICE_ADJUSTER_1D
+    baseFeeAdjuster.baseFeeAdjuster1D, // 33 - BASE_FEE_ADJUSTER_1D
+    twapSwap.twap, // 34 - TWAP
+    stableSwap.stableSwap2D, // 35 - STABLE_SWAP_2D
+    extruction.extruction, // 36 - EXTRUCTION
     controls.salt, // 37 - SALT
-    EMPTY_OPCODE, // 38 - FLAT_FEE_XD
-    EMPTY_OPCODE, // 39 - FLAT_FEE_AMOUNT_IN_XD
-    EMPTY_OPCODE, // 40 - FLAT_FEE_AMOUNT_OUT_XD
-    EMPTY_OPCODE, // 41 - PROGRESSIVE_FEE_XD
-    EMPTY_OPCODE, // 42 - PROTOCOL_FEE_AMOUNT_OUT_XD
-    EMPTY_OPCODE // 43 - AQUA_PROTOCOL_FEE_AMOUNT_OUT_XD
+    fee.flatFeeXD, // 38 - FLAT_FEE_XD
+    fee.flatFeeAmountInXD, // 39 - FLAT_FEE_AMOUNT_IN_XD
+    fee.flatFeeAmountOutXD, // 40 - FLAT_FEE_AMOUNT_OUT_XD
+    fee.progressiveFeeXD, // 41 - PROGRESSIVE_FEE_XD
+    fee.protocolFeeAmountOutXD, // 42 - PROTOCOL_FEE_AMOUNT_OUT_XD
+    fee.aquaProtocolFeeAmountOutXD // 43 - AQUA_PROTOCOL_FEE_AMOUNT_OUT_XD
 ] as const
 
 /**
@@ -129,12 +147,12 @@ export const aquaInstructions = [
     concentrate.concentrateGrowLiquidityXD, // 18 - CONCENTRATE_GROW_LIQUIDITY_XD
     concentrate.concentrateGrowLiquidity2D, // 19 - CONCENTRATE_GROW_LIQUIDITY_2D
     decay.decayXD, // 20 - DECAY_XD
-    EMPTY_OPCODE, // 21 - STABLE_SWAP_2D
+    stableSwap.stableSwap2D, // 21 - STABLE_SWAP_2D
     controls.salt, // 22 - SALT
-    EMPTY_OPCODE, // 23 - FLAT_FEE_XD
-    EMPTY_OPCODE, // 24 - FLAT_FEE_AMOUNT_IN_XD
-    EMPTY_OPCODE, // 25 - FLAT_FEE_AMOUNT_OUT_XD
-    EMPTY_OPCODE, // 26 - PROGRESSIVE_FEE_XD
-    EMPTY_OPCODE, // 27 - PROTOCOL_FEE_AMOUNT_OUT_XD
-    EMPTY_OPCODE // 28 - AQUA_PROTOCOL_FEE_AMOUNT_OUT_XD
+    fee.flatFeeXD, // 23 - FLAT_FEE_XD
+    fee.flatFeeAmountInXD, // 24 - FLAT_FEE_AMOUNT_IN_XD
+    fee.flatFeeAmountOutXD, // 25 - FLAT_FEE_AMOUNT_OUT_XD
+    fee.progressiveFeeXD, // 26 - PROGRESSIVE_FEE_XD
+    fee.protocolFeeAmountOutXD, // 27 - PROTOCOL_FEE_AMOUNT_OUT_XD
+    fee.aquaProtocolFeeAmountOutXD // 28 - AQUA_PROTOCOL_FEE_AMOUNT_OUT_XD
 ] as const
