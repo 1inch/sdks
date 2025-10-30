@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest'
 import {Address} from '@1inch/sdk-shared'
+import {UINT_16_MAX, UINT_64_MAX, UINT_8_MAX} from '@1inch/byte-utils'
 import {OraclePriceAdjusterArgs} from './oracle-price-adjuster-args'
-import { UINT_16_MAX, UINT_8_MAX } from '@1inch/byte-utils';
 
 describe('OraclePriceAdjusterArgs', () => {
     const oracle = new Address('0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419')
@@ -66,9 +66,9 @@ describe('OraclePriceAdjusterArgs', () => {
     })
 
     it('should throw on invalid values', () => {
-        const maxUint64 = (1n << 64n) - 1n
-        const maxUint16 = 65535n
-        const maxUint8 = 255n
+        const maxUint64 = UINT_64_MAX
+        const maxUint16 = UINT_16_MAX
+        const maxUint8 = UINT_8_MAX
 
         expect(
             () => new OraclePriceAdjusterArgs(-1n, 100n, 8n, oracle)

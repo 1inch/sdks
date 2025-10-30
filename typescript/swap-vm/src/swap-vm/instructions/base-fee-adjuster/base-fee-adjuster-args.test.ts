@@ -1,4 +1,5 @@
 import {describe, it, expect} from 'vitest'
+import {UINT_24_MAX, UINT_64_MAX, UINT_96_MAX} from '@1inch/byte-utils'
 import {BaseFeeAdjusterArgs} from './base-fee-adjuster-args'
 
 describe('BaseFeeAdjusterArgs', () => {
@@ -25,9 +26,9 @@ describe('BaseFeeAdjusterArgs', () => {
     })
 
     it('should handle maximum values', () => {
-        const maxUint64 = (1n << 64n) - 1n
-        const maxUint96 = (1n << 96n) - 1n
-        const maxUint24 = (1n << 24n) - 1n
+        const maxUint64 = UINT_64_MAX
+        const maxUint96 = UINT_96_MAX
+        const maxUint24 = UINT_24_MAX
 
         const args = new BaseFeeAdjusterArgs(
             maxUint64,

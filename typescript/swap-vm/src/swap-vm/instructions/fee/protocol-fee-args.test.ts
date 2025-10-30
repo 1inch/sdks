@@ -66,15 +66,12 @@ describe('ProtocolFeeArgs', () => {
         const maxUint32 = (1n << 32n) - 1n
         const BPS = 1000000000n
 
-        // Negative fee
         expect(() => new ProtocolFeeArgs(-1n, feeRecipient)).toThrow()
 
-        // Fee exceeding uint32
         expect(
             () => new ProtocolFeeArgs(maxUint32 + 1n, feeRecipient)
         ).toThrow()
 
-        // Fee exceeding 100% (BPS)
         expect(() => new ProtocolFeeArgs(BPS + 1n, feeRecipient)).toThrow(
             'Fee out of range'
         )
@@ -99,7 +96,7 @@ describe('ProtocolFeeArgs', () => {
             } // 0.1%
         ]
 
-        testCases.forEach(({desc, feeBps, recipient}) => {
+        testCases.forEach(({feeBps, recipient}) => {
             const to = new Address(recipient)
             const args = new ProtocolFeeArgs(feeBps, to)
             const encoded = ProtocolFeeArgs.CODER.encode(args)
@@ -115,10 +112,8 @@ describe('ProtocolFeeArgs', () => {
     it('should enforce BPS limit', () => {
         const BPS = 1000000000n
 
-        // Should work at exactly BPS
         expect(() => new ProtocolFeeArgs(BPS, feeRecipient)).not.toThrow()
 
-        // Should fail above BPS
         expect(() => new ProtocolFeeArgs(BPS + 1n, feeRecipient)).toThrow()
         expect(() => new ProtocolFeeArgs(2n * BPS, feeRecipient)).toThrow()
     })
@@ -132,7 +127,6 @@ describe('ProtocolFeeArgs', () => {
         const encoded = ProtocolFeeArgs.CODER.encode(args)
         const decoded = ProtocolFeeArgs.decode(encoded)
 
-        // Address should be preserved (though comparison is case-insensitive)
         expect(decoded.to.toString().toLowerCase()).toBe(
             mixedCaseAddress.toString().toLowerCase()
         )

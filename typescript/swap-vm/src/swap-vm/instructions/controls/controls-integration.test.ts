@@ -60,9 +60,8 @@ describe('Controls Integration', () => {
                 .build()
 
             const hex = program.toString()
-            // Instruction at position 15 (0x0F)
+
             expect(hex.substring(0, 4)).toBe('0x0f')
-            // 20 + 32 = 52 bytes (0x34 in hex)
             expect(hex.substring(4, 6)).toBe('34')
         })
 
@@ -78,9 +77,8 @@ describe('Controls Integration', () => {
                 .build()
 
             const hex = program.toString()
-            // Instruction at position 16 (0x10)
+
             expect(hex.substring(0, 4)).toBe('0x10')
-            // 20 + 8 = 28 bytes (0x1C in hex)
             expect(hex.substring(4, 6)).toBe('1c')
         })
     })

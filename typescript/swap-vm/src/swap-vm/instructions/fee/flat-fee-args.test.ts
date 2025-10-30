@@ -64,7 +64,7 @@ describe('FlatFeeArgs', () => {
             {pct: '10%', value: 100000000n}
         ]
 
-        testCases.forEach(({pct, value}) => {
+        testCases.forEach(({value}) => {
             const args = new FlatFeeArgs(value)
             const encoded = FlatFeeArgs.CODER.encode(args)
             const decoded = FlatFeeArgs.decode(encoded)
