@@ -13,12 +13,14 @@ describe('ProgramBuilder', () => {
     it('should encode and decode program correctly for REGULAR', () => {
         const originalBuilder = new RegularProgramBuilder()
 
-        const balancesArgs = new balances.BalancesArgs([
-            {tokenHalf: USDC_HALF, value: 2000n * 10n ** 6n},
-            {tokenHalf: WETH_HALF, value: 1n * 10n ** 18n}
-        ])
-
-        const program = originalBuilder.setBalancesXD(balancesArgs).build()
+        const program = originalBuilder
+            .setBalancesXD({
+                tokenBalances: [
+                    {tokenHalf: USDC_HALF, value: 2000n * 10n ** 6n},
+                    {tokenHalf: WETH_HALF, value: 1n * 10n ** 18n}
+                ]
+            })
+            .build()
         const decodedBuilder = RegularProgramBuilder.decode(program)
         const decodedProgram = decodedBuilder.build()
         expect(decodedProgram.toString()).toBe(program.toString())
