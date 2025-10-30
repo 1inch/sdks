@@ -3,8 +3,12 @@ import {Address, AddressHalf} from '@1inch/sdk-shared'
 import * as balances from '../instructions/balances'
 import * as controls from '../instructions/controls'
 import * as invalidators from '../instructions/invalidators'
+import * as xycSwap from '../instructions/xyc-swap'
+import * as concentrate from '../instructions/concentrate'
+import * as decay from '../instructions/decay'
 import {RegularProgramBuilder} from './'
 
+// eslint-disable-next-line max-lines-per-function
 describe('ProgramBuilder', () => {
     const USDC = new Address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
     const WETH = new Address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2')
@@ -319,5 +323,145 @@ describe('ProgramBuilder', () => {
 
         expect(ixs[10].opcode.id.toString()).toContain('jump')
         expect((ixs[10].args as controls.JumpArgs).nextPC).toBe(30n)
+    })
+
+    it('should handle xycSwap, concentrate and decay instructions', () => {
+        const originalBuilder = new RegularProgramBuilder()
+
+        const program = originalBuilder
+            .setBalancesXD({
+                tokenBalances: [
+                    {tokenHalf: USDC_HALF, value: 2000n * 10n ** 6n},
+                    {tokenHalf: WETH_HALF, value: 1n * 10n ** 18n}
+                ]
+            })
+            .xycSwapXD()
+            .concentrateGrowLiquidityXD({
+                tokenDeltas: [
+                    {tokenHalf: USDC_HALF, delta: 100n * 10n ** 18n},
+                    {tokenHalf: WETH_HALF, delta: 50n * 10n ** 18n}
+                ]
+            })
+            .concentrateGrowLiquidity2D({
+                deltaLt: 1000n * 10n ** 18n,
+                deltaGt: 500n * 10n ** 18n
+            })
+            .decayXD({decayPeriod: 3600n})
+            .build()
+
+        const decodedBuilder = RegularProgramBuilder.decode(program)
+        const decodedProgram = decodedBuilder.build()
+        expect(decodedProgram.toString()).toBe(program.toString())
+
+        const ixs = decodedBuilder.getInstructions()
+        expect(ixs).toHaveLength(5)
+
+        expect(ixs[0].opcode.id.toString()).toContain('setBalancesXD')
+        const setBalances = ixs[0].args as balances.BalancesArgs
+        expect(setBalances.tokenBalances).toHaveLength(2)
+
+        expect(ixs[1].opcode.id.toString()).toContain('xycSwapXD')
+        expect(ixs[1].args).toBeInstanceOf(xycSwap.XycSwapXDArgs)
+
+        expect(ixs[2].opcode.id.toString()).toContain(
+            'concentrateGrowLiquidityXD'
+        )
+        const concentrateXD = ixs[2]
+            .args as concentrate.ConcentrateGrowLiquidityXDArgs
+        expect(concentrateXD.tokenDeltas).toHaveLength(2)
+        expect(concentrateXD.tokenDeltas[0].tokenHalf.toString()).toBe(
+            USDC_HALF.toString()
+        )
+        expect(concentrateXD.tokenDeltas[0].delta).toBe(100n * 10n ** 18n)
+
+        expect(ixs[3].opcode.id.toString()).toContain(
+            'concentrateGrowLiquidity2D'
+        )
+        const concentrate2D = ixs[3]
+            .args as concentrate.ConcentrateGrowLiquidity2DArgs
+        expect(concentrate2D.deltaLt).toBe(1000n * 10n ** 18n)
+        expect(concentrate2D.deltaGt).toBe(500n * 10n ** 18n)
+
+        expect(ixs[4].opcode.id.toString()).toContain('decayXD')
+        const decayArgs = ixs[4].args as decay.DecayXDArgs
+        expect(decayArgs.decayPeriod).toBe(3600n)
+    })
+
+    it('should combine trading, control and invalidator instructions', () => {
+        const originalBuilder = new RegularProgramBuilder()
+
+        const program = originalBuilder
+            .salt({salt: 777n})
+            .invalidateBit1D({bitIndex: 512n})
+            .setBalancesXD({
+                tokenBalances: [
+                    {tokenHalf: USDC_HALF, value: 50000n * 10n ** 6n},
+                    {tokenHalf: WETH_HALF, value: 25n * 10n ** 18n},
+                    {tokenHalf: LINK_HALF, value: 1000n * 10n ** 18n}
+                ]
+            })
+            .concentrateGrowLiquidityXD({
+                tokenDeltas: [
+                    {tokenHalf: USDC_HALF, delta: 1000n * 10n ** 18n},
+                    {tokenHalf: WETH_HALF, delta: 5n * 10n ** 18n}
+                ]
+            })
+            .jumpIfExactIn({nextPC: 10n})
+            .decayXD({decayPeriod: 43200n}) // 12 hours (must be <= 65535)
+            .xycSwapXD()
+            .invalidateTokenIn1D({tokenInHalf: USDC_HALF})
+            .invalidateTokenOut1D({tokenOutHalf: WETH_HALF})
+            .concentrateGrowLiquidity2D({
+                deltaLt: 2000n * 10n ** 18n,
+                deltaGt: 1000n * 10n ** 18n
+            })
+            .jump({nextPC: 50n})
+            .build()
+
+        const decodedBuilder = RegularProgramBuilder.decode(program)
+        const decodedProgram = decodedBuilder.build()
+        expect(decodedProgram.toString()).toBe(program.toString())
+
+        const ixs = decodedBuilder.getInstructions()
+        expect(ixs).toHaveLength(11)
+
+        expect(ixs[0].opcode.id.toString()).toContain('salt')
+        expect((ixs[0].args as controls.SaltArgs).salt).toBe(777n)
+
+        expect(ixs[1].opcode.id.toString()).toContain('invalidateBit1D')
+        expect((ixs[1].args as invalidators.InvalidateBit1DArgs).bitIndex).toBe(
+            512n
+        )
+
+        expect(ixs[2].opcode.id.toString()).toContain('setBalancesXD')
+
+        expect(ixs[3].opcode.id.toString()).toContain(
+            'concentrateGrowLiquidityXD'
+        )
+        const concentrateXD = ixs[3]
+            .args as concentrate.ConcentrateGrowLiquidityXDArgs
+        expect(concentrateXD.tokenDeltas).toHaveLength(2)
+
+        expect(ixs[4].opcode.id.toString()).toContain('jumpIfExactIn')
+
+        expect(ixs[5].opcode.id.toString()).toContain('decayXD')
+        expect((ixs[5].args as decay.DecayXDArgs).decayPeriod).toBe(43200n)
+
+        expect(ixs[6].opcode.id.toString()).toContain('xycSwapXD')
+
+        expect(ixs[7].opcode.id.toString()).toContain('invalidateTokenIn1D')
+
+        expect(ixs[8].opcode.id.toString()).toContain('invalidateTokenOut1D')
+
+        expect(ixs[9].opcode.id.toString()).toContain(
+            'concentrateGrowLiquidity2D'
+        )
+        const concentrate2D = ixs[9]
+            .args as concentrate.ConcentrateGrowLiquidity2DArgs
+        expect(concentrate2D.deltaLt).toBe(2000n * 10n ** 18n)
+        expect(concentrate2D.deltaGt).toBe(1000n * 10n ** 18n)
+
+        expect(ixs[10].opcode.id.toString()).toContain('jump')
+        expect((ixs[10].args as controls.JumpArgs).nextPC).toBe(50n)
     })
 })

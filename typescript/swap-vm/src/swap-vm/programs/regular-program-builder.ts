@@ -5,6 +5,9 @@ import {allInstructions} from '../instructions'
 import * as balances from '../instructions/balances'
 import * as controls from '../instructions/controls'
 import * as invalidators from '../instructions/invalidators'
+import * as xycSwap from '../instructions/xyc-swap'
+import * as concentrate from '../instructions/concentrate'
+import * as decay from '../instructions/decay'
 
 export class RegularProgramBuilder extends ProgramBuilder {
     constructor() {
@@ -172,6 +175,59 @@ export class RegularProgramBuilder extends ProgramBuilder {
             invalidators.invalidateTokenOut1D.createIx(
                 new invalidators.InvalidateTokenOut1DArgs(data.tokenOutHalf)
             )
+        )
+
+        return this
+    }
+
+    /**
+     * Basic swap using constant product formula (x*y=k)
+     **/
+    public xycSwapXD(): this {
+        super.add(xycSwap.xycSwapXD.createIx(new xycSwap.XycSwapXDArgs()))
+
+        return this
+    }
+
+    /**
+     * Concentrates liquidity within price bounds for multiple tokens
+     **/
+    public concentrateGrowLiquidityXD(
+        data: DataFor<concentrate.ConcentrateGrowLiquidityXDArgs>
+    ): this {
+        super.add(
+            concentrate.concentrateGrowLiquidityXD.createIx(
+                new concentrate.ConcentrateGrowLiquidityXDArgs(data.tokenDeltas)
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Concentrates liquidity within price bounds for two tokens
+     **/
+    public concentrateGrowLiquidity2D(
+        data: DataFor<concentrate.ConcentrateGrowLiquidity2DArgs>
+    ): this {
+        super.add(
+            concentrate.concentrateGrowLiquidity2D.createIx(
+                new concentrate.ConcentrateGrowLiquidity2DArgs(
+                    data.deltaLt,
+                    data.deltaGt
+                )
+            )
+        )
+
+        return this
+    }
+
+    /**
+     * Applies time-based decay to balance adjustments
+     **/
+    public decayXD(data: DataFor<decay.DecayXDArgs>): this {
+        super.add(
+            decay.decayXD.createIx(new decay.DecayXDArgs(data.decayPeriod))
         )
 
         return this

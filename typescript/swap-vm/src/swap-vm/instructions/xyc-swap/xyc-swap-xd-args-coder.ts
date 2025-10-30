@@ -1,0 +1,13 @@
+import {HexString} from '@1inch/sdk-shared'
+import {XycSwapXDArgs} from './xyc-swap-xd-args'
+import {IArgsCoder} from '../types'
+
+export class XycSwapXDArgsCoder implements IArgsCoder<XycSwapXDArgs> {
+    encode(_args: XycSwapXDArgs): HexString {
+        return new HexString('0x00')
+    }
+
+    decode(_data: HexString): XycSwapXDArgs {
+        return new XycSwapXDArgs()
+    }
+}

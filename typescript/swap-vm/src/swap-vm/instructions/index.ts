@@ -2,11 +2,17 @@ import {EMPTY_OPCODE} from './empty'
 import * as balances from './balances'
 import * as controls from './controls'
 import * as invalidators from './invalidators'
+import * as xycSwap from './xyc-swap'
+import * as concentrate from './concentrate'
+import * as decay from './decay'
 
 export * from './types'
 export * from './balances'
 export * from './controls'
 export * from './invalidators'
+export * from './xyc-swap'
+export * from './concentrate'
+export * from './decay'
 
 /**
  * Regular opcodes array - matching SwapVM contract exactly (44 opcodes)
@@ -58,10 +64,10 @@ export const allInstructions = [
     /**
      * Trading instructions (22+)
      */
-    EMPTY_OPCODE, // 22 - XYC_SWAP_XD
-    EMPTY_OPCODE, // 23 - CONCENTRATE_GROW_LIQUIDITY_XD
-    EMPTY_OPCODE, // 24 - CONCENTRATE_GROW_LIQUIDITY_2D
-    EMPTY_OPCODE, // 25 - DECAY_XD
+    xycSwap.xycSwapXD, // 22 - XYC_SWAP_XD
+    concentrate.concentrateGrowLiquidityXD, // 23 - CONCENTRATE_GROW_LIQUIDITY_XD
+    concentrate.concentrateGrowLiquidity2D, // 24 - CONCENTRATE_GROW_LIQUIDITY_2D
+    decay.decayXD, // 25 - DECAY_XD
     EMPTY_OPCODE, // 26 - LIMIT_SWAP_1D
     EMPTY_OPCODE, // 27 - LIMIT_SWAP_ONLY_FULL_1D
     EMPTY_OPCODE, // 28 - REQUIRE_MIN_RATE_1D
@@ -119,10 +125,10 @@ export const aquaInstructions = [
     /**
      * Trading instructions (17+)
      */
-    EMPTY_OPCODE, // 17 - XYC_SWAP_XD (was 22 in regular)
-    EMPTY_OPCODE, // 18 - CONCENTRATE_GROW_LIQUIDITY_XD
-    EMPTY_OPCODE, // 19 - CONCENTRATE_GROW_LIQUIDITY_2D
-    EMPTY_OPCODE, // 20 - DECAY_XD
+    xycSwap.xycSwapXD, // 17 - XYC_SWAP_XD (was 22 in regular)
+    concentrate.concentrateGrowLiquidityXD, // 18 - CONCENTRATE_GROW_LIQUIDITY_XD
+    concentrate.concentrateGrowLiquidity2D, // 19 - CONCENTRATE_GROW_LIQUIDITY_2D
+    decay.decayXD, // 20 - DECAY_XD
     EMPTY_OPCODE, // 21 - STABLE_SWAP_2D
     controls.salt, // 22 - SALT
     EMPTY_OPCODE, // 23 - FLAT_FEE_XD
