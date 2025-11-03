@@ -1,16 +1,27 @@
 import {GenericContainer, StartedTestContainer} from 'testcontainers'
 import {LogWaitStrategy} from 'testcontainers/build/wait-strategies/log-wait-strategy'
 import {
-    ContractFactory,
-    InterfaceAbi,
-    JsonRpcProvider,
     parseEther,
     parseUnits,
-    Wallet
-} from 'ethers'
+    Client,
+    createTestClient,
+    http,
+    WalletClient,
+    Abi,
+    Transport,
+    Hex,
+    ContractConstructorArgs,
+    createWalletClient
+} from 'viem'
+
+import {mainnet} from 'viem/chains'
+
+import Aqua from '@contracts/Aqua.sol/Aqua.json' with {type: 'json'}
+import TestTrader from '@contracts/TestTrader.sol/TestTrader.json'
 
 import {ADDRESSES} from './constants'
-import {TestWallet} from './test-wallet'
+import {TestWallet} from '@1inch/sdk-shared/tests/test-wallet'
+import { privateKeyToAccount } from 'viem/accounts'
 
 export type EvmNodeConfig = {
     chainId?: number
@@ -20,11 +31,10 @@ export type EvmNodeConfig = {
 export type ReadyEvmFork = {
     chainId: number
     localNode: StartedTestContainer
-    provider: JsonRpcProvider
+    provider: Client
     addresses: {
-        settlement: string
-        nativeOrdersFactory: string
-        nativeOrdersImpl: string
+        aqua: string
+        testTrader: string
     }
     maker: TestWallet
     taker: TestWallet
@@ -38,19 +48,19 @@ export async function setupEvm(config: EvmNodeConfig): Promise<ReadyEvmFork> {
     const forkUrl =
         config.forkUrl ?? (process.env.FORK_URL || 'https://eth.llamarpc.com')
 
-    const {localNode, provider} = await startNode(chainId, forkUrl)
+    const {localNode, provider, transport} = await startNode(chainId, forkUrl)
 
     const maker = new TestWallet(
         '0x37d5819e14a620d31d0ba9aab2b5154aa000c5519ae602158ddbe6369dca91fb',
-        provider
+        transport
     )
 
     const taker = await TestWallet.fromAddress(
         '0x1d83cc9b3Fe9Ee21c45282Bef1BEd27Dfa689EA2',
-        provider
+        transport
     )
-    const addresses = await deployContracts(provider)
-    await setupBalances(maker, taker, provider)
+    const addresses = await deployContracts(transport)
+    await setupBalances(maker, taker, transport, addresses.aqua)
 
     return {
         chainId,
@@ -92,7 +102,8 @@ async function startNode(
     forkUrl: string
 ): Promise<{
     localNode: StartedTestContainer
-    provider: JsonRpcProvider
+    provider: Client,
+    transport: Transport
 }> {
     const innerPort = 8545
     const anvil = await new GenericContainer(
@@ -104,107 +115,93 @@ async function startNode(
         ])
         // .withLogConsumer((s) => s.pipe(process.stdout))
         .withWaitStrategy(new LogWaitStrategy('Listening on 0.0.0.0:8545', 1))
-        .withName(`anvil_cross_chain_tests_${chainId}_${randBigInt(100n)}`)
+        .withName(`anvil_aqua_tests_${chainId}_${Math.random()}`)
         .start()
 
     const url = `http://127.0.0.1:${anvil.getMappedPort(innerPort)}`
 
+    const chain = {...mainnet, id: chainId}
+  const transport = http(url);
     return {
-        localNode: anvil,
-        provider: new JsonRpcProvider(url, chainId, {
-            cacheTimeout: -1,
-            staticNetwork: true
-        })
+      localNode: anvil,
+      provider: createTestClient({
+        transport,
+        mode: 'anvil',
+        chain,
+      }),
+      transport
     }
 }
 
-async function deployContracts(provider: JsonRpcProvider): Promise<{
-    settlement: string
-    nativeOrdersFactory: string
-    nativeOrdersImpl: string
+async function deployContracts(transport: Transport): Promise<{
+    aqua: string
+    testTrader: string
 }> {
-    const deployer = new Wallet(
-        '0x3667482b9520ea17999acd812ad3db1ff29c12c006e756cdcb5fd6cc5d5a9b01',
-        provider
-    )
-    const accessToken = '0xacce550000159e70908c0499a1119d04e7039c28'
+    const deployer = createWalletClient({
+      account: privateKeyToAccount(
+          '0x3667482b9520ea17999acd812ad3db1ff29c12c006e756cdcb5fd6cc5d5a9b01',
+      ),
+      transport
+    })
 
-    const settlement = await deploy(
-        SimpleSettlement,
-        [
-            ONE_INCH_LIMIT_ORDER_V4,
-            accessToken,
-            WETH,
-            deployer.address // owner
-        ],
+    const aqua = await deploy(
+        Aqua as ContractParams,
+        [],
         deployer
     )
 
-    const nativeOrderImpl = await deploy(
-        NativeOrderImpl,
+    const testTrader = await deploy(
+        TestTrader as ContractParams,
         [
-            WETH,
-            deployer.address,
-            ONE_INCH_LIMIT_ORDER_V4,
-            accessToken,
-            60,
-            '1inch Aggregation Router',
-            '6' // version
+            aqua,
+            [ADDRESSES.WETH, ADDRESSES.USDC]
         ],
         deployer
     )
-
-    const nativeOrderFactory = await deploy(
-        NativeOrderFactory,
-        [
-            WETH,
-            ONE_INCH_LIMIT_ORDER_V4,
-            accessToken,
-            60,
-            '1inch Aggregation Router',
-            '6'
-        ],
-        deployer
-    )
-
     return {
-        settlement,
-        nativeOrdersFactory: nativeOrderFactory,
-        nativeOrdersImpl: nativeOrderImpl
+        aqua,
+        testTrader,
     }
 }
 
 async function setupBalances(
     maker: TestWallet,
     taker: TestWallet,
-    provider: JsonRpcProvider
+    transport: Transport,
+    aqua: string
 ): Promise<void> {
     // maker have WETH
-    await maker.transfer(WETH, parseEther('5'))
-    await maker.unlimitedApprove(WETH, ONE_INCH_LIMIT_ORDER_V4)
+    await maker.transfer(ADDRESSES.WETH, parseEther('5'))
+    await maker.unlimitedApprove(ADDRESSES.WETH, aqua)
 
     // taker have USDC
     await (
-        await TestWallet.fromAddress(USDC_DONOR, provider)
-    ).transferToken(USDC, await taker.getAddress(), parseUnits('10000', 6))
+        await TestWallet.fromAddress(ADDRESSES.USDC_DONOR, transport)
+    ).transferToken(ADDRESSES.USDC, await taker.getAddress(), parseUnits('10000', 6))
 
-    await taker.unlimitedApprove(USDC, ONE_INCH_LIMIT_ORDER_V4)
+    await taker.unlimitedApprove(ADDRESSES.USDC, aqua)
 }
 
 /**
  * Deploy contract and return its address
  */
 async function deploy(
-    json: {abi: InterfaceAbi; bytecode: {object: string}},
-    params: unknown[],
-    deployer: Wallet
+    json: ContractParams,
+    params: ContractConstructorArgs<Abi>,
+    deployer: WalletClient
 ): Promise<string> {
-    const deployed = await new ContractFactory(
-        json.abi,
-        json.bytecode,
-        deployer
-    ).deploy(...params)
-    await deployed.waitForDeployment()
+    const [account] = await deployer.getAddresses()
 
-    return deployed.getAddress()
+    const deployed = await deployer.deployContract({
+        abi: json.abi,
+        bytecode: json.bytecode.object,
+        args: params,
+        account,
+        chain: deployer.chain
+      }
+    )
+
+    return deployed
 }
+
+type ContractParams = { abi: Abi; bytecode: { object: Hex } };

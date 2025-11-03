@@ -3,7 +3,7 @@ import {add0x} from '@1inch/byte-utils'
 import assert from 'node:assert'
 
 /**
- * Address domain class (matching limit-order-sdk pattern)
+ * Address domain class
  */
 export class Address {
     static NATIVE_CURRENCY: Address = new Address(

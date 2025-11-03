@@ -21,7 +21,7 @@
       "@1inch/cross-chain-sdk": ["typescript/cross-chain/src/index.ts"],
       "@1inch/fusion-sdk": ["typescript/fusion/src/index.ts"],
       "@1inch/limit-order-sdk": ["typescript/limit-order/src/index.ts"],
-      "@contracts": ["dist/contracts"],
+      "@contracts/*": ["dist/contracts/*"],
       "@1inch/swap-vm-sdk": ["typescript/swap-vm/src/index.ts"]
     }
   },

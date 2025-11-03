@@ -10,6 +10,8 @@ import AQUA_PROTOCOL_ABI from '../abi/Aqua.abi.json' with {type: 'json'}
  * smart contract's core functions.
  */
 export class AquaProtocolContract {
+  constructor(public readonly address: Address) {}
+
     /**
      * Encodes the calldata for the ship function
      * @param args - Ship arguments containing app address, strategy, tokens, and amounts
