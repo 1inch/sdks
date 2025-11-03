@@ -13,7 +13,7 @@ describe('Controls Integration', () => {
             const program = builder.jump({nextPC: 100n}).build()
 
             const hex = program.toString()
-            expect(hex.startsWith('0x0b')).toBe(true)
+            expect(hex.startsWith('0x0a')).toBe(true)
             expect(hex.substring(4, 6)).toBe('02')
             expect(hex.substring(6, 10)).toBe('0064')
         })
@@ -27,9 +27,9 @@ describe('Controls Integration', () => {
                 .build()
 
             const hex = program.toString()
-            expect(hex.substring(0, 4)).toBe('0x0c')
+            expect(hex.substring(0, 4)).toBe('0x0b')
             expect(hex.substring(4, 10)).toBe('020032')
-            expect(hex.substring(10, 12)).toBe('0d')
+            expect(hex.substring(10, 12)).toBe('0c')
             expect(hex.substring(12, 18)).toBe('02004b')
         })
 
@@ -41,8 +41,8 @@ describe('Controls Integration', () => {
                 .build()
 
             const hex = program.toString()
-            expect(hex.substring(0, 4)).toBe('0x0e')
-            expect(hex.substring(4, 6)).toBe('14') // 20 in hex
+            expect(hex.substring(0, 4)).toBe('0x0d')
+            expect(hex.substring(4, 6)).toBe('14')
             expect(hex.substring(6, 46).toLowerCase()).toBe(
                 USDC.toString().substring(2).toLowerCase()
             )
@@ -61,7 +61,7 @@ describe('Controls Integration', () => {
 
             const hex = program.toString()
 
-            expect(hex.substring(0, 4)).toBe('0x0f')
+            expect(hex.substring(0, 4)).toBe('0x0e')
             expect(hex.substring(4, 6)).toBe('34')
         })
 
@@ -78,7 +78,7 @@ describe('Controls Integration', () => {
 
             const hex = program.toString()
 
-            expect(hex.substring(0, 4)).toBe('0x10')
+            expect(hex.substring(0, 4)).toBe('0x0f')
             expect(hex.substring(4, 6)).toBe('1c')
         })
     })

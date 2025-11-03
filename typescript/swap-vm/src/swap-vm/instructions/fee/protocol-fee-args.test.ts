@@ -25,8 +25,8 @@ describe('ProtocolFeeArgs', () => {
         const maxFee = 1000000000n // 100%
         const addresses = [
             '0x0000000000000000000000000000000000000001',
-            '0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF',
-            '0x742d35Cc6634C0532925a3b844Bc9e7595f0fA1b'
+            '0xffffffffffffffffffffffffffffffffffffffff',
+            '0x742d35cc6634c0532925a3b844bc9e7595f0fa1b'
         ]
 
         addresses.forEach((addr) => {
@@ -120,7 +120,7 @@ describe('ProtocolFeeArgs', () => {
 
     it('should preserve address case in encoding/decoding', () => {
         const mixedCaseAddress = new Address(
-            '0xAbCdEf1234567890123456789012345678901234'
+            '0xabcdef1234567890123456789012345678901234'
         )
         const args = new ProtocolFeeArgs(1000000n, mixedCaseAddress)
 

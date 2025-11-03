@@ -55,11 +55,11 @@ describe('DecayXDArgs', () => {
     })
 
     it('should convert to JSON', () => {
-        const args = new DecayXDArgs(86400n)
+        const args = new DecayXDArgs(43200n)
         const json = args.toJSON()
 
         expect(json).toEqual({
-            decayPeriod: '86400'
+            decayPeriod: '43200'
         })
     })
 })

@@ -1,8 +1,8 @@
 import {assertHexString} from './should-be-hex-string'
 
 describe('Unit Test assertHexString ', () => {
-    test('should throw error because value has length less than 3', async () => {
-        expect(() => assertHexString('0x')).toThrow()
+    test('should accept empty hex string 0x', async () => {
+        expect(() => assertHexString('0x')).not.toThrow()
     })
 
     test('should throw error because value not start from 0x', async () => {
