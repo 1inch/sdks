@@ -2,6 +2,7 @@ import {describe, it, expect} from 'vitest'
 import {Address, AddressHalf} from '@1inch/sdk-shared'
 import {SwapVmProgram} from '@1inch/swap-vm-sdk'
 import {RegularProgramBuilder} from './regular-program-builder'
+import {AquaProgramBuilder} from './aqua-program-builder'
 import * as balances from '../instructions/balances'
 import * as controls from '../instructions/controls'
 
@@ -30,7 +31,7 @@ describe('Cross-validation with Solidity', () => {
                 ]
             })
             .limitSwap1D({
-                makerDirectionLt: true // tokenB < tokenA (selling tokenA for tokenB)
+                makerDirectionLt: true
             })
             .invalidateTokenOut1D({
                 tokenOutHalf: AddressHalf.fromAddress(tokenA)
@@ -148,7 +149,6 @@ describe('Cross-validation with Solidity', () => {
         const SOLIDITY_HEX =
             '0x1056000296098f7c7019b51a820aec51e99254cd3fb576a90000000000000000000000000000000000000000000000056bc75e2d6310000000000000000000000000000000000000000000000000000ad78ebc5ac6200000190101'
 
-        // Decode and rebuild should produce identical hex
         const decoded = RegularProgramBuilder.decode(
             new SwapVmProgram(SOLIDITY_HEX)
         )
@@ -157,5 +157,136 @@ describe('Cross-validation with Solidity', () => {
         expect(rebuilt.toString().toLowerCase()).toBe(
             SOLIDITY_HEX.toLowerCase()
         )
+    })
+})
+
+describe('Cross-validation with StableSwap', () => {
+    it('should match exact hex from test_StableSwapExactIn', () => {
+        const SOLIDITY_HEX =
+            '0x224800000000000003e80000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000de0b6b3a764000024080000000000001234'
+
+        const decoded = RegularProgramBuilder.decode(
+            new SwapVmProgram(SOLIDITY_HEX)
+        )
+        const rebuilt = decoded.build()
+
+        expect(rebuilt.toString().toLowerCase()).toBe(
+            SOLIDITY_HEX.toLowerCase()
+        )
+    })
+
+    it('should build StableSwap program', () => {
+        const program = new RegularProgramBuilder()
+            .stableSwap2D({
+                fee: 1000n,
+                A: 1000n,
+                rateLt: 1000000000000000000n,
+                rateGt: 1000000000000000000n
+            })
+            .salt({salt: 0x1234n})
+            .build()
+
+        const decoded = RegularProgramBuilder.decode(program)
+        const rebuilt = decoded.build()
+
+        expect(rebuilt.toString()).toBe(program.toString())
+    })
+})
+
+describe('Cross-validation with Concentrate', () => {
+    it('should match exact hex from test_ConcentrateGrowLiquidity_KeepsPriceRangeForBothTokensNoFee', () => {
+        const SOLIDITY_HEX =
+            '0x1156000296098f7c7019b51a820aec51e99254cd3fb576a900000000000000000000000000000000000000000000043c33c19375648000000000000000000000000000000000000000000000000000a2a15d09519be000001740000000000000000000000000000000000000000000000028a857425466f8000000000000000000000000000000000000000000000000007877874945eeb8e38e2504000000001500'
+
+        const decoded = RegularProgramBuilder.decode(
+            new SwapVmProgram(SOLIDITY_HEX)
+        )
+        const rebuilt = decoded.build()
+
+        expect(rebuilt.toString().toLowerCase()).toBe(
+            SOLIDITY_HEX.toLowerCase()
+        )
+    })
+
+    it('should build Concentrate program from scratch', () => {
+        const tokenA = new Address('0x96098f7c7019b51a820aec51e99254cd3fb576a9')
+        const tokenB = new Address('0x0000000000000000000000000000000000000000')
+        const balanceA = 20000n * 10n ** 18n
+        const balanceB = 3000n * 10n ** 18n
+
+        const program = new RegularProgramBuilder()
+            .balancesXD({
+                tokenBalances: [
+                    {
+                        tokenHalf: AddressHalf.fromAddress(tokenA),
+                        value: balanceA
+                    },
+                    {
+                        tokenHalf: AddressHalf.fromAddress(tokenB),
+                        value: balanceB
+                    }
+                ]
+            })
+            .concentrateGrowLiquidity2D({
+                deltaLt: 200000n,
+                deltaGt: 100000n
+            })
+            .flatFeeXD({feeBps: 0n})
+            .xycSwapXD()
+            .build()
+
+        const decoded = RegularProgramBuilder.decode(program)
+        const rebuilt = decoded.build()
+
+        expect(rebuilt.toString()).toBe(program.toString())
+    })
+
+    it('should match exact hex from test_ConcentrateGrowLiquidity_KeepsPriceRangeForBothTokensWithFee', () => {
+        const SOLIDITY_HEX =
+            '0x1156000296098f7c7019b51a820aec51e99254cd3fb576a900000000000000000000000000000000000000000000043c33c19375648000000000000000000000000000000000000000000000000000a2a15d09519be000001740000000000000000000000000000000000000000000000028a857425466f8000000000000000000000000000000000000000000000000007877874945eeb8e38e2504002dc6c01500'
+
+        const decoded = RegularProgramBuilder.decode(
+            new SwapVmProgram(SOLIDITY_HEX)
+        )
+        const rebuilt = decoded.build()
+
+        expect(rebuilt.toString().toLowerCase()).toBe(
+            SOLIDITY_HEX.toLowerCase()
+        )
+    })
+})
+
+describe('Cross-validation with Aqua Solidity', () => {
+    it('should match exact hex from test_XYCSwap (using Regular opcodes)', () => {
+        const SOLIDITY_HEX = '0x1500'
+
+        const decoded = RegularProgramBuilder.decode(
+            new SwapVmProgram(SOLIDITY_HEX)
+        )
+        const rebuilt = decoded.build()
+
+        expect(rebuilt.toString().toLowerCase()).toBe(
+            SOLIDITY_HEX.toLowerCase()
+        )
+    })
+
+    it('should build simple XYCSwap program using regular builder', () => {
+        const program = new RegularProgramBuilder().xycSwapXD().build()
+
+        expect(program.toString()).toBe('0x1500')
+    })
+
+    it('should handle AquaProgramBuilder encoding/decoding', () => {
+        const program = new AquaProgramBuilder()
+            .decayXD({decayPeriod: 3600n})
+            .xycSwapXD()
+            .salt({salt: 0x1234n})
+            .flatFeeXD({feeBps: 300n})
+            .build()
+
+        const decoded = AquaProgramBuilder.decode(program)
+        const rebuilt = decoded.build()
+
+        expect(rebuilt.toString()).toBe(program.toString())
     })
 })

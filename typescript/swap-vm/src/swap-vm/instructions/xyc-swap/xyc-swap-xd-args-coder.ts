@@ -4,7 +4,7 @@ import {IArgsCoder} from '../types'
 
 export class XycSwapXDArgsCoder implements IArgsCoder<XycSwapXDArgs> {
     encode(_args: XycSwapXDArgs): HexString {
-        return new HexString('0x00')
+        return new HexString('0x')
     }
 
     decode(_data: HexString): XycSwapXDArgs {

@@ -21,7 +21,7 @@ export abstract class ProgramBuilder {
         while (!iter.isEmpty()) {
             const solidityOpcodeIdx = Number(iter.nextByte())
             const argsLength = Number(iter.nextByte())
-            const argsHex = argsLength ? iter.nextBytes(argsLength) : ''
+            const argsHex = argsLength ? iter.nextBytes(argsLength) : '0x'
 
             /**
              *  Solidity _opcodes() returns array without first element (index 0)
