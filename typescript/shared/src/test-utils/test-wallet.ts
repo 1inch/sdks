@@ -1,3 +1,4 @@
+import { CallInfo } from '@1inch/sdk-shared'
 import ERC20 from '@contracts/SafeERC20.sol/SafeERC20.json'
 import {
   Transport,
@@ -16,17 +17,18 @@ import { privateKeyToAccount } from 'viem/accounts'
 
 export class TestWallet {
   public provider: WalletClient<Transport, any, Account>
+
   private account: Account
+
   private transport: Transport
+
   private publicClient: PublicClient<Transport>
 
-  constructor(
-    privateKeyOrSigner: string | Account,
-    transport: Transport
-  ) {
-    this.account = typeof privateKeyOrSigner === 'string'
-      ? privateKeyToAccount(privateKeyOrSigner as Hex)
-      : privateKeyOrSigner
+  constructor(privateKeyOrSigner: string | Account, transport: Transport) {
+    this.account =
+      typeof privateKeyOrSigner === 'string'
+        ? privateKeyToAccount(privateKeyOrSigner as Hex)
+        : privateKeyOrSigner
 
     this.transport = transport
     this.provider = createWalletClient({
@@ -36,20 +38,15 @@ export class TestWallet {
     this.publicClient = createPublicClient({ transport })
   }
 
-  static async signTypedData(
-    account: Account,
-    typedData: TypedDataDefinition
-  ): Promise<Hex> {
+  static async signTypedData(account: Account, typedData: TypedDataDefinition): Promise<Hex> {
     if (!account.signTypedData) {
       throw new Error('Account does not support signing typed data')
     }
+
     return await account.signTypedData(typedData)
   }
 
-  public static async fromAddress(
-    address: Hex,
-    transport: Transport
-  ): Promise<TestWallet> {
+  public static async fromAddress(address: Hex, transport: Transport): Promise<TestWallet> {
     const client = createTestClient({
       transport,
       mode: 'anvil',
@@ -65,26 +62,23 @@ export class TestWallet {
   async tokenBalance(token: string): Promise<bigint> {
     const userAddress = await this.getAddress()
 
-    const balance = await this.publicClient.readContract({
+    const balance = (await this.publicClient.readContract({
       address: getAddress(token),
       abi: ERC20.abi as any,
       functionName: 'balanceOf',
       args: [userAddress],
-    }) as bigint
+    })) as bigint
 
     return balance
   }
 
   public async nativeBalance(): Promise<bigint> {
     const address = await this.getAddress()
+
     return this.publicClient.getBalance({ address })
   }
 
-  async topUpFromDonor(
-    token: string,
-    donor: string,
-    amount: bigint
-  ): Promise<void> {
+  async topUpFromDonor(token: string, donor: string, amount: bigint): Promise<void> {
     const donorWallet = await TestWallet.fromAddress(donor as Hex, this.transport)
     await donorWallet.transferToken(token, await this.getAddress(), amount)
   }
@@ -93,10 +87,7 @@ export class TestWallet {
     return this.account.address
   }
 
-  public async unlimitedApprove(
-    tokenAddress: string,
-    spender: string
-  ): Promise<void> {
+  public async unlimitedApprove(tokenAddress: string, spender: string): Promise<void> {
     const currentApprove = await this.getAllowance(tokenAddress, spender)
 
     // for usdt like tokens
@@ -110,12 +101,12 @@ export class TestWallet {
   public async getAllowance(token: string, spender: string): Promise<bigint> {
     const userAddress = await this.getAddress()
 
-    const allowance = await this.publicClient.readContract({
+    const allowance = (await this.publicClient.readContract({
       address: getAddress(token),
       abi: ERC20.abi as any,
       functionName: 'allowance',
       args: [userAddress, getAddress(spender)],
-    }) as bigint
+    })) as bigint
 
     return allowance
   }
@@ -127,11 +118,7 @@ export class TestWallet {
     } as any)
   }
 
-  public async transferToken(
-    token: string,
-    dest: string,
-    amount: bigint
-  ): Promise<void> {
+  public async transferToken(token: string, dest: string, amount: bigint): Promise<void> {
     const data = encodeFunctionData({
       abi: ERC20.abi as any,
       functionName: 'transfer',
@@ -145,11 +132,7 @@ export class TestWallet {
     } as any)
   }
 
-  public async approveToken(
-    token: string,
-    spender: string,
-    amount: bigint
-  ): Promise<void> {
+  public async approveToken(token: string, spender: string, amount: bigint): Promise<void> {
     const data = encodeFunctionData({
       abi: ERC20.abi as any,
       functionName: 'approve',
@@ -166,13 +149,12 @@ export class TestWallet {
     return TestWallet.signTypedData(this.account, typedData)
   }
 
-  async send(
-    param: any
-  ): Promise<{ txHash: Hex; blockTimestamp: bigint; blockHash: Hex }> {
+  async send(param: CallInfo): Promise<{ txHash: Hex; blockTimestamp: bigint; blockHash: Hex }> {
     const hash = await this.provider.sendTransaction({
       ...param,
+      chain: this.provider.chain,
       gas: 10_000_000n,
-    } as any)
+    })
 
     const receipt = await this.publicClient.getTransactionReceipt({ hash })
 

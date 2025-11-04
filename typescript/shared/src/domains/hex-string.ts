@@ -1,6 +1,7 @@
 import {assertString} from '../validators/should-be-string'
 import {assertNotEmpty} from '../validators/should-not-be-empty'
 import {assertHexString} from '../validators/should-be-hex-string'
+import { Hex } from 'viem'
 
 export class HexString {
     private readonly hexString: `0x${string}`
@@ -33,7 +34,7 @@ export class HexString {
         return BigInt(this.hexString)
     }
 
-    toString(): string {
+    toString(): Hex {
         return this.hexString
     }
 

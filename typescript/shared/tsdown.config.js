@@ -1,7 +1,7 @@
 import {defineConfig} from 'tsdown'
 
 export default defineConfig({
-    entry: ['src/index.ts'],
+    entry: ['src/index.ts', 'src/test-utils/index.ts'],
     platform: 'neutral',
     exports: {
         customExports(pkg, _) {

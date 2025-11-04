@@ -10,7 +10,7 @@ import AQUA_PROTOCOL_ABI from '../abi/Aqua.abi.json' with {type: 'json'}
  * smart contract's core functions.
  */
 export class AquaProtocolContract {
-  constructor(public readonly address: Address) {}
+    constructor(public readonly address: Address) {}
 
     /**
      * Encodes the calldata for the ship function
@@ -168,5 +168,22 @@ export class AquaProtocolContract {
      */
     static calculateStrategyHash(strategy: HexString): HexString {
         return new HexString(keccak256(strategy.toString()))
+    }
+
+    public ship(params: ShipArgs): CallInfo {
+        return AquaProtocolContract.buildShipTx(this.address ,params)
+    }
+
+
+    public dock(params: DockArgs): CallInfo {
+        return AquaProtocolContract.buildDockTx(this.address ,params)
+    }
+
+    public pull(params: PullArgs): CallInfo {
+        return AquaProtocolContract.buildPullTx(this.address ,params)
+    }
+
+    public push(params: PushArgs): CallInfo {
+        return AquaProtocolContract.buildPushTx(this.address ,params)
     }
 }

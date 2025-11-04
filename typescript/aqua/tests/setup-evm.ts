@@ -1,75 +1,105 @@
-import {GenericContainer, StartedTestContainer} from 'testcontainers'
-import {LogWaitStrategy} from 'testcontainers/build/wait-strategies/log-wait-strategy'
+import { GenericContainer, StartedTestContainer } from 'testcontainers'
+import { LogWaitStrategy } from 'testcontainers/build/wait-strategies/log-wait-strategy'
 import {
-    parseEther,
-    parseUnits,
-    Client,
-    createTestClient,
-    http,
-    WalletClient,
-    Abi,
-    Transport,
-    Hex,
-    ContractConstructorArgs,
-    createWalletClient
+  parseEther,
+  parseUnits,
+  createTestClient,
+  http,
+  WalletClient,
+  Abi,
+  Transport,
+  Hex,
+  ContractConstructorArgs,
+  createWalletClient,
+  RpcSchema,
+  PublicRpcSchema,
+  Chain,
+  Account,
+  Prettify,
+  TestActions,
+  TestRpcSchema,
+  Client,
+  PublicActions,
 } from 'viem'
 
-import {mainnet} from 'viem/chains'
+import { mainnet } from 'viem/chains'
 
-import Aqua from '@contracts/Aqua.sol/Aqua.json' with {type: 'json'}
-import TestTrader from '@contracts/TestTrader.sol/TestTrader.json'
+import Aqua from '@contracts/Aqua.sol/Aqua.json' with { type: 'json' }
+import TestTrader from '@contracts/TestTrader.sol/TestTrader.json' with { type: 'json' }
+import TestXYCSwap from '@contracts/TestXYCSwap.sol/TestXYCSwap.json' with { type: 'json' }
 
-import {ADDRESSES} from './constants'
-import {TestWallet} from '@1inch/sdk-shared/tests/test-wallet'
+import { TestWallet } from '@1inch/sdk-shared'
 import { privateKeyToAccount } from 'viem/accounts'
+import { ADDRESSES } from './constants'
+import { TestClientMode } from 'viem/_types/clients/createTestClient'
 
 export type EvmNodeConfig = {
-    chainId?: number
-    forkUrl?: string
+  chainId?: number
+  forkUrl?: string
 }
 
+export type TestClient<
+  mode extends TestClientMode = TestClientMode,
+  transport extends Transport = Transport,
+  chain extends Chain | undefined = Chain | undefined,
+  account extends Account | undefined = Account | undefined,
+  includeActions extends boolean = true,
+  rpcSchema extends RpcSchema | undefined = undefined,
+> = Prettify<
+  { mode: mode } & Client<
+    transport,
+    chain,
+    account,
+    rpcSchema extends RpcSchema
+    ? [...TestRpcSchema<mode>, ...rpcSchema]
+    : TestRpcSchema<mode>,
+    { mode: mode } & (includeActions extends true
+      ? TestActions & PublicActions
+      : Record<string, unknown>)
+  >
+>
+
+export type _Client = TestClient<'anvil', Transport, Chain, Account, true, PublicRpcSchema>
 export type ReadyEvmFork = {
-    chainId: number
-    localNode: StartedTestContainer
-    provider: Client
-    addresses: {
-        aqua: string
-        testTrader: string
-    }
-    maker: TestWallet
-    taker: TestWallet
+  chainId: number
+  localNode: StartedTestContainer
+  provider: _Client
+  addresses: TestAddresses
+  liqProvider: TestWallet
+  swapper: TestWallet
 }
+
+
 
 // Setup evm fork with escrow factory contract and users with funds
 // maker have WETH
 // taker have USDC on resolver contract
 export async function setupEvm(config: EvmNodeConfig): Promise<ReadyEvmFork> {
-    const chainId = config.chainId || 1
-    const forkUrl =
-        config.forkUrl ?? (process.env.FORK_URL || 'https://eth.llamarpc.com')
+  const chainId = config.chainId || 1
+  const forkUrl = config.forkUrl ?? (process.env.FORK_URL || 'https://eth.llamarpc.com')
 
-    const {localNode, provider, transport} = await startNode(chainId, forkUrl)
+  const { localNode, provider, transport } = await startNode(chainId, forkUrl)
 
-    const maker = new TestWallet(
-        '0x37d5819e14a620d31d0ba9aab2b5154aa000c5519ae602158ddbe6369dca91fb',
-        transport
-    )
+  const liqProvider = new TestWallet(
+    '0x37d5819e14a620d31d0ba9aab2b5154aa000c5519ae602158ddbe6369dca91fb',
+    transport,
+  )
 
-    const taker = await TestWallet.fromAddress(
-        '0x1d83cc9b3Fe9Ee21c45282Bef1BEd27Dfa689EA2',
-        transport
-    )
-    const addresses = await deployContracts(transport)
-    await setupBalances(maker, taker, transport, addresses.aqua)
+  const swapper = await TestWallet.fromAddress(
+    '0x1d83cc9b3Fe9Ee21c45282Bef1BEd27Dfa689EA2',
+    transport,
+  )
+  const addresses = await deployContracts(transport)
+  await setupBalances(liqProvider, swapper, transport, addresses.aqua)
 
-    return {
-        chainId,
-        addresses,
-        localNode,
-        provider,
-        maker,
-        taker
-    }
+  return {
+    chainId,
+    addresses,
+    localNode,
+    provider,
+    liqProvider,
+    swapper,
+  }
 }
 
 // Available Accounts
@@ -98,110 +128,113 @@ export async function setupEvm(config: EvmNodeConfig): Promise<ReadyEvmFork> {
 // (8) 0x64892fbe089cc18dc545a44f233c4b58e6b1279f0a6659367ba1df6cec4ae477
 // (9) 0x3667482b9520ea17999acd812ad3db1ff29c12c006e756cdcb5fd6cc5d5a9b01
 async function startNode(
-    chainId: number,
-    forkUrl: string
+  chainId: number,
+  forkUrl: string,
 ): Promise<{
-    localNode: StartedTestContainer
-    provider: Client,
-    transport: Transport
+  localNode: StartedTestContainer
+  provider: _Client
+  transport: Transport
 }> {
-    const innerPort = 8545
-    const anvil = await new GenericContainer(
-        'ghcr.io/foundry-rs/foundry:v1.2.3'
-    )
-        .withExposedPorts(innerPort)
-        .withCommand([
-            `anvil -f ${forkUrl} --fork-header "${process.env.FORK_HEADER || 'x-test: test'}" --chain-id ${chainId} --mnemonic 'hat hat horse border print cancel subway heavy copy alert eternal mask' --host 0.0.0.0`
-        ])
-        // .withLogConsumer((s) => s.pipe(process.stdout))
-        .withWaitStrategy(new LogWaitStrategy('Listening on 0.0.0.0:8545', 1))
-        .withName(`anvil_aqua_tests_${chainId}_${Math.random()}`)
-        .start()
+  const innerPort = 8545
+  const anvil = await new GenericContainer('ghcr.io/foundry-rs/foundry:v1.2.3')
+    .withExposedPorts(innerPort)
+    .withCommand([
+      `anvil -f ${forkUrl} --fork-header "${process.env.FORK_HEADER || 'x-test: test'}" --chain-id ${chainId} --mnemonic 'hat hat horse border print cancel subway heavy copy alert eternal mask' --host 0.0.0.0`,
+    ])
+    // .withLogConsumer((s) => s.pipe(process.stdout))
+    .withWaitStrategy(new LogWaitStrategy('Listening on 0.0.0.0:8545', 1))
+    .withName(`anvil_aqua_tests_${chainId}_${Math.random()}`)
+    .start()
 
-    const url = `http://127.0.0.1:${anvil.getMappedPort(innerPort)}`
+  const url = `http://127.0.0.1:${anvil.getMappedPort(innerPort)}`
 
-    const chain = {...mainnet, id: chainId}
-  const transport = http(url);
-    return {
-      localNode: anvil,
-      provider: createTestClient({
-        transport,
-        mode: 'anvil',
-        chain,
-      }),
-      transport
-    }
+  const chain = { ...mainnet, id: chainId } as typeof mainnet
+  const transport = http(url)
+
+  return {
+    localNode: anvil,
+    provider: createTestClient<'anvil', typeof transport, typeof chain, undefined, PublicRpcSchema>({
+      transport,
+      mode: 'anvil',
+      chain,
+    }).extend(publicActions) as _Client,
+    transport,
+  }
 }
 
-async function deployContracts(transport: Transport): Promise<{
-    aqua: string
-    testTrader: string
-}> {
-    const deployer = createWalletClient({
-      account: privateKeyToAccount(
-          '0x3667482b9520ea17999acd812ad3db1ff29c12c006e756cdcb5fd6cc5d5a9b01',
-      ),
-      transport
-    })
+async function deployContracts(transport: Transport): Promise<TestAddresses> {
+  const deployer = createWalletClient({
+    account: privateKeyToAccount(
+      '0x3667482b9520ea17999acd812ad3db1ff29c12c006e756cdcb5fd6cc5d5a9b01',
+    ),
+    transport,
+  })
 
-    const aqua = await deploy(
-        Aqua as ContractParams,
-        [],
-        deployer
-    )
+  const aqua = await deploy(Aqua as ContractParams, [], deployer)
 
-    const testTrader = await deploy(
-        TestTrader as ContractParams,
-        [
-            aqua,
-            [ADDRESSES.WETH, ADDRESSES.USDC]
-        ],
-        deployer
-    )
-    return {
-        aqua,
-        testTrader,
-    }
+  const xycSwap = await deploy(TestXYCSwap as ContractParams, [aqua], deployer)
+
+  const testTrader = await deploy(
+    TestTrader as ContractParams,
+    [aqua, [ADDRESSES.WETH, ADDRESSES.USDC]],
+    deployer,
+  )
+
+  return {
+    aqua,
+    testTrader,
+    xycSwap,
+  }
 }
 
 async function setupBalances(
-    maker: TestWallet,
-    taker: TestWallet,
-    transport: Transport,
-    aqua: string
+  liqProvider: TestWallet,
+  swapper: TestWallet,
+  transport: Transport,
+  aqua: string,
 ): Promise<void> {
-    // maker have WETH
-    await maker.transfer(ADDRESSES.WETH, parseEther('5'))
-    await maker.unlimitedApprove(ADDRESSES.WETH, aqua)
+  const usdcDonor = await TestWallet.fromAddress(ADDRESSES.USDC_DONOR, transport)
 
-    // taker have USDC
-    await (
-        await TestWallet.fromAddress(ADDRESSES.USDC_DONOR, transport)
-    ).transferToken(ADDRESSES.USDC, await taker.getAddress(), parseUnits('10000', 6))
+  // liqProvider have WETH and USDC
+  await liqProvider.transfer(ADDRESSES.WETH, parseEther('100'))
+  await liqProvider.unlimitedApprove(ADDRESSES.WETH, aqua)
+  await liqProvider.unlimitedApprove(ADDRESSES.USDC, aqua)
+  await usdcDonor.transferToken(
+    ADDRESSES.USDC,
+    await liqProvider.getAddress(),
+    parseUnits('100000', 6),
+  )
 
-    await taker.unlimitedApprove(ADDRESSES.USDC, aqua)
+  // swapper have USDC
+  await usdcDonor.transferToken(ADDRESSES.USDC, await swapper.getAddress(), parseUnits('10000', 6))
+  await swapper.unlimitedApprove(ADDRESSES.USDC, aqua)
 }
 
 /**
  * Deploy contract and return its address
  */
 async function deploy(
-    json: ContractParams,
-    params: ContractConstructorArgs<Abi>,
-    deployer: WalletClient
-): Promise<string> {
-    const [account] = await deployer.getAddresses()
+  json: ContractParams,
+  params: ContractConstructorArgs<Abi>,
+  deployer: WalletClient,
+): Promise<Hex> {
+  const [account] = await deployer.getAddresses()
 
-    const deployed = await deployer.deployContract({
-        abi: json.abi,
-        bytecode: json.bytecode.object,
-        args: params,
-        account,
-        chain: deployer.chain
-      }
-    )
+  const deployed = await deployer.deployContract({
+    abi: json.abi,
+    bytecode: json.bytecode.object,
+    args: params,
+    account,
+    chain: deployer.chain,
+  })
 
-    return deployed
+  return deployed
 }
 
-type ContractParams = { abi: Abi; bytecode: { object: Hex } };
+type ContractParams = { abi: Abi; bytecode: { object: Hex } }
+
+export type TestAddresses = {
+  aqua: Hex
+  testTrader: Hex
+  xycSwap: Hex
+}

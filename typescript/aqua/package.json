@@ -12,11 +12,6 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
-    "./viem": {
-      "types": "./dist/viem.d.ts",
-      "import": "./dist/viem.mjs",
-      "require": "./dist/viem.js"
-    },
     "./package.json": "./package.json"
   },
   "files": [
