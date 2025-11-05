@@ -1,44 +1,42 @@
-import {assertString} from '../validators/should-be-string'
-import {assertNotEmpty} from '../validators/should-not-be-empty'
-import {assertHexString} from '../validators/should-be-hex-string'
+import { assertString } from '../validators/should-be-string'
+import { assertNotEmpty } from '../validators/should-not-be-empty'
+import { assertHexString } from '../validators/should-be-hex-string'
 import { Hex } from 'viem'
 
 export class HexString {
-    private readonly hexString: `0x${string}`
+  private readonly hexString: `0x${string}`
 
-    constructor(hex: unknown, name = '') {
-        assertString(hex, `hexString ${name}`)
-        assertNotEmpty(hex, `hexString ${name}`)
-        assertHexString(hex, `hexString ${name}`)
+  constructor(hex: string, name = '') {
+    assertHexString(hex, `hexString ${name}`)
 
-        this.hexString = hex
+    this.hexString = hex
+  }
+
+  static fromBigInt(bigInt: bigint, name?: string): HexString {
+    return new HexString(`0x${bigInt.toString(16)}`, name)
+  }
+
+  static fromUnknown(val: unknown, name?: string): HexString {
+    if (typeof val === 'bigint') {
+      return HexString.fromBigInt(val, name)
     }
 
-    static fromBigInt(bigInt: bigint, name?: string): HexString {
-        return new HexString(`0x${bigInt.toString(16)}`, name)
+    if (typeof val === 'string') {
+      return new HexString(val, name)
     }
 
-    static fromUnknown(val: unknown, name?: string): HexString {
-        if (typeof val === 'bigint') {
-            return HexString.fromBigInt(val, name)
-        }
+    throw new Error(`Invalid hex string${name ? ' ' + name : ''}`)
+  }
 
-        if (typeof val === 'string') {
-            return new HexString(val, name)
-        }
+  toBigInt(): bigint {
+    return BigInt(this.hexString)
+  }
 
-        throw new Error(`Invalid hex string${name ? ' ' + name : ''}`)
-    }
+  toString(): Hex {
+    return this.hexString
+  }
 
-    toBigInt(): bigint {
-        return BigInt(this.hexString)
-    }
-
-    toString(): Hex {
-        return this.hexString
-    }
-
-    toJSON(): string {
-        return this.hexString
-    }
+  toJSON(): string {
+    return this.hexString
+  }
 }

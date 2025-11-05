@@ -1,4 +1,4 @@
-export const AquaABI = [
+export const AQUA_ABI = [
   {
     "type": "function",
     "name": "balances",

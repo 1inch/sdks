@@ -5,7 +5,7 @@ import { ReadyEvmFork, setupEvm } from './setup-evm.js'
 import { ADDRESSES } from './constants.js'
 
 import { AquaProtocolContract } from '../src/aqua-protocol-contract/aqua-protocol-contract.js'
-import { AquaABI } from '../src/abi/Aqua.abi.js'
+import { AQUA_ABI } from '../src/abi/Aqua.abi.js'
 
 describe('Aqua', () => {
   let forkNode: ReadyEvmFork
@@ -15,7 +15,7 @@ describe('Aqua', () => {
   const getAquaBalance = async (maker: Address | Hex, app: Address | Hex, strategyHash: Hex, token: Address | Hex): Promise<bigint> => {
     return forkNode.provider.readContract({
       address: forkNode.addresses.aqua,
-      abi: AquaABI,
+      abi: AQUA_ABI,
       functionName: 'balances',
       args: [maker.toString() as Hex, app.toString() as Hex, strategyHash, token.toString() as Hex]
     })
@@ -228,6 +228,84 @@ describe('Aqua', () => {
     const usdcBalanceAfter = await getAquaBalance(liqProviderAddress, forkNode.addresses.xycSwap, strategyHash, ADDRESSES.USDC)
 
     expect(wethBalanceAfter).to.eq(0n)
+    expect(usdcBalanceAfter).to.eq(0n)
+  })
+
+  test('should push', async () => {
+    const aqua = new AquaProtocolContract(new Address(forkNode.addresses.aqua));
+    const strategy = new HexString('0xdeadbeef');
+    const strategyHash = AquaProtocolContract.calculateStrategyHash(strategy).toString()
+
+    const liquidityProvider = forkNode.liqProvider
+
+    const usdcBalanceBefore = await getAquaBalance(liqProviderAddress, forkNode.addresses.xycSwap, strategyHash, ADDRESSES.USDC)
+    expect(usdcBalanceBefore).to.eq(0n)
+
+    // first ship strategy, it's not possible to push otherwise
+    const shipTx = aqua.ship({
+      app: new Address(forkNode.addresses.xycSwap),
+      strategy,
+      amountsAndTokens: [
+        {
+          amount: 0n,
+          token: new Address(ADDRESSES.USDC),
+        },
+      ],
+    })
+
+    await liquidityProvider.send(shipTx)
+
+    const pushedAmount = 1337n;
+    const tx = aqua.push({
+      app: new Address(forkNode.addresses.xycSwap),
+      strategyHash: new HexString(strategyHash),
+      token: new Address(ADDRESSES.USDC),
+      amount: pushedAmount,
+      maker: new Address(liqProviderAddress)
+    })
+
+    await liquidityProvider.send(tx)
+
+    const usdcBalanceAfter = await getAquaBalance(liqProviderAddress, forkNode.addresses.xycSwap, strategyHash, ADDRESSES.USDC)
+    expect(usdcBalanceAfter).to.eq(pushedAmount)
+  })
+
+  test('should pull', async () => {
+    const aqua = new AquaProtocolContract(new Address(forkNode.addresses.aqua));
+    const strategy = new HexString('0xdeadbeef');
+    const strategyHash = AquaProtocolContract.calculateStrategyHash(strategy).toString()
+
+    const liquidityProvider = forkNode.liqProvider
+
+
+    const amount = 1337n;
+    // first ship strategy, it's not possible to pull otherwise
+    const shipTx = aqua.ship({
+      app: new Address(liqProviderAddress), // app is own EOA, because only app address can use `aqua.call`
+      strategy,
+      amountsAndTokens: [
+        {
+          amount: amount,
+          token: new Address(ADDRESSES.USDC),
+        },
+      ],
+    })
+
+    await liquidityProvider.send(shipTx)
+    const usdcBalanceBefore = await getAquaBalance(liqProviderAddress, liqProviderAddress, strategyHash, ADDRESSES.USDC)
+    expect(usdcBalanceBefore).to.eq(amount)
+
+    const tx = aqua.pull({
+      strategyHash: new HexString(strategyHash),
+      token: new Address(ADDRESSES.USDC),
+      amount: amount,
+      maker: new Address(liqProviderAddress),
+      to: new Address(liqProviderAddress)
+    })
+
+    await liquidityProvider.send(tx)
+
+    const usdcBalanceAfter = await getAquaBalance(liqProviderAddress, liqProviderAddress, strategyHash, ADDRESSES.USDC)
     expect(usdcBalanceAfter).to.eq(0n)
   })
 })
