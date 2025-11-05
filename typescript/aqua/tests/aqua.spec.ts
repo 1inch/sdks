@@ -7,7 +7,7 @@ import { ADDRESSES } from './constants.js'
 import { AquaProtocolContract } from '../src/aqua-protocol-contract/aqua-protocol-contract.js'
 import { AquaABI } from '../src/abi/Aqua.abi.js'
 
-describe('Aqau', () => {
+describe('Aqua', () => {
   let forkNode: ReadyEvmFork
   let liqProviderAddress: Hex
   let swapperAddress: Hex
