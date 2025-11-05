@@ -8,6 +8,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts}'],
-    hookTimeout: 60_000
+    hookTimeout: 60_000,
+    testTimeout: 60_000,
   },
 })

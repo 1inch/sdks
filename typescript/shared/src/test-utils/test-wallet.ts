@@ -30,11 +30,11 @@ export class TestWallet {
 
   private transport: Transport
 
-  constructor(privateKeyOrSigner: string | Account, transport: Transport, public readonly chain: Chain) {
+  constructor(privateKeyOrAddress: Hex, transport: Transport, public readonly chain: Chain) {
     this.account =
-      typeof privateKeyOrSigner === 'string' && !isAddress(privateKeyOrSigner)
-        ? privateKeyToAccount(privateKeyOrSigner as Hex)
-        : privateKeyOrSigner as Account
+      typeof privateKeyOrAddress === 'string' && !isAddress(privateKeyOrAddress)
+        ? privateKeyToAccount(privateKeyOrAddress)
+        : {type: 'json-rpc', address: privateKeyOrAddress}
 
     this.transport = transport
     this.provider = createWalletClient({
@@ -90,8 +90,7 @@ export class TestWallet {
   }
 
   public async getAddress(): Promise<Hex> {
-    const [address] = await this.provider.getAddresses()
-    return address
+    return this.account.address
   }
 
   public async unlimitedApprove(tokenAddress: string, spender: string): Promise<void> {
@@ -156,20 +155,20 @@ export class TestWallet {
     return TestWallet.signTypedData(this.account, typedData)
   }
 
-  async send(param: CallInfo): Promise<{ txHash: Hex; blockTimestamp: bigint; blockHash: Hex }> {
+  async send(param: CallInfo & { allowFail?: boolean }): Promise<{ txHash: Hex; blockTimestamp: bigint; blockHash: Hex }> {
     const hash = await this.provider.sendTransaction({
       ...param,
       chain: this.provider.chain,
       gas: 10_000_000n,
     })
 
-    const receipt = await this.provider.getTransactionReceipt({ hash })
+    const receipt = await this.provider.waitForTransactionReceipt({ hash })
 
     if (!receipt) {
       throw new Error('Transaction receipt not found')
     }
 
-    if (receipt.status !== 'success') {
+    if (receipt.status !== 'success' && !param.allowFail) {
       throw new Error('Transaction failed')
     }
 

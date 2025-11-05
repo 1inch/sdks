@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { Address, HexString } from '@1inch/sdk-shared'
-import { encodeAbiParameters, Hex, parseUnits } from 'viem'
+import { setTimeout } from 'node:timers/promises'
+import { encodeAbiParameters, encodeFunctionData, Hex, parseUnits } from 'viem'
 import { ReadyEvmFork, setupEvm } from './setup-evm.js'
 import { ADDRESSES } from './constants.js'
 
@@ -9,6 +10,8 @@ import { AquaABI } from '../src/abi/Aqua.abi.js'
 
 describe('Default Strategies', () => {
   let forkNode: ReadyEvmFork
+  let liqProviderAddress: Hex
+  let swapperAddress: Hex
 
   const getBalance = async (maker: Address | Hex, app: Address | Hex, strategyHash: Hex, token: Address | Hex): Promise<bigint> => {
     return forkNode.provider.readContract({
@@ -18,13 +21,22 @@ describe('Default Strategies', () => {
       args: [maker.toString() as Hex, app.toString() as Hex, strategyHash, token.toString() as Hex]
     })
   }
+
   beforeAll(async () => {
     forkNode = await setupEvm({ chainId: 1 })
+    liqProviderAddress = await forkNode.liqProvider.getAddress()
+    swapperAddress = await forkNode.swapper.getAddress()
   })
 
-  test('should be able to ship basic strategy', async () => {
-    const liquidityProvider = forkNode.liqProvider
-    const liqProviderAddress = await liquidityProvider.getAddress()
+  test('should ship', async () => {
+    const aqua = new AquaProtocolContract(new Address(forkNode.addresses.aqua));
+    const strategyData = {
+      maker: liqProviderAddress,
+      token0: ADDRESSES.WETH,
+      token1: ADDRESSES.USDC,
+      feeBps: 0n,
+      salt: '0x0000000000000000000000000000000000000000000000000000000000000001',
+    } as const
     const strategy = encodeAbiParameters(
       [
         {
@@ -39,18 +51,11 @@ describe('Default Strategies', () => {
           ],
         },
       ],
-      [
-        {
-          maker: liqProviderAddress,
-          token0: ADDRESSES.WETH,
-          token1: ADDRESSES.USDC,
-          feeBps: 0n,
-          salt: '0x0000000000000000000000000000000000000000000000000000000000000001',
-        },
-      ],
+      [strategyData],
     )
-
     const strategyHash = AquaProtocolContract.calculateStrategyHash(new HexString(strategy)).toString()
+
+    const liquidityProvider = forkNode.liqProvider
 
     const wethBalanceBefore = await getBalance(liqProviderAddress, forkNode.addresses.xycSwap, strategyHash, ADDRESSES.WETH)
     const usdcBalanceBefore = await getBalance(liqProviderAddress, forkNode.addresses.xycSwap, strategyHash, ADDRESSES.USDC)
@@ -58,8 +63,7 @@ describe('Default Strategies', () => {
     const usdcAmount = parseUnits('1000', 6)
     const wethAmount = parseUnits('1', 18)
 
-
-    const tx = new AquaProtocolContract(new Address(forkNode.addresses.aqua)).ship({
+    const tx = aqua.ship({
       app: new Address(forkNode.addresses.xycSwap),
       strategy: new HexString(strategy),
       amountsAndTokens: [
@@ -81,5 +85,100 @@ describe('Default Strategies', () => {
 
     expect(wethBalanceAfter).to.equal(wethBalanceBefore + wethAmount)
     expect(usdcBalanceAfter).to.equal(usdcBalanceBefore + usdcAmount)
+  })
+
+  test('should swap', async () => {
+    const strategyData = {
+      maker: liqProviderAddress,
+      token0: ADDRESSES.WETH,
+      token1: ADDRESSES.USDC,
+      feeBps: 0n,
+      salt: '0x0000000000000000000000000000000000000000000000000000000000000001',
+    } as const
+    const strategy = encodeAbiParameters(
+      [
+        {
+          name: 'strategy',
+          type: 'tuple',
+          components: [
+            { name: 'maker', type: 'address' },
+            { name: 'token0', type: 'address' },
+            { name: 'token1', type: 'address' },
+            { name: 'feeBps', type: 'uint256' },
+            { name: 'salt', type: 'bytes32' },
+          ],
+        },
+      ],
+      [strategyData],
+    )
+    const strategyHash = AquaProtocolContract.calculateStrategyHash(new HexString(strategy)).toString()
+
+    const swapper = forkNode.swapper
+    const providerWethBalanceBefore = await getBalance(liqProviderAddress, forkNode.addresses.xycSwap, strategyHash, ADDRESSES.WETH)
+    const providerUsdcBalanceBefore = await getBalance(liqProviderAddress, forkNode.addresses.xycSwap, strategyHash, ADDRESSES.USDC)
+    const swapperWethBalanceBefore = await swapper.tokenBalance(ADDRESSES.WETH)
+    const swapperUsdcBalanceBefore = await swapper.tokenBalance(ADDRESSES.USDC)
+
+    const srcAmount = parseUnits('10', 6)
+    const srcToken = ADDRESSES.USDC
+    const isZeroForOne = srcToken as string == strategyData.token0
+
+    const encodedData = encodeFunctionData({
+      abi: [
+        {
+          "type": "function",
+          "name": "swap",
+          "inputs": [
+            { "name": "app", "type": "address", "internalType": "contract XYCSwap" },
+            {
+              "name": "strategy",
+              "type": "tuple",
+              "internalType": "struct XYCSwap.Strategy",
+              "components": [
+                { "name": "maker", "type": "address", "internalType": "address" },
+                { "name": "token0", "type": "address", "internalType": "address" },
+                { "name": "token1", "type": "address", "internalType": "address" },
+                { "name": "feeBps", "type": "uint256", "internalType": "uint256" },
+                { "name": "salt", "type": "bytes32", "internalType": "bytes32" }
+              ]
+            },
+            { "name": "zeroForOne", "type": "bool", "internalType": "bool" },
+            { "name": "amountIn", "type": "uint256", "internalType": "uint256" }
+          ],
+          "outputs": [{ "name": "amountOut", "type": "uint256", "internalType": "uint256" }],
+          "stateMutability": "nonpayable"
+        }
+      ],
+      functionName: 'swap',
+      args: [forkNode.addresses.xycSwap, strategyData, isZeroForOne, srcAmount]
+    })
+
+    // Simulate the call to get the dstAmount
+    const simulateResult = await forkNode.provider.call({
+      account: swapperAddress,
+      to: forkNode.addresses.testTrader,
+      value: 0n,
+      data: encodedData
+    })
+
+    const dstAmount = BigInt(simulateResult.data || '0x0')
+
+    const swapTx = await swapper.send({
+      to: forkNode.addresses.testTrader,
+      value: 0n,
+      data: encodedData,
+    })
+
+    await forkNode.provider.waitForTransactionReceipt({ hash: swapTx.txHash })
+
+    const providerWethBalanceAfter = await getBalance(liqProviderAddress, forkNode.addresses.xycSwap, strategyHash, ADDRESSES.WETH)
+    const providerUsdcBalanceAfter = await getBalance(liqProviderAddress, forkNode.addresses.xycSwap, strategyHash, ADDRESSES.USDC)
+    expect(providerWethBalanceAfter).to.equal(providerWethBalanceBefore - dstAmount)
+    expect(providerUsdcBalanceAfter).to.equal(providerUsdcBalanceBefore + srcAmount)
+
+    const swapperWethBalanceAfter = await swapper.tokenBalance(ADDRESSES.WETH)
+    const swapperUsdcBalanceAfter = await swapper.tokenBalance(ADDRESSES.USDC)
+    expect(swapperWethBalanceAfter).to.equal(swapperWethBalanceBefore + dstAmount)
+    expect(swapperUsdcBalanceAfter).to.equal(swapperUsdcBalanceBefore - srcAmount)
   })
 })

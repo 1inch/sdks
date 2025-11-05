@@ -19,8 +19,11 @@ contract TestTrader is IAquaTakerCallback {
         XYCSwap.Strategy calldata strategy,
         bool zeroForOne,
         uint256 amountIn
-    ) external {
-        app.swapExactIn(
+    ) external returns (uint256 amountOut) {
+        IERC20 token = IERC20(zeroForOne ? strategy.token0 : strategy.token1);
+        require(token.transferFrom(msg.sender, address(this), amountIn), 'transferFrom failed');
+
+        return app.swapExactIn(
             strategy,
             zeroForOne,
             amountIn,

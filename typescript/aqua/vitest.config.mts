@@ -11,9 +11,6 @@ export default defineConfig({
     coverage: {
       reportsDirectory: '../../coverage/typescript/aqua',
       include: ['src']
-    },
-    alias: {
-      '@contracts/': new URL('../../../dist/contracts/', import.meta.url).pathname,
     }
   }
 })

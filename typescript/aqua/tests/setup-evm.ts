@@ -71,7 +71,7 @@ export async function setupEvm(config: EvmNodeConfig): Promise<ReadyEvmFork> {
     chain
   )
   const addresses = await deployContracts(transport, chain)
-  await setupBalances(liqProvider, swapper, transport, chain, addresses.aqua)
+  await setupBalances(liqProvider, swapper, transport, chain, addresses)
 
   return {
     chainId,
@@ -156,9 +156,7 @@ async function deployContracts(transport: Transport, chain: Chain): Promise<Test
   })
 
   const aqua = await deploy(Aqua as ContractParams, [], deployer)
-
   const xycSwap = await deploy(TestXYCSwap as ContractParams, [aqua], deployer)
-
   const testTrader = await deploy(
     TestTrader as ContractParams,
     [aqua, [ADDRESSES.WETH, ADDRESSES.USDC]],
@@ -177,14 +175,14 @@ async function setupBalances(
   swapper: TestWallet,
   transport: Transport,
   chain: Chain,
-  aqua: string,
+  addresses: TestAddresses,
 ): Promise<void> {
   const usdcDonor = await TestWallet.fromAddress(ADDRESSES.USDC_DONOR, transport, chain)
 
   // liqProvider have WETH and USDC
   await liqProvider.transfer(ADDRESSES.WETH, parseEther('100'))
-  await liqProvider.unlimitedApprove(ADDRESSES.WETH, aqua)
-  await liqProvider.unlimitedApprove(ADDRESSES.USDC, aqua)
+  await liqProvider.unlimitedApprove(ADDRESSES.WETH, addresses.aqua)
+  await liqProvider.unlimitedApprove(ADDRESSES.USDC, addresses.aqua)
   await usdcDonor.transferToken(
     ADDRESSES.USDC,
     await liqProvider.getAddress(),
@@ -193,7 +191,15 @@ async function setupBalances(
 
   // swapper have USDC
   await usdcDonor.transferToken(ADDRESSES.USDC, await swapper.getAddress(), parseUnits('10000', 6))
-  await swapper.unlimitedApprove(ADDRESSES.USDC, aqua)
+  await swapper.unlimitedApprove(ADDRESSES.USDC, addresses.testTrader)
+
+  console.log('swapper address is', await swapper.getAddress())
+  console.log('swapper USDC balance is', await swapper.tokenBalance(ADDRESSES.USDC))
+  console.log('swapper WETH balance is', await swapper.tokenBalance(ADDRESSES.WETH))
+
+  console.log('liquidity provider address is', await liqProvider.getAddress())
+  console.log('liquidity provider USDC balance is', await liqProvider.tokenBalance(ADDRESSES.USDC))
+  console.log('liquidity provider WETH balance is', await liqProvider.tokenBalance(ADDRESSES.WETH))
 }
 
 /**
