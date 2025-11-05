@@ -281,7 +281,7 @@ describe('Aqua', () => {
     const amount = 1337n;
     // first ship strategy, it's not possible to pull otherwise
     const shipTx = aqua.ship({
-      app: new Address(liqProviderAddress), // app is own EOA, because only app address can use `aqua.call`
+      app: new Address(liqProviderAddress), // app is own EOA, because only app address can use `aqua.pull`
       strategy,
       amountsAndTokens: [
         {
