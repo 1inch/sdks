@@ -12,6 +12,13 @@
         "commands": ["tsdown"]
       }
     },
+    "node-version": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "typescript/shared",
+        "commands": ["node -e \"console.log(process.version)\""]
+      }
+    },
     "test": {
       "executor": "@nx/vite:test",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],

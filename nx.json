@@ -22,7 +22,7 @@
     "lint": {
       "inputs": ["default", "{workspaceRoot}/.eslintrc.json"]
     },
-    "e2e": {
+    "test:e2e": {
       "inputs": ["default", "^production"],
       "dependsOn": ["^build"]
     }

@@ -1,4 +1,5 @@
 import { GenericContainer, StartedTestContainer } from 'testcontainers'
+// @ts-ignore
 import { LogWaitStrategy } from 'testcontainers/build/wait-strategies/log-wait-strategy'
 import {
   parseEther,
@@ -20,46 +21,25 @@ import {
   TestRpcSchema,
   Client,
   PublicActions,
+  publicActions,
 } from 'viem'
 
 import { mainnet } from 'viem/chains'
 
-import Aqua from '@contracts/Aqua.sol/Aqua.json' with { type: 'json' }
-import TestTrader from '@contracts/TestTrader.sol/TestTrader.json' with { type: 'json' }
-import TestXYCSwap from '@contracts/TestXYCSwap.sol/TestXYCSwap.json' with { type: 'json' }
+import Aqua from '@contracts/Aqua.sol/Aqua.json'
+import TestTrader from '@contracts/TestTrader.sol/TestTrader.json'
+import TestXYCSwap from '@contracts/TestXYCSwap.sol/TestXYCSwap.json'
 
-import { TestWallet } from '@1inch/sdk-shared'
+import { TestWallet } from '@1inch/sdk-shared/test-utils'
 import { privateKeyToAccount } from 'viem/accounts'
-import { ADDRESSES } from './constants'
-import { TestClientMode } from 'viem/_types/clients/createTestClient'
+import { ADDRESSES } from './constants.js'
 
 export type EvmNodeConfig = {
   chainId?: number
   forkUrl?: string
+  forkHeader?: string
 }
 
-export type TestClient<
-  mode extends TestClientMode = TestClientMode,
-  transport extends Transport = Transport,
-  chain extends Chain | undefined = Chain | undefined,
-  account extends Account | undefined = Account | undefined,
-  includeActions extends boolean = true,
-  rpcSchema extends RpcSchema | undefined = undefined,
-> = Prettify<
-  { mode: mode } & Client<
-    transport,
-    chain,
-    account,
-    rpcSchema extends RpcSchema
-    ? [...TestRpcSchema<mode>, ...rpcSchema]
-    : TestRpcSchema<mode>,
-    { mode: mode } & (includeActions extends true
-      ? TestActions & PublicActions
-      : Record<string, unknown>)
-  >
->
-
-export type _Client = TestClient<'anvil', Transport, Chain, Account, true, PublicRpcSchema>
 export type ReadyEvmFork = {
   chainId: number
   localNode: StartedTestContainer
@@ -69,28 +49,29 @@ export type ReadyEvmFork = {
   swapper: TestWallet
 }
 
-
-
 // Setup evm fork with escrow factory contract and users with funds
 // maker have WETH
 // taker have USDC on resolver contract
 export async function setupEvm(config: EvmNodeConfig): Promise<ReadyEvmFork> {
   const chainId = config.chainId || 1
   const forkUrl = config.forkUrl ?? (process.env.FORK_URL || 'https://eth.llamarpc.com')
+  const forkHeader = config.forkUrl ?? process.env.FORK_HEADER
 
-  const { localNode, provider, transport } = await startNode(chainId, forkUrl)
+  const { localNode, provider, transport, chain } = await startNode(chainId, forkUrl, forkHeader)
 
   const liqProvider = new TestWallet(
     '0x37d5819e14a620d31d0ba9aab2b5154aa000c5519ae602158ddbe6369dca91fb',
     transport,
+    chain
   )
 
   const swapper = await TestWallet.fromAddress(
     '0x1d83cc9b3Fe9Ee21c45282Bef1BEd27Dfa689EA2',
     transport,
+    chain
   )
-  const addresses = await deployContracts(transport)
-  await setupBalances(liqProvider, swapper, transport, addresses.aqua)
+  const addresses = await deployContracts(transport, chain)
+  await setupBalances(liqProvider, swapper, transport, chain, addresses.aqua)
 
   return {
     chainId,
@@ -130,16 +111,18 @@ export async function setupEvm(config: EvmNodeConfig): Promise<ReadyEvmFork> {
 async function startNode(
   chainId: number,
   forkUrl: string,
+  forkHeader?: string,
 ): Promise<{
   localNode: StartedTestContainer
   provider: _Client
-  transport: Transport
+  transport: Transport,
+  chain: Chain
 }> {
   const innerPort = 8545
   const anvil = await new GenericContainer('ghcr.io/foundry-rs/foundry:v1.2.3')
     .withExposedPorts(innerPort)
     .withCommand([
-      `anvil -f ${forkUrl} --fork-header "${process.env.FORK_HEADER || 'x-test: test'}" --chain-id ${chainId} --mnemonic 'hat hat horse border print cancel subway heavy copy alert eternal mask' --host 0.0.0.0`,
+      `anvil -f ${forkUrl} --fork-header "${forkHeader || 'x-test: test'}" --chain-id ${chainId} --mnemonic 'hat hat horse border print cancel subway heavy copy alert eternal mask' --host 0.0.0.0`,
     ])
     // .withLogConsumer((s) => s.pipe(process.stdout))
     .withWaitStrategy(new LogWaitStrategy('Listening on 0.0.0.0:8545', 1))
@@ -157,17 +140,19 @@ async function startNode(
       transport,
       mode: 'anvil',
       chain,
-    }).extend(publicActions) as _Client,
+    }).extend(publicActions) as unknown as _Client,
     transport,
+    chain
   }
 }
 
-async function deployContracts(transport: Transport): Promise<TestAddresses> {
+async function deployContracts(transport: Transport, chain: Chain): Promise<TestAddresses> {
   const deployer = createWalletClient({
     account: privateKeyToAccount(
       '0x3667482b9520ea17999acd812ad3db1ff29c12c006e756cdcb5fd6cc5d5a9b01',
     ),
     transport,
+    chain
   })
 
   const aqua = await deploy(Aqua as ContractParams, [], deployer)
@@ -191,9 +176,10 @@ async function setupBalances(
   liqProvider: TestWallet,
   swapper: TestWallet,
   transport: Transport,
+  chain: Chain,
   aqua: string,
 ): Promise<void> {
-  const usdcDonor = await TestWallet.fromAddress(ADDRESSES.USDC_DONOR, transport)
+  const usdcDonor = await TestWallet.fromAddress(ADDRESSES.USDC_DONOR, transport, chain)
 
   // liqProvider have WETH and USDC
   await liqProvider.transfer(ADDRESSES.WETH, parseEther('100'))
@@ -220,15 +206,19 @@ async function deploy(
 ): Promise<Hex> {
   const [account] = await deployer.getAddresses()
 
-  const deployed = await deployer.deployContract({
+  const txHash = await deployer.deployContract({
     abi: json.abi,
     bytecode: json.bytecode.object,
     args: params,
     account,
-    chain: deployer.chain,
+    chain: deployer.chain
   })
 
-  return deployed
+  // Get the contract address from the transaction receipt
+  const publicClient = deployer.extend(publicActions)
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
+
+  return receipt.contractAddress as Hex
 }
 
 type ContractParams = { abi: Abi; bytecode: { object: Hex } }
@@ -238,3 +228,26 @@ export type TestAddresses = {
   testTrader: Hex
   xycSwap: Hex
 }
+
+export type TestClient<
+  transport extends Transport = Transport,
+  chain extends Chain | undefined = Chain | undefined,
+  account extends Account | undefined = Account | undefined,
+  includeActions extends boolean = true,
+  rpcSchema extends RpcSchema | undefined = undefined,
+  mode extends 'anvil' = 'anvil'
+> = Prettify<
+  { mode: mode } & Client<
+    transport,
+    chain,
+    account,
+    rpcSchema extends RpcSchema
+    ? [...TestRpcSchema<mode>, ...rpcSchema]
+    : TestRpcSchema<mode>,
+    { mode: mode } & (includeActions extends true
+      ? TestActions & PublicActions
+      : Record<string, unknown>)
+  >
+>
+
+export type _Client = TestClient<Transport, Chain, Account, true, PublicRpcSchema>

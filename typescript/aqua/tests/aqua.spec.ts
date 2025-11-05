@@ -1,10 +1,11 @@
+import 'dotenv/config'
 import { Address, HexString } from '@1inch/sdk-shared'
 import { encodeAbiParameters, Hex, parseUnits } from 'viem'
-import { ReadyEvmFork, setupEvm } from './setup-evm'
-import { ADDRESSES } from './constants'
+import { ReadyEvmFork, setupEvm } from './setup-evm.js'
+import { ADDRESSES } from './constants.js'
 
-import { AquaProtocolContract } from '../src/aqua-protocol-contract'
-import { AquaABI } from '../src/abi/Aqua.abi'
+import { AquaProtocolContract } from '../src/aqua-protocol-contract/aqua-protocol-contract.js'
+import { AquaABI } from '../src/abi/Aqua.abi.js'
 
 describe('Default Strategies', () => {
   let forkNode: ReadyEvmFork

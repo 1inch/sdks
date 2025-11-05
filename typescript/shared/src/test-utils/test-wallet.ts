@@ -1,5 +1,3 @@
-import { CallInfo } from '@1inch/sdk-shared'
-import ERC20 from '@contracts/SafeERC20.sol/SafeERC20.json'
 import {
   Transport,
   Account,
@@ -12,30 +10,38 @@ import {
   createTestClient,
   encodeFunctionData,
   getAddress,
+  isAddress,
+  Chain,
+  publicActions,
+  Prettify,
+  Client,
+  PublicActions,
+  RpcSchema,
+  WalletActions,
+  WalletRpcSchema,
 } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
+import { CallInfo } from '../types/tx.js'
+import { ERC20_ABI } from '../abi/ERC20.abi.js'
 
 export class TestWallet {
-  public provider: WalletClient<Transport, any, Account>
-
+  public provider: _Client
   private account: Account
 
   private transport: Transport
 
-  private publicClient: PublicClient<Transport>
-
-  constructor(privateKeyOrSigner: string | Account, transport: Transport) {
+  constructor(privateKeyOrSigner: string | Account, transport: Transport, public readonly chain: Chain) {
     this.account =
-      typeof privateKeyOrSigner === 'string'
+      typeof privateKeyOrSigner === 'string' && !isAddress(privateKeyOrSigner)
         ? privateKeyToAccount(privateKeyOrSigner as Hex)
-        : privateKeyOrSigner
+        : privateKeyOrSigner as Account
 
     this.transport = transport
     this.provider = createWalletClient({
       transport,
       account: this.account,
-    }) as WalletClient<Transport, any, Account>
-    this.publicClient = createPublicClient({ transport })
+      chain
+    }).extend(publicActions) as _Client
   }
 
   static async signTypedData(account: Account, typedData: TypedDataDefinition): Promise<Hex> {
@@ -46,7 +52,7 @@ export class TestWallet {
     return await account.signTypedData(typedData)
   }
 
-  public static async fromAddress(address: Hex, transport: Transport): Promise<TestWallet> {
+  public static async fromAddress(address: Hex, transport: Transport, chain: Chain): Promise<TestWallet> {
     const client = createTestClient({
       transport,
       mode: 'anvil',
@@ -56,15 +62,15 @@ export class TestWallet {
       address,
     })
 
-    return new TestWallet(address, transport)
+    return new TestWallet(address, transport, chain)
   }
 
   async tokenBalance(token: string): Promise<bigint> {
     const userAddress = await this.getAddress()
 
-    const balance = (await this.publicClient.readContract({
+    const balance = (await this.provider.readContract({
       address: getAddress(token),
-      abi: ERC20.abi as any,
+      abi: ERC20_ABI,
       functionName: 'balanceOf',
       args: [userAddress],
     })) as bigint
@@ -75,16 +81,17 @@ export class TestWallet {
   public async nativeBalance(): Promise<bigint> {
     const address = await this.getAddress()
 
-    return this.publicClient.getBalance({ address })
+    return this.provider.getBalance({ address })
   }
 
   async topUpFromDonor(token: string, donor: string, amount: bigint): Promise<void> {
-    const donorWallet = await TestWallet.fromAddress(donor as Hex, this.transport)
+    const donorWallet = await TestWallet.fromAddress(donor as Hex, this.transport, this.chain)
     await donorWallet.transferToken(token, await this.getAddress(), amount)
   }
 
   public async getAddress(): Promise<Hex> {
-    return this.account.address
+    const [address] = await this.provider.getAddresses()
+    return address
   }
 
   public async unlimitedApprove(tokenAddress: string, spender: string): Promise<void> {
@@ -101,11 +108,11 @@ export class TestWallet {
   public async getAllowance(token: string, spender: string): Promise<bigint> {
     const userAddress = await this.getAddress()
 
-    const allowance = (await this.publicClient.readContract({
-      address: getAddress(token),
-      abi: ERC20.abi as any,
+    const allowance = (await this.provider.readContract({
+      address: token as Hex,
+      abi: ERC20_ABI,
       functionName: 'allowance',
-      args: [userAddress, getAddress(spender)],
+      args: [userAddress, spender as Hex],
     })) as bigint
 
     return allowance
@@ -113,20 +120,20 @@ export class TestWallet {
 
   public async transfer(dest: string, amount: bigint): Promise<void> {
     await this.provider.sendTransaction({
-      to: getAddress(dest),
+      to: dest as Hex,
       value: amount,
     } as any)
   }
 
   public async transferToken(token: string, dest: string, amount: bigint): Promise<void> {
     const data = encodeFunctionData({
-      abi: ERC20.abi as any,
+      abi: ERC20_ABI,
       functionName: 'transfer',
-      args: [getAddress(dest), amount],
+      args: [dest as Hex, amount],
     })
 
     await this.provider.sendTransaction({
-      to: getAddress(token),
+      to: token as Hex,
       data,
       gas: 1_000_000n,
     } as any)
@@ -134,13 +141,13 @@ export class TestWallet {
 
   public async approveToken(token: string, spender: string, amount: bigint): Promise<void> {
     const data = encodeFunctionData({
-      abi: ERC20.abi as any,
+      abi: ERC20_ABI,
       functionName: 'approve',
-      args: [getAddress(spender), amount],
+      args: [spender as Hex, amount],
     })
 
     await this.provider.sendTransaction({
-      to: getAddress(token),
+      to: token as Hex,
       data,
     } as any)
   }
@@ -156,7 +163,7 @@ export class TestWallet {
       gas: 10_000_000n,
     })
 
-    const receipt = await this.publicClient.getTransactionReceipt({ hash })
+    const receipt = await this.provider.getTransactionReceipt({ hash })
 
     if (!receipt) {
       throw new Error('Transaction receipt not found')
@@ -166,7 +173,7 @@ export class TestWallet {
       throw new Error('Transaction failed')
     }
 
-    const block = await this.publicClient.getBlock({ blockHash: receipt.blockHash })
+    const block = await this.provider.getBlock({ blockHash: receipt.blockHash })
 
     return {
       txHash: receipt.transactionHash,
@@ -175,3 +182,15 @@ export class TestWallet {
     }
   }
 }
+
+type _Client<chain extends Chain = Chain, account extends Account = Account, transport extends Transport = Transport, rpcSchema extends RpcSchema = RpcSchema> = Prettify<
+  Client<
+    transport,
+    chain,
+    account,
+    rpcSchema extends RpcSchema
+    ? [...WalletRpcSchema, ...rpcSchema]
+    : WalletRpcSchema,
+    WalletActions<chain, account> & PublicActions<transport, chain, account>
+  >
+>

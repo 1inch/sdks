@@ -1,23 +1,25 @@
 import {defineConfig} from 'tsdown'
 
 export default defineConfig({
-    entry: ['src/index.ts', 'src/viem.ts'],
+    entry: ['src/index.ts'],
     platform: 'neutral',
     exports: {
-        customExports(pkg, _) {
-            for (const [exp, map] of Object.entries(pkg.exports)) {
+        customExports(exports, _ctx) {
+            for (const [exp, map] of Object.entries(exports)) {
                 if (map instanceof Object) {
+
                     const types = map.require.replace(/\.js$/, '.d.ts')
-                    pkg.exports[exp] = {types, ...map}
+                    exports[exp] = {types, ...map}
                 }
             }
 
-            return pkg
+            return exports
         }
     },
-    unbundle: true,
+    unbundle: false,
     dts: {
         build: true,
+        compilerOptions
     },
     outDir: './dist',
     format: ['cjs', 'esm']
