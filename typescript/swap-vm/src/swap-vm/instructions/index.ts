@@ -38,11 +38,6 @@ export * from './extruction'
  */
 export const allInstructions = [
     /**
-     *  0 - NOT_INSTRUCTION
-     */
-    EMPTY_OPCODE, // 0 - NOT_INSTRUCTION
-
-    /**
      * Debug slots (1-10) - reserved for debugging
      */
     EMPTY_OPCODE, // 1
@@ -111,11 +106,6 @@ export const allInstructions = [
  * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/opcodes/AquaOpcodes.sol#L28
  */
 export const aquaInstructions = [
-    /**
-     *  0 - NOT_INSTRUCTION
-     */
-    EMPTY_OPCODE, // 0 - NOT_INSTRUCTION
-
     /**
      * Debug slots (1-10) - reserved for debugging
      */

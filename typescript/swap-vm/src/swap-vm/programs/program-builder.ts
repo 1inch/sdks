@@ -19,19 +19,10 @@ export abstract class ProgramBuilder {
         const iter = BytesIter.HexString(program.toString())
 
         while (!iter.isEmpty()) {
-            const solidityOpcodeIdx = Number(iter.nextByte())
+            const opcodeIdx = Number(iter.nextByte())
             const argsLength = Number(iter.nextByte())
             const argsHex = argsLength ? iter.nextBytes(argsLength) : '0x'
 
-            /**
-             *  Solidity _opcodes() returns array without first element (index 0)
-             *  @see https://github.com/1inch/swap-vm-private/blob/main/src/opcodes/Opcodes.sol#L111-L114
-             *  So we need to add 1 to the index when decoding
-             **/
-            const opcodeIdx =
-                solidityOpcodeIdx > 0
-                    ? solidityOpcodeIdx + 1
-                    : solidityOpcodeIdx
 
             if (opcodeIdx === 0) {
                 throw new Error('Invalid opcode: 0 (NOT_INSTRUCTION)')
@@ -67,15 +58,8 @@ export abstract class ProgramBuilder {
 
             const encodedBytes = trim0x(encoded.toString())
 
-            /**
-             *  Solidity _opcodes() returns array without first element (index 0)
-             *  @see https://github.com/1inch/swap-vm-private/blob/main/src/opcodes/Opcodes.sol#L111-L114
-             *  So we need to subtract 1 from our index to match Solidity
-             **/
-            const solidityOpcodeIdx = opcodeIdx > 0 ? opcodeIdx - 1 : opcodeIdx
-
             builder
-                .addByte(BigInt(solidityOpcodeIdx))
+                .addByte(BigInt(opcodeIdx))
                 .addByte(BigInt(encodedBytes.length / 2))
 
             if (encodedBytes.length) {
