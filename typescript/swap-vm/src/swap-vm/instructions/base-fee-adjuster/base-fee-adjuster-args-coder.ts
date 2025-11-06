@@ -17,17 +17,17 @@ export class BaseFeeAdjusterArgsCoder
     }
 
     decode(data: HexString): BaseFeeAdjusterArgs {
-        const iter = BytesIter.HexString(data.toString())
+        const iter = BytesIter.BigInt(data.toString())
         const baseGasPrice = iter.nextUint64()
         const ethToToken1Price = iter.nextUint96()
         const gasAmount = iter.nextUint24()
         const maxPriceDecay = iter.nextUint64()
 
         return new BaseFeeAdjusterArgs(
-            BigInt(baseGasPrice),
-            BigInt(ethToToken1Price),
-            BigInt(gasAmount),
-            BigInt(maxPriceDecay)
+            baseGasPrice,
+            ethToToken1Price,
+            gasAmount,
+            maxPriceDecay
         )
     }
 }

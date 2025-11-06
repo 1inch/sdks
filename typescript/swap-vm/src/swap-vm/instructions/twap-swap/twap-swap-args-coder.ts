@@ -17,7 +17,7 @@ export class TWAPSwapArgsCoder implements IArgsCoder<TWAPSwapArgs> {
     }
 
     decode(data: HexString): TWAPSwapArgs {
-        const iter = BytesIter.HexString(data.toString())
+        const iter = BytesIter.BigInt(data.toString())
         const balanceIn = iter.nextUint256()
         const balanceOut = iter.nextUint256()
         const startTime = iter.nextUint256()
@@ -26,12 +26,12 @@ export class TWAPSwapArgsCoder implements IArgsCoder<TWAPSwapArgs> {
         const minTradeAmountOut = iter.nextUint256()
 
         return new TWAPSwapArgs(
-            BigInt(balanceIn),
-            BigInt(balanceOut),
-            BigInt(startTime),
-            BigInt(duration),
-            BigInt(priceBumpAfterIlliquidity),
-            BigInt(minTradeAmountOut)
+            balanceIn,
+            balanceOut,
+            startTime,
+            duration,
+            priceBumpAfterIlliquidity,
+            minTradeAmountOut
         )
     }
 }

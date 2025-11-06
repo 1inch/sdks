@@ -12,10 +12,9 @@ export class SaltArgsCoder implements IArgsCoder<SaltArgs> {
     }
 
     decode(data: HexString): SaltArgs {
-        const iter = BytesIter.HexString(data.toString())
+        const iter = BytesIter.BigInt(data.toString())
         const bytes = iter.nextUint64()
-        const salt = BigInt(add0x(bytes))
 
-        return new SaltArgs(salt)
+        return new SaltArgs(bytes)
     }
 }

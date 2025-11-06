@@ -12,8 +12,8 @@ export class JumpArgsCoder implements IArgsCoder<JumpArgs> {
     }
 
     decode(data: HexString): JumpArgs {
-        const iter = BytesIter.HexString(data.toString())
-        const nextPC = BigInt(iter.nextUint16())
+        const iter = BytesIter.BigInt(data.toString())
+        const nextPC = iter.nextUint16()
 
         return new JumpArgs(nextPC)
     }

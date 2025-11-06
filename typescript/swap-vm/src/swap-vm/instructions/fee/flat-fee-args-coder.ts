@@ -12,9 +12,9 @@ export class FlatFeeArgsCoder implements IArgsCoder<FlatFeeArgs> {
     }
 
     decode(data: HexString): FlatFeeArgs {
-        const iter = BytesIter.HexString(data.toString())
+        const iter = BytesIter.BigInt(data.toString())
         const feeBps = iter.nextUint32()
 
-        return new FlatFeeArgs(BigInt(feeBps))
+        return new FlatFeeArgs(feeBps)
     }
 }

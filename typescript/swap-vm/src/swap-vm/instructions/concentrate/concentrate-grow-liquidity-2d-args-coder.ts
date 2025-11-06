@@ -16,9 +16,9 @@ export class ConcentrateGrowLiquidity2DArgsCoder
     }
 
     decode(data: HexString): ConcentrateGrowLiquidity2DArgs {
-        const iter = BytesIter.HexString(data.toString())
-        const deltaLt = BigInt(iter.nextUint256())
-        const deltaGt = BigInt(iter.nextUint256())
+        const iter = BytesIter.BigInt(data.toString())
+        const deltaLt = iter.nextUint256()
+        const deltaGt = iter.nextUint256()
 
         return new ConcentrateGrowLiquidity2DArgs(deltaLt, deltaGt)
     }

@@ -14,15 +14,11 @@ export class DutchAuctionArgsCoder implements IArgsCoder<DutchAuctionArgs> {
     }
 
     decode(data: HexString): DutchAuctionArgs {
-        const iter = BytesIter.HexString(data.toString())
+        const iter = BytesIter.BigInt(data.toString())
         const startTime = iter.nextUint40()
         const duration = iter.nextUint16()
         const decayFactor = iter.nextUint32()
 
-        return new DutchAuctionArgs(
-            BigInt(startTime),
-            BigInt(duration),
-            BigInt(decayFactor)
-        )
+        return new DutchAuctionArgs(startTime, duration, decayFactor)
     }
 }

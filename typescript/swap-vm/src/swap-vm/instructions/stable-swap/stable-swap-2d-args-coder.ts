@@ -15,17 +15,12 @@ export class StableSwap2DArgsCoder implements IArgsCoder<StableSwap2DArgs> {
     }
 
     decode(data: HexString): StableSwap2DArgs {
-        const iter = BytesIter.HexString(data.toString())
+        const iter = BytesIter.BigInt(data.toString())
         const fee = iter.nextUint32()
         const A = iter.nextUint32()
         const rateLt = iter.nextUint256()
         const rateGt = iter.nextUint256()
 
-        return new StableSwap2DArgs(
-            BigInt(fee),
-            BigInt(A),
-            BigInt(rateLt),
-            BigInt(rateGt)
-        )
+        return new StableSwap2DArgs(fee, A, rateLt, rateGt)
     }
 }

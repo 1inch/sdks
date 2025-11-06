@@ -1,5 +1,6 @@
 import {add0x} from '@1inch/byte-utils'
 import {Address} from './address'
+import {assertHexString} from '../validators'
 
 /**
  * Represents the last 10 bytes (80 bits) of an Ethereum address
@@ -22,7 +23,9 @@ export class AddressHalf {
     }
 
     static fromHex(hexValue: string): AddressHalf {
-        return new AddressHalf(add0x(hexValue))
+        assertHexString(hexValue)
+
+        return new AddressHalf(add0x(hexValue.padStart(20, '0')))
     }
 
     toString(): string {

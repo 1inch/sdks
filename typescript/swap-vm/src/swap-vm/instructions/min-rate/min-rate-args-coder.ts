@@ -13,10 +13,10 @@ export class MinRateArgsCoder implements IArgsCoder<MinRateArgs> {
     }
 
     decode(data: HexString): MinRateArgs {
-        const iter = BytesIter.HexString(data.toString())
+        const iter = BytesIter.BigInt(data.toString())
         const rateLt = iter.nextUint64()
         const rateGt = iter.nextUint64()
 
-        return new MinRateArgs(BigInt(rateLt), BigInt(rateGt))
+        return new MinRateArgs(rateLt, rateGt)
     }
 }

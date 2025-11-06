@@ -14,8 +14,8 @@ export class InvalidateBit1DArgsCoder
     }
 
     decode(data: HexString): InvalidateBit1DArgs {
-        const iter = BytesIter.HexString(data.toString())
-        const bitIndex = BigInt(iter.nextUint32())
+        const iter = BytesIter.BigInt(data.toString())
+        const bitIndex = iter.nextUint32()
 
         return new InvalidateBit1DArgs(bitIndex)
     }

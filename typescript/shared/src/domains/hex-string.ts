@@ -33,6 +33,10 @@ export class HexString {
         return BigInt(this.hexString)
     }
 
+    isEmpty(): boolean {
+        return this.hexString === '0x'
+    }
+
     toString(): string {
         return this.hexString
     }

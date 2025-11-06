@@ -12,8 +12,8 @@ export class DecayXDArgsCoder implements IArgsCoder<DecayXDArgs> {
     }
 
     decode(data: HexString): DecayXDArgs {
-        const iter = BytesIter.HexString(data.toString())
-        const decayPeriod = BigInt(iter.nextUint16())
+        const iter = BytesIter.BigInt(data.toString())
+        const decayPeriod = iter.nextUint16()
 
         return new DecayXDArgs(decayPeriod)
     }

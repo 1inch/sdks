@@ -14,9 +14,9 @@ export class LimitSwapDirectionArgsCoder
     }
 
     decode(data: HexString): LimitSwapDirectionArgs {
-        const iter = BytesIter.HexString(data.toString())
+        const iter = BytesIter.BigInt(data.toString())
 
-        const makerDirectionLt = BigInt(iter.nextUint8()) !== 0n
+        const makerDirectionLt = iter.nextUint8() !== 0n
 
         return new LimitSwapDirectionArgs(makerDirectionLt)
     }
