@@ -59,54 +59,6 @@ export class AquaProtocolContract {
   }
 
   /**
-   * Encodes the calldata for the pull function
-   * @param args - Pull arguments containing maker, strategy hash, token, amount, and recipient
-   * @returns Encoded calldata as HexString
-   * @see https://github.com/1inch/aqua-protocol/blob/master/src/Aqua.sol#L59
-   */
-  static encodePullCallData(args: PullArgs): HexString {
-    const { maker, strategyHash, token, amount, to } = args
-
-    const result = encodeFunctionData({
-      abi: AQUA_ABI,
-      functionName: 'pull',
-      args: [
-        maker.toString(),
-        strategyHash.toString(),
-        token.toString(),
-        amount,
-        to.toString()
-      ]
-    })
-
-    return new HexString(result)
-  }
-
-  /**
-   * Encodes the calldata for the push function
-   * @param args - Push arguments containing maker, app, strategy hash, token, and amount
-   * @returns Encoded calldata as HexString
-   * @see https://github.com/1inch/aqua-protocol/blob/master/src/Aqua.sol#L69
-   */
-  static encodePushCallData(args: PushArgs): HexString {
-    const { maker, app, strategyHash, token, amount } = args
-
-    const result = encodeFunctionData({
-      abi: AQUA_ABI,
-      functionName: 'push',
-      args: [
-        maker.toString(),
-        app.toString(),
-        strategyHash.toString(),
-        token.toString(),
-        amount
-      ]
-    })
-
-    return new HexString(result)
-  }
-
-  /**
    * Builds a complete transaction object for the ship function
    * @param contractAddress - The Aqua protocol contract address
    * @param params - Ship arguments
@@ -134,33 +86,6 @@ export class AquaProtocolContract {
     }
   }
 
-  /**
-   * Builds a complete transaction object for the pull function
-   * @param contractAddress - The Aqua protocol contract address
-   * @param params - Pull arguments
-   * @returns Transaction call info with to, data, and value fields
-   */
-  static buildPullTx(contractAddress: Address, params: PullArgs): CallInfo {
-    return {
-      to: contractAddress.toString(),
-      data: this.encodePullCallData(params).toString(),
-      value: 0n
-    }
-  }
-
-  /**
-   * Builds a complete transaction object for the push function
-   * @param contractAddress - The Aqua protocol contract address
-   * @param params - Push arguments
-   * @returns Transaction call info with to, data, and value fields
-   */
-  static buildPushTx(contractAddress: Address, params: PushArgs): CallInfo {
-    return {
-      to: contractAddress.toString(),
-      data: this.encodePushCallData(params).toString(),
-      value: 0n
-    }
-  }
 
   /**
    * Calculate strategy hash from strategy bytes
@@ -180,11 +105,4 @@ export class AquaProtocolContract {
     return AquaProtocolContract.buildDockTx(this.address, params)
   }
 
-  public pull(params: PullArgs): CallInfo {
-    return AquaProtocolContract.buildPullTx(this.address, params)
-  }
-
-  public push(params: PushArgs): CallInfo {
-    return AquaProtocolContract.buildPushTx(this.address, params)
-  }
 }
