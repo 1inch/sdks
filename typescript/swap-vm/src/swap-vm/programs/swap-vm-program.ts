@@ -6,9 +6,7 @@ import {assertHexString, assertNotEmpty, assertString} from '@1inch/sdk-shared'
 export class SwapVmProgram {
     private readonly value: `0x${string}`
 
-    constructor(val: unknown) {
-        assertString(val)
-        assertNotEmpty(val)
+    constructor(val: string) {
         assertHexString(val)
 
         this.value = val
@@ -17,7 +15,7 @@ export class SwapVmProgram {
     /**
      * Returns the program bytecode as a hex string
      **/
-    toString(): string {
+    toString(): `0x${string}` {
         return this.value
     }
 }

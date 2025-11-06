@@ -5,12 +5,12 @@ import {IArgsData, IInstruction, IOpcode} from '../instructions'
 import {EMPTY_OPCODE} from '../instructions/empty'
 
 /**
- * Abstract base class for building SwapVM programs with type-safe instruction handling
+ * Abstract base class for building SwapVM programs
  **/
-export abstract class ProgramBuilder {
+export class ProgramBuilder {
     protected program: IInstruction<IArgsData>[] = []
 
-    protected constructor(public readonly ixsSet: IOpcode[]) {}
+    public constructor(public readonly ixsSet: IOpcode[]) {}
 
     /**
      * Decodes a SwapVM program into builder instructions
@@ -19,19 +19,10 @@ export abstract class ProgramBuilder {
         const iter = BytesIter.HexString(program.toString())
 
         while (!iter.isEmpty()) {
-            const solidityOpcodeIdx = Number(iter.nextByte())
+            const opcodeIdx = Number(iter.nextByte())
             const argsLength = Number(iter.nextByte())
             const argsHex = argsLength ? iter.nextBytes(argsLength) : '0x'
 
-            /**
-             *  Solidity _opcodes() returns array without first element (index 0)
-             *  @see https://github.com/1inch/swap-vm/blob/main/src/opcodes/Opcodes.sol#L111-L114
-             *  So we need to add 1 to the index when decoding
-             **/
-            const opcodeIdx =
-                solidityOpcodeIdx > 0
-                    ? solidityOpcodeIdx + 1
-                    : solidityOpcodeIdx
 
             if (opcodeIdx === 0) {
                 throw new Error('Invalid opcode: 0 (NOT_INSTRUCTION)')
@@ -67,15 +58,8 @@ export abstract class ProgramBuilder {
 
             const encodedBytes = trim0x(encoded.toString())
 
-            /**
-             *  Solidity _opcodes() returns array without first element (index 0)
-             *  @see https://github.com/1inch/swap-vm/blob/main/src/opcodes/Opcodes.sol#L111-L114
-             *  So we need to subtract 1 from our index to match Solidity
-             **/
-            const solidityOpcodeIdx = opcodeIdx > 0 ? opcodeIdx - 1 : opcodeIdx
-
             builder
-                .addByte(BigInt(solidityOpcodeIdx))
+                .addByte(BigInt(opcodeIdx))
                 .addByte(BigInt(encodedBytes.length / 2))
 
             if (encodedBytes.length) {
@@ -96,7 +80,7 @@ export abstract class ProgramBuilder {
     /**
      * Adds an instruction to the program with validation
      **/
-    protected add(ix: IInstruction): this {
+    public add(ix: IInstruction): this {
         const opcodeId = this.ixsSet.findIndex((o) => o.id === ix.opcode.id)
 
         if (opcodeId === -1) {
