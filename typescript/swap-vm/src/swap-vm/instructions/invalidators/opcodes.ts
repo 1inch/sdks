@@ -5,7 +5,7 @@ import {Opcode} from '../opcode'
 
 /**
  * Invalidates a specific bit index for order uniqueness
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/Invalidators.sol#L75
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Invalidators.sol#L75
  **/
 export const invalidateBit1D = new Opcode(
     Symbol('Invalidators.invalidateBit1D'),
@@ -14,7 +14,7 @@ export const invalidateBit1D = new Opcode(
 
 /**
  * Invalidates order by token input to prevent re-use
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/Invalidators.sol#L85
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Invalidators.sol#L85
  **/
 export const invalidateTokenIn1D = new Opcode(
     Symbol('Invalidators.invalidateTokenIn1D'),
@@ -23,7 +23,7 @@ export const invalidateTokenIn1D = new Opcode(
 
 /**
  * Invalidates order by token output to prevent re-use
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/Invalidators.sol#L103
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Invalidators.sol#L103
  **/
 export const invalidateTokenOut1D = new Opcode(
     Symbol('Invalidators.invalidateTokenOut1D'),

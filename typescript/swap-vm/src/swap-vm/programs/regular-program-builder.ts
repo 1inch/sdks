@@ -429,7 +429,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
      * Applies flat fee to computed swap amount
      **/
     public flatFeeXD(data: DataFor<fee.FlatFeeArgs>): this {
-        super.add(fee.flatFeeXD.createIx(new fee.FlatFeeArgs(data.feeBps)))
+        super.add(fee.flatFeeXD.createIx(new fee.FlatFeeArgs(data.fee)))
 
         return this
     }
@@ -438,9 +438,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
      * Applies fee to amountIn
      **/
     public flatFeeAmountInXD(data: DataFor<fee.FlatFeeArgs>): this {
-        super.add(
-            fee.flatFeeAmountInXD.createIx(new fee.FlatFeeArgs(data.feeBps))
-        )
+        super.add(fee.flatFeeAmountInXD.createIx(new fee.FlatFeeArgs(data.fee)))
 
         return this
     }
@@ -450,7 +448,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
      **/
     public flatFeeAmountOutXD(data: DataFor<fee.FlatFeeArgs>): this {
         super.add(
-            fee.flatFeeAmountOutXD.createIx(new fee.FlatFeeArgs(data.feeBps))
+            fee.flatFeeAmountOutXD.createIx(new fee.FlatFeeArgs(data.fee))
         )
 
         return this
@@ -460,9 +458,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
      * Applies progressive fee based on price impact
      **/
     public progressiveFeeXD(data: DataFor<fee.FlatFeeArgs>): this {
-        super.add(
-            fee.progressiveFeeXD.createIx(new fee.FlatFeeArgs(data.feeBps))
-        )
+        super.add(fee.progressiveFeeXD.createIx(new fee.FlatFeeArgs(data.fee)))
 
         return this
     }
@@ -473,7 +469,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
     public protocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
         super.add(
             fee.protocolFeeAmountOutXD.createIx(
-                new fee.ProtocolFeeArgs(data.feeBps, data.to)
+                new fee.ProtocolFeeArgs(data.fee, data.to)
             )
         )
 
@@ -488,7 +484,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
     ): this {
         super.add(
             fee.aquaProtocolFeeAmountOutXD.createIx(
-                new fee.ProtocolFeeArgs(data.feeBps, data.to)
+                new fee.ProtocolFeeArgs(data.fee, data.to)
             )
         )
 

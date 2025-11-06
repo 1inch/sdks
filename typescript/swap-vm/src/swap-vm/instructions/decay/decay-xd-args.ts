@@ -6,7 +6,7 @@ import {IArgsData} from '../types'
 
 /**
  * Arguments for decayXD instruction with decay period
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/Decay.sol#L79
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Decay.sol#L79
  **/
 export class DecayXDArgs implements IArgsData {
     public static readonly CODER = new DecayXDArgsCoder()

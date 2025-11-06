@@ -4,7 +4,7 @@ import {SwapVmProgram} from '../programs'
 
 /**
  * Aqua AMM Strategy builder that mirrors AquaAMM.sol
- * @see https://github.com/1inch/swap-vm-private/blob/main/src/strategies/AquaAMM.sol
+ * @see https://github.com/1inch/swap-vm/blob/main/src/strategies/AquaAMM.sol
  */
 export class AquaAMMStrategy {
     /**
@@ -42,7 +42,7 @@ export class AquaAMMStrategy {
         }
 
         if (params.feeBpsIn && params.feeBpsIn > 0n) {
-            builder.flatFeeAmountInXD({feeBps: params.feeBpsIn})
+            builder.flatFeeAmountInXD({fee: params.feeBpsIn})
         }
 
         if (
@@ -51,7 +51,7 @@ export class AquaAMMStrategy {
             params.feeReceiver
         ) {
             builder.aquaProtocolFeeAmountOutXD({
-                feeBps: params.protocolFeeBpsIn,
+                fee: params.protocolFeeBpsIn,
                 to: params.feeReceiver
             })
         }

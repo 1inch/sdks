@@ -34,7 +34,7 @@ export * from './extruction'
 
 /**
  * Regular opcodes array - matching SwapVM contract exactly (44 opcodes)
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/opcodes/Opcodes.sol#L46
+ * @see https://github.com/1inch/swap-vm/blob/main/src/opcodes/Opcodes.sol#L46
  */
 export const allInstructions = [
     /**
@@ -103,7 +103,7 @@ export const allInstructions = [
 
 /**
  * Aqua opcodes array - matching AquaSwapVM contract (29 opcodes)
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/opcodes/AquaOpcodes.sol#L28
+ * @see https://github.com/1inch/swap-vm/blob/main/src/opcodes/AquaOpcodes.sol#L28
  */
 export const aquaInstructions = [
     /**

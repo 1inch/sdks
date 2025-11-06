@@ -1,10 +1,12 @@
 import {Address, HexString} from '@1inch/sdk-shared'
+import {UINT_256_MAX} from '@1inch/byte-utils'
+import assert from 'node:assert'
 import {ConcentrateGrowLiquidity2DArgsCoder} from './concentrate-grow-liquidity-2d-args-coder'
 import {IArgsData} from '../types'
 
 /**
  * Arguments for concentrateGrowLiquidity2D instruction with two deltas
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/Concentrate.sol#L153
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/XYCConcentrate.sol#L172
  **/
 export class ConcentrateGrowLiquidity2DArgs implements IArgsData {
     public static readonly CODER = new ConcentrateGrowLiquidity2DArgsCoder()
@@ -12,7 +14,16 @@ export class ConcentrateGrowLiquidity2DArgs implements IArgsData {
     constructor(
         public readonly deltaLt: bigint,
         public readonly deltaGt: bigint
-    ) {}
+    ) {
+        assert(
+            deltaLt >= 0n && deltaLt <= UINT_256_MAX,
+            `Invalid deltaLt: ${deltaLt}. Must be >= 0 and <= UINT_256_MAX`
+        )
+        assert(
+            deltaGt >= 0n && deltaGt <= UINT_256_MAX,
+            `Invalid deltaGt: ${deltaGt}. Must be >= 0 and <= UINT_256_MAX`
+        )
+    }
 
     /**
      * Helper to create args from token addresses and deltas (handles ordering)

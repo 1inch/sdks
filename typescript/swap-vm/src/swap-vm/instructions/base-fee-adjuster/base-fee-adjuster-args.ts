@@ -21,7 +21,7 @@ import {IArgsData} from '../types'
  * 3. Extra cost = 80 gwei * 150k gas * 3000 USDC/ETH = 36 USDC
  * 4. With maxPriceDecay=0.99e18 (1% max), final price: 1 ETH for 2970 USDC
  *
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/BaseFeeAdjuster.sol#L75
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/BaseFeeAdjuster.sol#L75
  */
 export class BaseFeeAdjusterArgs implements IArgsData {
     public static readonly CODER = new BaseFeeAdjusterArgsCoder()

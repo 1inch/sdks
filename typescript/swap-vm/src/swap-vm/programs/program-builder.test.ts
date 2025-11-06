@@ -704,16 +704,16 @@ describe('ProgramBuilder', () => {
         )
 
         const program = originalBuilder
-            .flatFeeXD({feeBps: 30000000n})
-            .flatFeeAmountInXD({feeBps: 25000000n})
-            .flatFeeAmountOutXD({feeBps: 20000000n})
-            .progressiveFeeXD({feeBps: 15000000n})
+            .flatFeeXD({fee: 30000000n})
+            .flatFeeAmountInXD({fee: 25000000n})
+            .flatFeeAmountOutXD({fee: 20000000n})
+            .progressiveFeeXD({fee: 15000000n})
             .protocolFeeAmountOutXD({
-                feeBps: 10000000n,
+                fee: 10000000n,
                 to: feeRecipient
             })
             .aquaProtocolFeeAmountOutXD({
-                feeBps: 5000000n,
+                fee: 5000000n,
                 to: feeRecipient
             })
             .build()
@@ -726,27 +726,27 @@ describe('ProgramBuilder', () => {
         expect(ixs).toHaveLength(6)
 
         expect(ixs[0].opcode.id.toString()).toContain('flatFeeXD')
-        expect((ixs[0].args as fee.FlatFeeArgs).feeBps).toBe(30000000n)
+        expect((ixs[0].args as fee.FlatFeeArgs).fee).toBe(30000000n)
 
         expect(ixs[1].opcode.id.toString()).toContain('flatFeeAmountInXD')
-        expect((ixs[1].args as fee.FlatFeeArgs).feeBps).toBe(25000000n)
+        expect((ixs[1].args as fee.FlatFeeArgs).fee).toBe(25000000n)
 
         expect(ixs[2].opcode.id.toString()).toContain('flatFeeAmountOutXD')
-        expect((ixs[2].args as fee.FlatFeeArgs).feeBps).toBe(20000000n)
+        expect((ixs[2].args as fee.FlatFeeArgs).fee).toBe(20000000n)
 
         expect(ixs[3].opcode.id.toString()).toContain('progressiveFeeXD')
-        expect((ixs[3].args as fee.FlatFeeArgs).feeBps).toBe(15000000n)
+        expect((ixs[3].args as fee.FlatFeeArgs).fee).toBe(15000000n)
 
         expect(ixs[4].opcode.id.toString()).toContain('protocolFeeAmountOutXD')
         const protocolFee = ixs[4].args as fee.ProtocolFeeArgs
-        expect(protocolFee.feeBps).toBe(10000000n)
+        expect(protocolFee.fee).toBe(10000000n)
         expect(protocolFee.to.toString()).toBe(feeRecipient.toString())
 
         expect(ixs[5].opcode.id.toString()).toContain(
             'aquaProtocolFeeAmountOutXD'
         )
         const aquaFee = ixs[5].args as fee.ProtocolFeeArgs
-        expect(aquaFee.feeBps).toBe(5000000n)
+        expect(aquaFee.fee).toBe(5000000n)
         expect(aquaFee.to.toString()).toBe(feeRecipient.toString())
     })
 
@@ -766,7 +766,7 @@ describe('ProgramBuilder', () => {
                 ]
             })
             .limitSwap1D({makerDirectionLt: true})
-            .progressiveFeeXD({feeBps: 3000000n})
+            .progressiveFeeXD({fee: 3000000n})
             .oraclePriceAdjuster1D({
                 maxPriceDecay: 950000000000000000n,
                 maxStaleness: 3600n,
@@ -775,7 +775,7 @@ describe('ProgramBuilder', () => {
             })
             .requireMinRate1D({rateLt: 3000n, rateGt: 1n})
             .protocolFeeAmountOutXD({
-                feeBps: 1000000n,
+                fee: 1000000n,
                 to: feeRecipient
             })
             .invalidateBit1D({bitIndex: 999n})

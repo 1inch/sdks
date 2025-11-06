@@ -6,15 +6,15 @@ import {IArgsCoder} from '../types'
 export class FlatFeeArgsCoder implements IArgsCoder<FlatFeeArgs> {
     encode(args: FlatFeeArgs): HexString {
         const builder = new BytesBuilder()
-        builder.addUint32(args.feeBps)
+        builder.addUint32(args.fee)
 
         return new HexString(add0x(builder.asHex()))
     }
 
     decode(data: HexString): FlatFeeArgs {
         const iter = BytesIter.BigInt(data.toString())
-        const feeBps = iter.nextUint32()
+        const fee = iter.nextUint32()
 
-        return new FlatFeeArgs(feeBps)
+        return new FlatFeeArgs(fee)
     }
 }

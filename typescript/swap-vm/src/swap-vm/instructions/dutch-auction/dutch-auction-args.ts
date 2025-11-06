@@ -27,7 +27,7 @@ import {IArgsData} from '../types'
  *    - exactOut: Taker needs only ~36.6% of initial token1
  * 3. After deadline, the auction expires and cannot be executed
  *
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/DutchAuction.sol#L66
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/DutchAuction.sol#L66
  */
 export class DutchAuctionArgs implements IArgsData {
     public static readonly CODER = new DutchAuctionArgsCoder()
