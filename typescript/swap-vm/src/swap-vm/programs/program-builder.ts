@@ -7,10 +7,10 @@ import {EMPTY_OPCODE} from '../instructions/empty'
 /**
  * Abstract base class for building SwapVM programs
  **/
-export abstract class ProgramBuilder {
+export class ProgramBuilder {
     protected program: IInstruction<IArgsData>[] = []
 
-    protected constructor(public readonly ixsSet: IOpcode[]) {}
+    public constructor(public readonly ixsSet: IOpcode[]) {}
 
     /**
      * Decodes a SwapVM program into builder instructions
@@ -80,7 +80,7 @@ export abstract class ProgramBuilder {
     /**
      * Adds an instruction to the program with validation
      **/
-    protected add(ix: IInstruction): this {
+    public add(ix: IInstruction): this {
         const opcodeId = this.ixsSet.findIndex((o) => o.id === ix.opcode.id)
 
         if (opcodeId === -1) {
