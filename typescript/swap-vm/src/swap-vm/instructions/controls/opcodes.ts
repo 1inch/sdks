@@ -7,13 +7,13 @@ import {Opcode} from '../opcode'
 
 /**
  *  Unconditional jump to specified program counter
- *  @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/Controls.sol#L52
+ *  @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L52
  **/
 export const jump = new Opcode(Symbol('Controls.jump'), JumpArgs.CODER)
 
 /**
  * Jump to specified program counter if swap mode is exact input
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/Controls.sol#L59
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L59
  **/
 export const jumpIfExactIn = new Opcode(
     Symbol('Controls.jumpIfExactIn'),
@@ -22,7 +22,7 @@ export const jumpIfExactIn = new Opcode(
 
 /**
  * Jump to specified program counter if swap mode is exact output
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/Controls.sol#L68
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L68
  **/
 export const jumpIfExactOut = new Opcode(
     Symbol('Controls.jumpIfExactOut'),
@@ -31,7 +31,7 @@ export const jumpIfExactOut = new Opcode(
 
 /**
  * Requires taker to hold any amount of specified token (supports NFTs)
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/Controls.sol#L77
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L77
  **/
 export const onlyTakerTokenBalanceNonZero = new Opcode(
     Symbol('Controls.onlyTakerTokenBalanceNonZero'),
@@ -40,7 +40,7 @@ export const onlyTakerTokenBalanceNonZero = new Opcode(
 
 /**
  * Requires taker to hold at least specified amount of token
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/Controls.sol#L86
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L86
  */
 export const onlyTakerTokenBalanceGte = new Opcode(
     Symbol('Controls.onlyTakerTokenBalanceGte'),
@@ -49,7 +49,7 @@ export const onlyTakerTokenBalanceGte = new Opcode(
 
 /**
  * Requires taker to hold at least specified share of token's total supply
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/Controls.sol#L96
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L96
  **/
 export const onlyTakerTokenSupplyShareGte = new Opcode(
     Symbol('Controls.onlyTakerTokenSupplyShareGte'),
@@ -58,6 +58,6 @@ export const onlyTakerTokenSupplyShareGte = new Opcode(
 
 /**
  * No-op instruction used to add uniqueness to order hashes (prevents replay attacks)
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/Controls.sol#L48
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L48
  **/
 export const salt = new Opcode(Symbol('Controls.salt'), SaltArgs.CODER)

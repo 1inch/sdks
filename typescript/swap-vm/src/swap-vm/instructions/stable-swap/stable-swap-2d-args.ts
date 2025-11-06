@@ -1,12 +1,11 @@
 import {Address, HexString} from '@1inch/sdk-shared'
-import {UINT_32_MAX} from '@1inch/byte-utils'
+import {UINT_32_MAX, UINT_256_MAX} from '@1inch/byte-utils'
 import assert from 'node:assert'
 import {StableSwap2DArgsCoder} from './stable-swap-2d-args-coder'
 import {IArgsData} from '../types'
 
 /**
  * Arguments for stableSwap2D instruction for stablecoin optimized swaps
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/StableSwap.sol#L45
  **/
 export class StableSwap2DArgs implements IArgsData {
     public static readonly CODER = new StableSwap2DArgsCoder()
@@ -25,8 +24,14 @@ export class StableSwap2DArgs implements IArgsData {
     ) {
         assert(fee >= 0n && fee <= UINT_32_MAX, `Invalid fee: ${fee}`)
         assert(A >= 0n && A <= UINT_32_MAX, `Invalid A: ${A}`)
-        assert(rateLt > 0n, 'rateLt must be positive')
-        assert(rateGt > 0n, 'rateGt must be positive')
+        assert(
+            rateLt > 0n && rateLt <= UINT_256_MAX,
+            `Invalid rateLt: ${rateLt}. Must be positive and <= UINT_256_MAX`
+        )
+        assert(
+            rateGt > 0n && rateGt <= UINT_256_MAX,
+            `Invalid rateGt: ${rateGt}. Must be positive and <= UINT_256_MAX`
+        )
     }
 
     static fromTokens(

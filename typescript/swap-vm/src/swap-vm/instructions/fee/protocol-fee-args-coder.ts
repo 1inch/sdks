@@ -6,7 +6,7 @@ import {IArgsCoder} from '../types'
 export class ProtocolFeeArgsCoder implements IArgsCoder<ProtocolFeeArgs> {
     encode(args: ProtocolFeeArgs): HexString {
         const builder = new BytesBuilder()
-        builder.addUint32(args.feeBps)
+        builder.addUint32(args.fee)
         builder.addAddress(args.to.toString())
 
         return new HexString(builder.asHex())
@@ -14,9 +14,9 @@ export class ProtocolFeeArgsCoder implements IArgsCoder<ProtocolFeeArgs> {
 
     decode(data: HexString): ProtocolFeeArgs {
         const iter = BytesIter.HexString(data.toString())
-        const feeBps = iter.nextUint32()
+        const fee = iter.nextUint32()
         const to = new Address(iter.nextAddress())
 
-        return new ProtocolFeeArgs(BigInt(feeBps), to)
+        return new ProtocolFeeArgs(BigInt(fee), to)
     }
 }

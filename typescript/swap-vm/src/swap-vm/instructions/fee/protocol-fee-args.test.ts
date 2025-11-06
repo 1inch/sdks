@@ -8,8 +8,8 @@ describe('ProtocolFeeArgs', () => {
     )
 
     it('should encode and decode protocol fee args', () => {
-        const feeBps = 10000000n // 1%
-        const args = new ProtocolFeeArgs(feeBps, feeRecipient)
+        const fee = 10000000n
+        const args = new ProtocolFeeArgs(fee, feeRecipient)
 
         const encoded = ProtocolFeeArgs.CODER.encode(args)
         expect(encoded.toString()).toBe(
@@ -17,12 +17,12 @@ describe('ProtocolFeeArgs', () => {
         )
 
         const decoded = ProtocolFeeArgs.decode(encoded)
-        expect(decoded.feeBps).toBe(feeBps)
+        expect(decoded.fee).toBe(fee)
         expect(decoded.to.toString()).toBe(feeRecipient.toString())
     })
 
     it('should handle maximum fee with different addresses', () => {
-        const maxFee = 1000000000n // 100%
+        const maxFee = 1000000000n
         const addresses = [
             '0x0000000000000000000000000000000000000001',
             '0xffffffffffffffffffffffffffffffffffffffff',
@@ -36,7 +36,7 @@ describe('ProtocolFeeArgs', () => {
             const encoded = ProtocolFeeArgs.CODER.encode(args)
             const decoded = ProtocolFeeArgs.decode(encoded)
 
-            expect(decoded.feeBps).toBe(maxFee)
+            expect(decoded.fee).toBe(maxFee)
             expect(decoded.to.toString()).toBe(recipient.toString())
         })
     })
@@ -48,7 +48,7 @@ describe('ProtocolFeeArgs', () => {
         const encoded = ProtocolFeeArgs.CODER.encode(args)
         const decoded = ProtocolFeeArgs.decode(encoded)
 
-        expect(decoded.feeBps).toBe(minFee)
+        expect(decoded.fee).toBe(minFee)
         expect(decoded.to.toString()).toBe(feeRecipient.toString())
     })
 
@@ -57,14 +57,14 @@ describe('ProtocolFeeArgs', () => {
         const json = args.toJSON()
 
         expect(json).toEqual({
-            feeBps: '5000000',
+            fee: '5000000',
             to: feeRecipient.toString()
         })
     })
 
     it('should throw on invalid values', () => {
         const maxUint32 = (1n << 32n) - 1n
-        const BPS = 1000000000n
+        const FEE_100_PERCENT = 1000000000n
 
         expect(() => new ProtocolFeeArgs(-1n, feeRecipient)).toThrow()
 
@@ -72,50 +72,56 @@ describe('ProtocolFeeArgs', () => {
             () => new ProtocolFeeArgs(maxUint32 + 1n, feeRecipient)
         ).toThrow()
 
-        expect(() => new ProtocolFeeArgs(BPS + 1n, feeRecipient)).toThrow(
-            'Fee out of range'
-        )
+        expect(
+            () => new ProtocolFeeArgs(FEE_100_PERCENT + 1n, feeRecipient)
+        ).toThrow('Fee out of range')
     })
 
     it('should handle common protocol fee scenarios', () => {
         const testCases = [
             {
                 desc: 'DEX fee',
-                feeBps: 2500000n,
+                fee: 2500000n,
                 recipient: '0x1111111254fb6c44bAC0beD2854e76F90643097d'
-            }, // 0.25%
+            },
             {
                 desc: 'Treasury fee',
-                feeBps: 5000000n,
+                fee: 5000000n,
                 recipient: '0xE37e799D5077682FA0a244D46E5649F71457BD09'
-            }, // 0.5%
+            },
             {
                 desc: 'Staking rewards',
-                feeBps: 1000000n,
+                fee: 1000000n,
                 recipient: '0x0000000000000000000000000000000000000000'
-            } // 0.1%
+            }
         ]
 
-        testCases.forEach(({feeBps, recipient}) => {
+        testCases.forEach(({fee, recipient}) => {
             const to = new Address(recipient)
-            const args = new ProtocolFeeArgs(feeBps, to)
+            const args = new ProtocolFeeArgs(fee, to)
             const encoded = ProtocolFeeArgs.CODER.encode(args)
             const decoded = ProtocolFeeArgs.decode(encoded)
 
-            expect(decoded.feeBps).toBe(feeBps)
+            expect(decoded.fee).toBe(fee)
             expect(decoded.to.toString().toLowerCase()).toBe(
                 recipient.toLowerCase()
             )
         })
     })
 
-    it('should enforce BPS limit', () => {
-        const BPS = 1000000000n
+    it('should enforce fee limit (100%)', () => {
+        const FEE_100_PERCENT = 1000000000n
 
-        expect(() => new ProtocolFeeArgs(BPS, feeRecipient)).not.toThrow()
+        expect(
+            () => new ProtocolFeeArgs(FEE_100_PERCENT, feeRecipient)
+        ).not.toThrow()
 
-        expect(() => new ProtocolFeeArgs(BPS + 1n, feeRecipient)).toThrow()
-        expect(() => new ProtocolFeeArgs(2n * BPS, feeRecipient)).toThrow()
+        expect(
+            () => new ProtocolFeeArgs(FEE_100_PERCENT + 1n, feeRecipient)
+        ).toThrow()
+        expect(
+            () => new ProtocolFeeArgs(2n * FEE_100_PERCENT, feeRecipient)
+        ).toThrow()
     })
 
     it('should preserve address case in encoding/decoding', () => {
@@ -130,5 +136,49 @@ describe('ProtocolFeeArgs', () => {
         expect(decoded.to.toString().toLowerCase()).toBe(
             mixedCaseAddress.toString().toLowerCase()
         )
+    })
+
+    it('should create from basis points correctly', () => {
+        const testCases = [
+            {bps: 0, expectedFee: 0n},
+            {bps: 10, expectedFee: 1000000n},
+            {bps: 100, expectedFee: 10000000n},
+            {bps: 250, expectedFee: 25000000n},
+            {bps: 1000, expectedFee: 100000000n}
+        ]
+
+        testCases.forEach(({bps, expectedFee}) => {
+            const args = ProtocolFeeArgs.fromBps(bps, feeRecipient)
+            expect(args).toBeInstanceOf(ProtocolFeeArgs)
+            expect(args.fee).toBe(expectedFee)
+            expect(args.to).toBe(feeRecipient)
+
+            // Verify encoding/decoding works
+            const encoded = ProtocolFeeArgs.CODER.encode(args)
+            const decoded = ProtocolFeeArgs.decode(encoded)
+            expect(decoded.fee).toBe(expectedFee)
+            expect(decoded.to.toString()).toBe(feeRecipient.toString())
+        })
+    })
+
+    it('should create from percent correctly and be consistent with fromBps', () => {
+        const testCases = [
+            {percent: 0.1, expectedFee: 1000000n},
+            {percent: 1, expectedFee: 10000000n},
+            {percent: 2.5, expectedFee: 25000000n},
+            {percent: 10, expectedFee: 100000000n}
+        ]
+
+        testCases.forEach(({percent, expectedFee}) => {
+            const args = ProtocolFeeArgs.fromPercent(percent, feeRecipient)
+            expect(args).toBeInstanceOf(ProtocolFeeArgs)
+            expect(args.fee).toBe(expectedFee)
+            expect(args.to).toBe(feeRecipient)
+        })
+
+        const percent1 = ProtocolFeeArgs.fromPercent(1, feeRecipient)
+        const bps100 = ProtocolFeeArgs.fromBps(100, feeRecipient)
+        expect(percent1.fee).toBe(bps100.fee)
+        expect(percent1.to).toBe(bps100.to)
     })
 })

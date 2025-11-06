@@ -4,7 +4,7 @@ import {IArgsData} from '../types'
 
 /**
  * Arguments for extruction instruction to call external contract logic
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/Extruction.sol#L33
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Extruction.sol#L33
  **/
 export class ExtructionArgs implements IArgsData {
     public static readonly CODER = new ExtructionArgsCoder()

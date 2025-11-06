@@ -4,30 +4,30 @@ import assert from 'node:assert'
 import {ProtocolFeeArgsCoder} from './protocol-fee-args-coder'
 import {IArgsData} from '../types'
 
-const BPS = 1e9 // 1e9 = 100%
+const FEE_100_PERCENT = 1e9 // 1e9 = 100%
 
 /**
  * Arguments for protocol fee instructions (protocolFeeAmountOutXD, aquaProtocolFeeAmountOutXD)
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/Fee.sol#L102
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L102
  **/
 export class ProtocolFeeArgs implements IArgsData {
     public static readonly CODER = new ProtocolFeeArgsCoder()
 
     /**
-     * feeBps - fee in bps, 1e9 = 100% (uint32)
+     * fee - 1e9 = 100% (uint32)
      * to - address to send pulled tokens to (20 bytes)
      **/
     constructor(
-        public readonly feeBps: bigint,
+        public readonly fee: bigint,
         public readonly to: Address
     ) {
         assert(
-            feeBps >= 0n && feeBps <= UINT_32_MAX,
-            `Invalid feeBps: ${feeBps}. Must be a valid uint32`
+            fee >= 0n && fee <= UINT_32_MAX,
+            `Invalid fee: ${fee}. Must be a valid uint32`
         )
         assert(
-            feeBps <= BigInt(BPS),
-            `Fee out of range: ${feeBps}. Must be <= ${BPS}`
+            fee <= BigInt(FEE_100_PERCENT),
+            `Fee out of range: ${fee}. Must be <= ${FEE_100_PERCENT}`
         )
     }
 
@@ -38,9 +38,31 @@ export class ProtocolFeeArgs implements IArgsData {
         return ProtocolFeeArgs.CODER.decode(data)
     }
 
+    /**
+     * Creates a ProtocolFeeArgs instance from percentage
+     * @param percent - Fee as percentage (e.g., 1 for 1%, 0.1 for 0.1%)
+     * @param to - Address to receive the protocol fee
+     * @returns ProtocolFeeArgs instance
+     */
+    public static fromPercent(percent: number, to: Address): ProtocolFeeArgs {
+        return ProtocolFeeArgs.fromBps(percent * 100, to)
+    }
+
+    /**
+     * Creates a ProtocolFeeArgs instance from basis points
+     * @param bps - Fee in basis points (10000 bps = 100%)
+     * @param to - Address to receive the protocol fee
+     * @returns ProtocolFeeArgs instance
+     */
+    public static fromBps(bps: number, to: Address): ProtocolFeeArgs {
+        const fee = BigInt(bps * 100000)
+
+        return new ProtocolFeeArgs(fee, to)
+    }
+
     toJSON(): Record<string, unknown> {
         return {
-            feeBps: this.feeBps.toString(),
+            fee: this.fee.toString(),
             to: this.to.toString()
         }
     }

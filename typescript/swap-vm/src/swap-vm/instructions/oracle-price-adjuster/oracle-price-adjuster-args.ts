@@ -22,7 +22,7 @@ import {IArgsData} from '../types'
  * 3. exactIn: Taker gets more ETH (up to 5% improvement)
  * 4. exactOut: Taker pays less USDC (up to 5% discount)
  *
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/OraclePriceAdjuster.sol#L84
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/OraclePriceAdjuster.sol#L84
  */
 export class OraclePriceAdjusterArgs implements IArgsData {
     public static readonly CODER = new OraclePriceAdjusterArgsCoder()

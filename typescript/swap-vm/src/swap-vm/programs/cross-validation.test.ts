@@ -9,7 +9,7 @@ import * as controls from '../instructions/controls'
 describe('Cross-validation with Solidity', () => {
     it('should match Solidity test_PartialFillLimitOrder structure', () => {
         /*
-         * @see https://github.com/1inch/swap-vm-private/blob/5127474d61f82cd886095c86b6c6a5e06ef895b4/test/SwapVM.t.sol#L72-L87
+         * @see https://github.com/1inch/swap-vm/blob/main/test/SwapVM.t.sol#L72-L87
          **/
         const tokenA = new Address('0x1111111111111111111111111111111111111111')
         const tokenB = new Address('0x2222222222222222222222222222222222222222')
@@ -231,7 +231,7 @@ describe('Cross-validation with Concentrate', () => {
                 deltaLt: 200000n,
                 deltaGt: 100000n
             })
-            .flatFeeXD({feeBps: 0n})
+            .flatFeeXD({fee: 0n})
             .xycSwapXD()
             .build()
 
@@ -281,7 +281,7 @@ describe('Cross-validation with Aqua Solidity', () => {
             .decayXD({decayPeriod: 3600n})
             .xycSwapXD()
             .salt({salt: 0x1234n})
-            .flatFeeXD({feeBps: 300n})
+            .flatFeeXD({fee: 300n})
             .build()
 
         const decoded = AquaProgramBuilder.decode(program)

@@ -70,10 +70,10 @@ describe('StableSwap2DArgs', () => {
         ).toThrow()
 
         expect(() => new StableSwap2DArgs(100n, 100n, 0n, 1n)).toThrow(
-            'must be positive'
+            'Must be positive and <= UINT_256_MAX'
         )
         expect(() => new StableSwap2DArgs(100n, 100n, 1n, 0n)).toThrow(
-            'must be positive'
+            'Must be positive and <= UINT_256_MAX'
         )
     })
 
@@ -94,10 +94,18 @@ describe('StableSwap2DArgs', () => {
         expect(decoded.rateGt).toBe(1000200000000000000n)
     })
 
-    it('should enforce positive rates', () => {
+    it('should enforce positive rates and UINT_256_MAX bounds', () => {
+        const maxUint256 = 2n ** 256n - 1n
+
         expect(() => new StableSwap2DArgs(100n, 100n, 0n, 1n)).toThrow()
         expect(() => new StableSwap2DArgs(100n, 100n, 1n, 0n)).toThrow()
         expect(() => new StableSwap2DArgs(100n, 100n, -1n, 1n)).toThrow()
         expect(() => new StableSwap2DArgs(100n, 100n, 1n, -1n)).toThrow()
+        expect(
+            () => new StableSwap2DArgs(100n, 100n, maxUint256 + 1n, 1n)
+        ).toThrow()
+        expect(
+            () => new StableSwap2DArgs(100n, 100n, 1n, maxUint256 + 1n)
+        ).toThrow()
     })
 })

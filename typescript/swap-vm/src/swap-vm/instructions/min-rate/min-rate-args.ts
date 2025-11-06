@@ -6,7 +6,7 @@ import {IArgsData} from '../types'
 
 /**
  * Arguments for min rate instructions (requireMinRate1D, adjustMinRate1D)
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/MinRate.sol#L36
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/MinRate.sol#L36
  **/
 export class MinRateArgs implements IArgsData {
     public static readonly CODER = new MinRateArgsCoder()

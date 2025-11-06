@@ -4,7 +4,7 @@ import {Opcode} from '../opcode'
 
 /**
  * Concentrates liquidity within price bounds for multiple tokens
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/Concentrate.sol#L101
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/XYCConcentrate.sol#L139
  **/
 export const concentrateGrowLiquidityXD = new Opcode(
     Symbol('Concentrate.concentrateGrowLiquidityXD'),
@@ -13,7 +13,7 @@ export const concentrateGrowLiquidityXD = new Opcode(
 
 /**
  * Concentrates liquidity within price bounds for two tokens
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/Concentrate.sol#L153
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/XYCConcentrate.sol#L172
  **/
 export const concentrateGrowLiquidity2D = new Opcode(
     Symbol('Concentrate.concentrateGrowLiquidity2D'),

@@ -4,7 +4,7 @@ import {IArgsData} from '../types'
 
 /**
  * Arguments for limit swap instructions (limitSwap1D, limitSwapOnlyFull1D)
- * @see https://github.com/1inch/swap-vm-private/blob/f4ed8024b66bca1a19ec2bc6bb62fce04bc8eab4/src/instructions/LimitSwap.sol#L27
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/LimitSwap.sol#L27
  **/
 export class LimitSwapDirectionArgs implements IArgsData {
     public static readonly CODER = new LimitSwapDirectionArgsCoder()

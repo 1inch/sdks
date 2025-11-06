@@ -25,7 +25,7 @@ export abstract class ProgramBuilder {
 
             /**
              *  Solidity _opcodes() returns array without first element (index 0)
-             *  @see https://github.com/1inch/swap-vm-private/blob/main/src/opcodes/Opcodes.sol#L111-L114
+             *  @see https://github.com/1inch/swap-vm/blob/main/src/opcodes/Opcodes.sol#L111-L114
              *  So we need to add 1 to the index when decoding
              **/
             const opcodeIdx =
@@ -69,7 +69,7 @@ export abstract class ProgramBuilder {
 
             /**
              *  Solidity _opcodes() returns array without first element (index 0)
-             *  @see https://github.com/1inch/swap-vm-private/blob/main/src/opcodes/Opcodes.sol#L111-L114
+             *  @see https://github.com/1inch/swap-vm/blob/main/src/opcodes/Opcodes.sol#L111-L114
              *  So we need to subtract 1 from our index to match Solidity
              **/
             const solidityOpcodeIdx = opcodeIdx > 0 ? opcodeIdx - 1 : opcodeIdx
