@@ -5,7 +5,7 @@ import {IArgsData, IInstruction, IOpcode} from '../instructions'
 import {EMPTY_OPCODE} from '../instructions/empty'
 
 /**
- * Abstract base class for building SwapVM programs with type-safe instruction handling
+ * Abstract base class for building SwapVM programs
  **/
 export abstract class ProgramBuilder {
     protected program: IInstruction<IArgsData>[] = []
