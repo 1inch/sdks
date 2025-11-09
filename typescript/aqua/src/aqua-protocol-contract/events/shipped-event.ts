@@ -27,7 +27,6 @@ export class ShippedEvent {
             eventName: ShippedEvent.eventName
         })
 
-        // todo: for now leave this way the casting then change, also we need to leave either strategy or strategyHash
         const {maker, app, strategyHash, strategy} =
             decoded.args as unknown as {
                 maker: string

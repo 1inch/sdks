@@ -1,10 +1,10 @@
-import { assertString } from '../validators/should-be-string'
-import { assertNotEmpty } from '../validators/should-not-be-empty'
 import { assertHexString } from '../validators/should-be-hex-string'
 import { Hex } from '../types'
 
 export class HexString {
-  private readonly hexString: `0x${string}`
+  static EMPTY: HexString = new HexString('0x')
+
+  private readonly hexString: Hex
 
   constructor(hex: string, name = '') {
     assertHexString(hex, `hexString ${name}`)
@@ -32,11 +32,16 @@ export class HexString {
     return BigInt(this.hexString)
   }
 
-  toString(): Hex {
-    return this.hexString
-  }
 
-  toJSON(): string {
-    return this.hexString
-  }
+    isEmpty(): boolean {
+        return this.hexString === '0x'
+    }
+
+    toString(): string {
+        return this.hexString
+    }
+
+    toJSON(): string {
+        return this.hexString
+    }
 }

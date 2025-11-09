@@ -1,3 +1,4 @@
+import {describe, expect, test} from 'vitest'
 import {HexString} from './hex-string'
 
 describe('HexString Unit Test', () => {
@@ -37,8 +38,9 @@ describe('HexString Unit Test', () => {
         expect(() => new HexString('')).toThrow()
     })
 
-    test('should not create because hexString has length less than 3', async () => {
-        expect(() => new HexString('0x')).toThrow()
+    test('should accept empty hex string 0x', async () => {
+        const hex = new HexString('0x')
+        expect(hex.toString()).toBe('0x')
     })
 
     test('should not create because hexString not start from 0x', async () => {
