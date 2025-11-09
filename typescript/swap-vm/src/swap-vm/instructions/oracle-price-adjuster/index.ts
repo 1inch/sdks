@@ -1,2 +1,2 @@
 export * from './opcodes'
-export {OraclePriceAdjusterArgs} from './oracle-price-adjuster-args'
+export { OraclePriceAdjusterArgs } from './oracle-price-adjuster-args'

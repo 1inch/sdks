@@ -1,2 +1,2 @@
 export * from './opcodes'
-export {DutchAuctionArgs} from './dutch-auction-args'
+export { DutchAuctionArgs } from './dutch-auction-args'

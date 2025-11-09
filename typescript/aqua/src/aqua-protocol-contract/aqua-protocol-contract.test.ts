@@ -1,18 +1,15 @@
 import { describe, it, expect } from 'vitest'
 import { Address, HexString } from '@1inch/sdk-shared'
-import { DockArgs, PullArgs, PushArgs, ShipArgs } from './types'
+import { DockArgs, ShipArgs } from './types'
 import { AquaProtocolContract } from './aqua-protocol-contract'
 
 describe('AquaProtocolContract', () => {
   const mockApp = Address.fromBigInt(1n)
-  const mockMaker = Address.fromBigInt(2n)
   const mockToken = Address.fromBigInt(3n)
-  const mockTo = Address.fromBigInt(4n)
   const mockContractAddress = Address.fromBigInt(5n)
 
   const mockStrategy = new HexString('0x01020304')
-  const mockStrategyHash =
-    AquaProtocolContract.calculateStrategyHash(mockStrategy)
+  const mockStrategyHash = AquaProtocolContract.calculateStrategyHash(mockStrategy)
   const mockAmount = BigInt(1000)
   const mockAmounts = [mockAmount, BigInt(2000)]
   const mockTokens = [mockToken, Address.fromBigInt(6n)]
@@ -24,8 +21,8 @@ describe('AquaProtocolContract', () => {
         strategy: mockStrategy,
         amountsAndTokens: [
           { token: mockTokens[0], amount: mockAmounts[0] },
-          { token: mockTokens[1], amount: mockAmounts[1] }
-        ]
+          { token: mockTokens[1], amount: mockAmounts[1] },
+        ],
       }
 
       const result = AquaProtocolContract.encodeShipCallData(args)
@@ -39,7 +36,7 @@ describe('AquaProtocolContract', () => {
       const args: DockArgs = {
         app: mockApp,
         strategyHash: mockStrategyHash,
-        tokens: mockTokens
+        tokens: mockTokens,
       }
 
       const result = AquaProtocolContract.encodeDockCallData(args)
@@ -56,14 +53,11 @@ describe('AquaProtocolContract', () => {
         strategy: mockStrategy,
         amountsAndTokens: [
           { token: mockTokens[0], amount: mockAmounts[0] },
-          { token: mockTokens[1], amount: mockAmounts[1] }
-        ]
+          { token: mockTokens[1], amount: mockAmounts[1] },
+        ],
       }
 
-      const tx = AquaProtocolContract.buildShipTx(
-        mockContractAddress,
-        args
-      )
+      const tx = AquaProtocolContract.buildShipTx(mockContractAddress, args)
 
       expect(tx).toBeDefined()
       expect(tx.to).toBe(mockContractAddress.toString())
@@ -77,13 +71,10 @@ describe('AquaProtocolContract', () => {
       const args: DockArgs = {
         app: mockApp,
         strategyHash: mockStrategyHash,
-        tokens: mockTokens
+        tokens: mockTokens,
       }
 
-      const tx = AquaProtocolContract.buildDockTx(
-        mockContractAddress,
-        args
-      )
+      const tx = AquaProtocolContract.buildDockTx(mockContractAddress, args)
 
       expect(tx).toBeDefined()
       expect(tx.to).toBe(mockContractAddress.toString())
@@ -91,7 +82,6 @@ describe('AquaProtocolContract', () => {
       expect(tx.value).toBe(0n)
     })
   })
-
 
   describe('calculateStrategyHash', () => {
     it('should calculate strategy hash correctly', () => {

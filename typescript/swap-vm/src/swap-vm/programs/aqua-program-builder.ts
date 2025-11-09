@@ -1,7 +1,7 @@
-import type {DataFor} from '@1inch/sdk-shared'
-import {ProgramBuilder} from './program-builder'
-import {SwapVmProgram} from './swap-vm-program'
-import {aquaInstructions} from '../instructions'
+import type { DataFor } from '@1inch/sdk-shared'
+import { ProgramBuilder } from './program-builder'
+import { SwapVmProgram } from './swap-vm-program'
+import { aquaInstructions } from '../instructions'
 import * as controls from '../instructions/controls'
 import * as xycSwap from '../instructions/xyc-swap'
 import * as concentrate from '../instructions/concentrate'
@@ -10,239 +10,205 @@ import * as stableSwap from '../instructions/stable-swap'
 import * as fee from '../instructions/fee'
 
 export class AquaProgramBuilder extends ProgramBuilder {
-    constructor() {
-        super([...aquaInstructions])
-    }
+  constructor() {
+    super([...aquaInstructions])
+  }
 
-    static decode(program: SwapVmProgram): AquaProgramBuilder {
-        return new AquaProgramBuilder().decode(program)
-    }
+  static decode(program: SwapVmProgram): AquaProgramBuilder {
+    return new AquaProgramBuilder().decode(program)
+  }
 
-    /**
-     * Unconditional jump to specified program counter
-     **/
-    public jump(data: DataFor<controls.JumpArgs>): this {
-        super.add(controls.jump.createIx(new controls.JumpArgs(data.nextPC)))
+  /**
+   * Unconditional jump to specified program counter
+   **/
+  public jump(data: DataFor<controls.JumpArgs>): this {
+    super.add(controls.jump.createIx(new controls.JumpArgs(data.nextPC)))
 
-        return this
-    }
+    return this
+  }
 
-    /**
-     * Jump to specified program counter if swap mode is exact input
-     **/
-    public jumpIfExactIn(data: DataFor<controls.JumpArgs>): this {
-        super.add(
-            controls.jumpIfExactIn.createIx(new controls.JumpArgs(data.nextPC))
-        )
+  /**
+   * Jump to specified program counter if swap mode is exact input
+   **/
+  public jumpIfExactIn(data: DataFor<controls.JumpArgs>): this {
+    super.add(controls.jumpIfExactIn.createIx(new controls.JumpArgs(data.nextPC)))
 
-        return this
-    }
+    return this
+  }
 
-    /**
-     * Jump to specified program counter if swap mode is exact output
-     **/
-    public jumpIfExactOut(data: DataFor<controls.JumpArgs>): this {
-        super.add(
-            controls.jumpIfExactOut.createIx(new controls.JumpArgs(data.nextPC))
-        )
+  /**
+   * Jump to specified program counter if swap mode is exact output
+   **/
+  public jumpIfExactOut(data: DataFor<controls.JumpArgs>): this {
+    super.add(controls.jumpIfExactOut.createIx(new controls.JumpArgs(data.nextPC)))
 
-        return this
-    }
+    return this
+  }
 
-    /**
-     * Requires taker to hold any amount of specified token (supports NFTs)
-     **/
-    public onlyTakerTokenBalanceNonZero(
-        data: DataFor<controls.OnlyTakerTokenBalanceNonZeroArgs>
-    ): this {
-        super.add(
-            controls.onlyTakerTokenBalanceNonZero.createIx(
-                new controls.OnlyTakerTokenBalanceNonZeroArgs(data.token)
-            )
-        )
+  /**
+   * Requires taker to hold any amount of specified token (supports NFTs)
+   **/
+  public onlyTakerTokenBalanceNonZero(
+    data: DataFor<controls.OnlyTakerTokenBalanceNonZeroArgs>,
+  ): this {
+    super.add(
+      controls.onlyTakerTokenBalanceNonZero.createIx(
+        new controls.OnlyTakerTokenBalanceNonZeroArgs(data.token),
+      ),
+    )
 
-        return this
-    }
+    return this
+  }
 
-    /**
-     * Requires taker to hold at least specified amount of token
-     **/
-    public onlyTakerTokenBalanceGte(
-        data: DataFor<controls.OnlyTakerTokenBalanceGteArgs>
-    ): this {
-        super.add(
-            controls.onlyTakerTokenBalanceGte.createIx(
-                new controls.OnlyTakerTokenBalanceGteArgs(
-                    data.token,
-                    data.minAmount
-                )
-            )
-        )
+  /**
+   * Requires taker to hold at least specified amount of token
+   **/
+  public onlyTakerTokenBalanceGte(data: DataFor<controls.OnlyTakerTokenBalanceGteArgs>): this {
+    super.add(
+      controls.onlyTakerTokenBalanceGte.createIx(
+        new controls.OnlyTakerTokenBalanceGteArgs(data.token, data.minAmount),
+      ),
+    )
 
-        return this
-    }
+    return this
+  }
 
-    /**
-     * Requires taker to hold at least specified share of token's total supply
-     **/
-    public onlyTakerTokenSupplyShareGte(
-        data: DataFor<controls.OnlyTakerTokenSupplyShareGteArgs>
-    ): this {
-        super.add(
-            controls.onlyTakerTokenSupplyShareGte.createIx(
-                new controls.OnlyTakerTokenSupplyShareGteArgs(
-                    data.token,
-                    data.minShareE18
-                )
-            )
-        )
+  /**
+   * Requires taker to hold at least specified share of token's total supply
+   **/
+  public onlyTakerTokenSupplyShareGte(
+    data: DataFor<controls.OnlyTakerTokenSupplyShareGteArgs>,
+  ): this {
+    super.add(
+      controls.onlyTakerTokenSupplyShareGte.createIx(
+        new controls.OnlyTakerTokenSupplyShareGteArgs(data.token, data.minShareE18),
+      ),
+    )
 
-        return this
-    }
+    return this
+  }
 
-    /**
-     * No-op instruction used to add uniqueness to order hashes (prevents replay attacks)
-     **/
-    public salt(data: DataFor<controls.SaltArgs>): this {
-        super.add(controls.salt.createIx(new controls.SaltArgs(data.salt)))
+  /**
+   * No-op instruction used to add uniqueness to order hashes (prevents replay attacks)
+   **/
+  public salt(data: DataFor<controls.SaltArgs>): this {
+    super.add(controls.salt.createIx(new controls.SaltArgs(data.salt)))
 
-        return this
-    }
+    return this
+  }
 
-    /**
-     * Basic swap using constant product formula (x*y=k)
-     **/
-    public xycSwapXD(): this {
-        super.add(xycSwap.xycSwapXD.createIx(new xycSwap.XycSwapXDArgs()))
+  /**
+   * Basic swap using constant product formula (x*y=k)
+   **/
+  public xycSwapXD(): this {
+    super.add(xycSwap.xycSwapXD.createIx(new xycSwap.XycSwapXDArgs()))
 
-        return this
-    }
+    return this
+  }
 
-    /**
-     * Concentrates liquidity within price bounds for multiple tokens
-     **/
-    public concentrateGrowLiquidityXD(
-        data: DataFor<concentrate.ConcentrateGrowLiquidityXDArgs>
-    ): this {
-        super.add(
-            concentrate.concentrateGrowLiquidityXD.createIx(
-                new concentrate.ConcentrateGrowLiquidityXDArgs(data.tokenDeltas)
-            )
-        )
+  /**
+   * Concentrates liquidity within price bounds for multiple tokens
+   **/
+  public concentrateGrowLiquidityXD(
+    data: DataFor<concentrate.ConcentrateGrowLiquidityXDArgs>,
+  ): this {
+    super.add(
+      concentrate.concentrateGrowLiquidityXD.createIx(
+        new concentrate.ConcentrateGrowLiquidityXDArgs(data.tokenDeltas),
+      ),
+    )
 
-        return this
-    }
+    return this
+  }
 
-    /**
-     * Concentrates liquidity within price bounds for two tokens
-     **/
-    public concentrateGrowLiquidity2D(
-        data: DataFor<concentrate.ConcentrateGrowLiquidity2DArgs>
-    ): this {
-        super.add(
-            concentrate.concentrateGrowLiquidity2D.createIx(
-                new concentrate.ConcentrateGrowLiquidity2DArgs(
-                    data.deltaLt,
-                    data.deltaGt
-                )
-            )
-        )
+  /**
+   * Concentrates liquidity within price bounds for two tokens
+   **/
+  public concentrateGrowLiquidity2D(
+    data: DataFor<concentrate.ConcentrateGrowLiquidity2DArgs>,
+  ): this {
+    super.add(
+      concentrate.concentrateGrowLiquidity2D.createIx(
+        new concentrate.ConcentrateGrowLiquidity2DArgs(data.deltaLt, data.deltaGt),
+      ),
+    )
 
-        return this
-    }
+    return this
+  }
 
-    /**
-     * Applies time-based decay to balance adjustments
-     **/
-    public decayXD(data: DataFor<decay.DecayXDArgs>): this {
-        super.add(
-            decay.decayXD.createIx(new decay.DecayXDArgs(data.decayPeriod))
-        )
+  /**
+   * Applies time-based decay to balance adjustments
+   **/
+  public decayXD(data: DataFor<decay.DecayXDArgs>): this {
+    super.add(decay.decayXD.createIx(new decay.DecayXDArgs(data.decayPeriod)))
 
-        return this
-    }
+    return this
+  }
 
-    /**
-     * Stablecoin optimized swap using StableSwap algorithm (Curve-style)
-     **/
-    public stableSwap2D(data: DataFor<stableSwap.StableSwap2DArgs>): this {
-        super.add(
-            stableSwap.stableSwap2D.createIx(
-                new stableSwap.StableSwap2DArgs(
-                    data.fee,
-                    data.A,
-                    data.rateLt,
-                    data.rateGt
-                )
-            )
-        )
+  /**
+   * Stablecoin optimized swap using StableSwap algorithm (Curve-style)
+   **/
+  public stableSwap2D(data: DataFor<stableSwap.StableSwap2DArgs>): this {
+    super.add(
+      stableSwap.stableSwap2D.createIx(
+        new stableSwap.StableSwap2DArgs(data.fee, data.A, data.rateLt, data.rateGt),
+      ),
+    )
 
-        return this
-    }
+    return this
+  }
 
-    /**
-     * Applies flat fee to computed swap amount
-     **/
-    public flatFeeXD(data: DataFor<fee.FlatFeeArgs>): this {
-        super.add(fee.flatFeeXD.createIx(new fee.FlatFeeArgs(data.fee)))
+  /**
+   * Applies flat fee to computed swap amount
+   **/
+  public flatFeeXD(data: DataFor<fee.FlatFeeArgs>): this {
+    super.add(fee.flatFeeXD.createIx(new fee.FlatFeeArgs(data.fee)))
 
-        return this
-    }
+    return this
+  }
 
-    /**
-     * Applies fee to amountIn
-     **/
-    public flatFeeAmountInXD(data: DataFor<fee.FlatFeeArgs>): this {
-        super.add(fee.flatFeeAmountInXD.createIx(new fee.FlatFeeArgs(data.fee)))
+  /**
+   * Applies fee to amountIn
+   **/
+  public flatFeeAmountInXD(data: DataFor<fee.FlatFeeArgs>): this {
+    super.add(fee.flatFeeAmountInXD.createIx(new fee.FlatFeeArgs(data.fee)))
 
-        return this
-    }
+    return this
+  }
 
-    /**
-     * Applies fee to amountOut
-     **/
-    public flatFeeAmountOutXD(data: DataFor<fee.FlatFeeArgs>): this {
-        super.add(
-            fee.flatFeeAmountOutXD.createIx(new fee.FlatFeeArgs(data.fee))
-        )
+  /**
+   * Applies fee to amountOut
+   **/
+  public flatFeeAmountOutXD(data: DataFor<fee.FlatFeeArgs>): this {
+    super.add(fee.flatFeeAmountOutXD.createIx(new fee.FlatFeeArgs(data.fee)))
 
-        return this
-    }
+    return this
+  }
 
-    /**
-     * Applies progressive fee based on price impact
-     **/
-    public progressiveFeeXD(data: DataFor<fee.FlatFeeArgs>): this {
-        super.add(fee.progressiveFeeXD.createIx(new fee.FlatFeeArgs(data.fee)))
+  /**
+   * Applies progressive fee based on price impact
+   **/
+  public progressiveFeeXD(data: DataFor<fee.FlatFeeArgs>): this {
+    super.add(fee.progressiveFeeXD.createIx(new fee.FlatFeeArgs(data.fee)))
 
-        return this
-    }
+    return this
+  }
 
-    /**
-     * Applies protocol fee to amountOut with direct transfer
-     **/
-    public protocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
-        super.add(
-            fee.protocolFeeAmountOutXD.createIx(
-                new fee.ProtocolFeeArgs(data.fee, data.to)
-            )
-        )
+  /**
+   * Applies protocol fee to amountOut with direct transfer
+   **/
+  public protocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
+    super.add(fee.protocolFeeAmountOutXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
 
-        return this
-    }
+    return this
+  }
 
-    /**
-     * Applies protocol fee to amountOut through Aqua protocol
-     **/
-    public aquaProtocolFeeAmountOutXD(
-        data: DataFor<fee.ProtocolFeeArgs>
-    ): this {
-        super.add(
-            fee.aquaProtocolFeeAmountOutXD.createIx(
-                new fee.ProtocolFeeArgs(data.fee, data.to)
-            )
-        )
+  /**
+   * Applies protocol fee to amountOut through Aqua protocol
+   **/
+  public aquaProtocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
+    super.add(fee.aquaProtocolFeeAmountOutXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
 
-        return this
-    }
+    return this
+  }
 }

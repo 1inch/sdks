@@ -1,6 +1,6 @@
-import { Address } from "@1inch/sdk-shared";
-import { MakerTraits } from "./maker-traits";
-import { SwapVmProgram } from "./programs/swap-vm-program";
+import { Address, DataFor } from '@1inch/sdk-shared'
+import { MakerTraits } from './maker-traits'
+import { SwapVmProgram } from './programs/swap-vm-program'
 
 export class Order {
   constructor(
@@ -9,8 +9,10 @@ export class Order {
     /**
      * List of instructions to be executed (8 bit index, 8 bit args length, args)
      */
-    public readonly program: SwapVmProgram
+    public readonly program: SwapVmProgram,
   ) {}
 
-  public static new(data: DataFor<Order>): Order {}
+  public static new(data: DataFor<Order>): Order {
+    return new Order(data.maker, data.traits, data.program)
+  }
 }

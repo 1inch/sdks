@@ -1,8 +1,8 @@
-import {Address, HexString} from '@1inch/sdk-shared'
-import {UINT_8_MAX, UINT_16_MAX, UINT_64_MAX} from '@1inch/byte-utils'
+import { Address, HexString } from '@1inch/sdk-shared'
+import { UINT_8_MAX, UINT_16_MAX, UINT_64_MAX } from '@1inch/byte-utils'
 import assert from 'node:assert'
-import {OraclePriceAdjusterArgsCoder} from './oracle-price-adjuster-args-coder'
-import {IArgsData} from '../types'
+import { OraclePriceAdjusterArgsCoder } from './oracle-price-adjuster-args-coder'
+import { IArgsData } from '../types'
 
 /**
  * @notice Oracle Price Adjuster instruction for dynamic price adjustment based on Chainlink price feeds
@@ -25,51 +25,48 @@ import {IArgsData} from '../types'
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/OraclePriceAdjuster.sol#L84
  */
 export class OraclePriceAdjusterArgs implements IArgsData {
-    public static readonly CODER = new OraclePriceAdjusterArgsCoder()
+  public static readonly CODER = new OraclePriceAdjusterArgsCoder()
 
-    /**
-     * maxPriceDecay - maximum price decay coefficient (uint64)
-     * maxStaleness - maximum allowed oracle data staleness in seconds (uint16
-     * oracleDecimals - decimals used by the oracle (uint8)
-     * oracleAddress - address of the Chainlink price oracle contract
-     **/
-    constructor(
-        public readonly maxPriceDecay: bigint,
-        public readonly maxStaleness: bigint,
-        public readonly oracleDecimals: bigint,
-        public readonly oracleAddress: Address
-    ) {
-        assert(
-            maxPriceDecay >= 0n && maxPriceDecay <= UINT_64_MAX,
-            `Invalid maxPriceDecay: ${maxPriceDecay}. Must be a valid uint64`
-        )
-        assert(
-            maxPriceDecay < 1e18,
-            `Max price decay should be less than 1e18: ${maxPriceDecay}`
-        )
-        assert(
-            maxStaleness >= 0n && maxStaleness <= UINT_16_MAX,
-            `Invalid maxStaleness: ${maxStaleness}. Must be a valid uint16`
-        )
-        assert(
-            oracleDecimals >= 0n && oracleDecimals <= UINT_8_MAX,
-            `Invalid oracleDecimals: ${oracleDecimals}. Must be a valid uint8`
-        )
-    }
+  /**
+   * maxPriceDecay - maximum price decay coefficient (uint64)
+   * maxStaleness - maximum allowed oracle data staleness in seconds (uint16
+   * oracleDecimals - decimals used by the oracle (uint8)
+   * oracleAddress - address of the Chainlink price oracle contract
+   **/
+  constructor(
+    public readonly maxPriceDecay: bigint,
+    public readonly maxStaleness: bigint,
+    public readonly oracleDecimals: bigint,
+    public readonly oracleAddress: Address,
+  ) {
+    assert(
+      maxPriceDecay >= 0n && maxPriceDecay <= UINT_64_MAX,
+      `Invalid maxPriceDecay: ${maxPriceDecay}. Must be a valid uint64`,
+    )
+    assert(maxPriceDecay < 1e18, `Max price decay should be less than 1e18: ${maxPriceDecay}`)
+    assert(
+      maxStaleness >= 0n && maxStaleness <= UINT_16_MAX,
+      `Invalid maxStaleness: ${maxStaleness}. Must be a valid uint16`,
+    )
+    assert(
+      oracleDecimals >= 0n && oracleDecimals <= UINT_8_MAX,
+      `Invalid oracleDecimals: ${oracleDecimals}. Must be a valid uint8`,
+    )
+  }
 
-    /**
-     * Decodes hex data into OraclePriceAdjusterArgs instance
-     **/
-    static decode(data: HexString): OraclePriceAdjusterArgs {
-        return OraclePriceAdjusterArgs.CODER.decode(data)
-    }
+  /**
+   * Decodes hex data into OraclePriceAdjusterArgs instance
+   **/
+  static decode(data: HexString): OraclePriceAdjusterArgs {
+    return OraclePriceAdjusterArgs.CODER.decode(data)
+  }
 
-    toJSON(): Record<string, unknown> {
-        return {
-            maxPriceDecay: this.maxPriceDecay.toString(),
-            maxStaleness: this.maxStaleness.toString(),
-            oracleDecimals: this.oracleDecimals.toString(),
-            oracleAddress: this.oracleAddress.toString()
-        }
+  toJSON(): Record<string, unknown> {
+    return {
+      maxPriceDecay: this.maxPriceDecay.toString(),
+      maxStaleness: this.maxStaleness.toString(),
+      oracleDecimals: this.oracleDecimals.toString(),
+      oracleAddress: this.oracleAddress.toString(),
     }
+  }
 }

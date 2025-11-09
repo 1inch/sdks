@@ -1,2 +1,2 @@
 export * from './opcodes'
-export {DecayXDArgs} from './decay-xd-args'
+export { DecayXDArgs } from './decay-xd-args'

@@ -1,5 +1,5 @@
-import {TWAPSwapArgs} from './twap-swap-args'
-import {Opcode} from '../opcode'
+import { TWAPSwapArgs } from './twap-swap-args'
+import { Opcode } from '../opcode'
 
 /**
  * TWAP trading with exponential dutch auction and illiquidity handling

@@ -33,15 +33,15 @@ export class HexString {
   }
 
 
-    isEmpty(): boolean {
-        return this.hexString === '0x'
-    }
+  isEmpty(): boolean {
+    return this.hexString === '0x'
+  }
 
-    toString(): string {
-        return this.hexString
-    }
+  toString(): Hex {
+    return this.hexString
+  }
 
-    toJSON(): string {
-        return this.hexString
-    }
+  toJSON(): string {
+    return this.hexString
+  }
 }

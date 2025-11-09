@@ -1,8 +1,8 @@
-import {HexString} from '@1inch/sdk-shared'
-import {UINT_256_MAX} from '@1inch/byte-utils'
+import { HexString } from '@1inch/sdk-shared'
+import { UINT_256_MAX } from '@1inch/byte-utils'
 import assert from 'node:assert'
-import {TWAPSwapArgsCoder} from './twap-swap-args-coder'
-import {IArgsData} from '../types'
+import { TWAPSwapArgsCoder } from './twap-swap-args-coder'
+import { IArgsData } from '../types'
 
 /**
  * @notice TWAP Hook with exponential dutch auction and illiquidity handling
@@ -51,67 +51,65 @@ import {IArgsData} from '../types'
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/TWAPSwap.sol#L104
  */
 export class TWAPSwapArgs implements IArgsData {
-    public static readonly CODER = new TWAPSwapArgsCoder()
+  public static readonly CODER = new TWAPSwapArgsCoder()
 
-    /**
-     * balanceIn - expected amount of token1 for initial price (uint256)
-     * balanceOut - total amount of token0 for TWAP (uint256)
-     * startTime - TWAP start time (uint256)
-     * duration - TWAP duration (uint256)
-     * priceBumpAfterIlliquidity - price jump when liquidity insufficient, e.g. 1.10e18 = +10% (uint256)
-     * minTradeAmountOut - minimum trade size for token0 (uint256)
-     **/
-    constructor(
-        public readonly balanceIn: bigint,
-        public readonly balanceOut: bigint,
-        public readonly startTime: bigint,
-        public readonly duration: bigint,
-        public readonly priceBumpAfterIlliquidity: bigint,
-        public readonly minTradeAmountOut: bigint
-    ) {
-        assert(
-            balanceIn >= 0n && balanceIn <= UINT_256_MAX,
-            `Invalid balanceIn: ${balanceIn}. Must be >= 0 and <= UINT_256_MAX`
-        )
-        assert(
-            balanceOut >= 0n && balanceOut <= UINT_256_MAX,
-            `Invalid balanceOut: ${balanceOut}. Must be >= 0 and <= UINT_256_MAX`
-        )
-        assert(
-            startTime >= 0n && startTime <= UINT_256_MAX,
-            `Invalid startTime: ${startTime}. Must be >= 0 and <= UINT_256_MAX`
-        )
-        assert(
-            duration >= 0n && duration <= UINT_256_MAX,
-            `Invalid duration: ${duration}. Must be >= 0 and <= UINT_256_MAX`
-        )
-        assert(
-            priceBumpAfterIlliquidity >= 0n &&
-                priceBumpAfterIlliquidity <= UINT_256_MAX,
-            `Invalid priceBumpAfterIlliquidity: ${priceBumpAfterIlliquidity}. Must be >= 0 and <= UINT_256_MAX`
-        )
-        assert(
-            minTradeAmountOut >= 0n && minTradeAmountOut <= UINT_256_MAX,
-            `Invalid minTradeAmountOut: ${minTradeAmountOut}. Must be >= 0 and <= UINT_256_MAX`
-        )
-    }
+  /**
+   * balanceIn - expected amount of token1 for initial price (uint256)
+   * balanceOut - total amount of token0 for TWAP (uint256)
+   * startTime - TWAP start time (uint256)
+   * duration - TWAP duration (uint256)
+   * priceBumpAfterIlliquidity - price jump when liquidity insufficient, e.g. 1.10e18 = +10% (uint256)
+   * minTradeAmountOut - minimum trade size for token0 (uint256)
+   **/
+  constructor(
+    public readonly balanceIn: bigint,
+    public readonly balanceOut: bigint,
+    public readonly startTime: bigint,
+    public readonly duration: bigint,
+    public readonly priceBumpAfterIlliquidity: bigint,
+    public readonly minTradeAmountOut: bigint,
+  ) {
+    assert(
+      balanceIn >= 0n && balanceIn <= UINT_256_MAX,
+      `Invalid balanceIn: ${balanceIn}. Must be >= 0 and <= UINT_256_MAX`,
+    )
+    assert(
+      balanceOut >= 0n && balanceOut <= UINT_256_MAX,
+      `Invalid balanceOut: ${balanceOut}. Must be >= 0 and <= UINT_256_MAX`,
+    )
+    assert(
+      startTime >= 0n && startTime <= UINT_256_MAX,
+      `Invalid startTime: ${startTime}. Must be >= 0 and <= UINT_256_MAX`,
+    )
+    assert(
+      duration >= 0n && duration <= UINT_256_MAX,
+      `Invalid duration: ${duration}. Must be >= 0 and <= UINT_256_MAX`,
+    )
+    assert(
+      priceBumpAfterIlliquidity >= 0n && priceBumpAfterIlliquidity <= UINT_256_MAX,
+      `Invalid priceBumpAfterIlliquidity: ${priceBumpAfterIlliquidity}. Must be >= 0 and <= UINT_256_MAX`,
+    )
+    assert(
+      minTradeAmountOut >= 0n && minTradeAmountOut <= UINT_256_MAX,
+      `Invalid minTradeAmountOut: ${minTradeAmountOut}. Must be >= 0 and <= UINT_256_MAX`,
+    )
+  }
 
-    /**
-     * Decodes hex data into TWAPSwapArgs instance
-     **/
-    static decode(data: HexString): TWAPSwapArgs {
-        return TWAPSwapArgs.CODER.decode(data)
-    }
+  /**
+   * Decodes hex data into TWAPSwapArgs instance
+   **/
+  static decode(data: HexString): TWAPSwapArgs {
+    return TWAPSwapArgs.CODER.decode(data)
+  }
 
-    toJSON(): Record<string, unknown> {
-        return {
-            balanceIn: this.balanceIn.toString(),
-            balanceOut: this.balanceOut.toString(),
-            startTime: this.startTime.toString(),
-            duration: this.duration.toString(),
-            priceBumpAfterIlliquidity:
-                this.priceBumpAfterIlliquidity.toString(),
-            minTradeAmountOut: this.minTradeAmountOut.toString()
-        }
+  toJSON(): Record<string, unknown> {
+    return {
+      balanceIn: this.balanceIn.toString(),
+      balanceOut: this.balanceOut.toString(),
+      startTime: this.startTime.toString(),
+      duration: this.duration.toString(),
+      priceBumpAfterIlliquidity: this.priceBumpAfterIlliquidity.toString(),
+      minTradeAmountOut: this.minTradeAmountOut.toString(),
     }
+  }
 }

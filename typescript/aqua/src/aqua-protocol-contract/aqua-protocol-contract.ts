@@ -1,8 +1,7 @@
 import { encodeFunctionData, keccak256 } from 'viem'
 import { CallInfo, Address, HexString } from '@1inch/sdk-shared'
-import { ShipArgs, DockArgs, PullArgs, PushArgs } from './types'
-import { AQUA_ABI } from '../abi/Aqua.abi';
-
+import { ShipArgs, DockArgs } from './types'
+import { AQUA_ABI } from '../abi/Aqua.abi'
 
 /**
  * Aqua Protocol Contract - Encoding/decoding for ship, dock, push, pull
@@ -11,7 +10,7 @@ import { AQUA_ABI } from '../abi/Aqua.abi';
  * smart contract's core functions.
  */
 export class AquaProtocolContract {
-  constructor(public readonly address: Address) { }
+  constructor(public readonly address: Address) {}
 
   /**
    * Encodes the calldata for the ship function
@@ -29,8 +28,8 @@ export class AquaProtocolContract {
         app.toString(),
         strategy.toString(),
         amountsAndTokens.map(({ token }) => token.toString()),
-        amountsAndTokens.map(({ amount }) => amount)
-      ]
+        amountsAndTokens.map(({ amount }) => amount),
+      ],
     })
 
     return new HexString(result)
@@ -48,11 +47,7 @@ export class AquaProtocolContract {
     const result = encodeFunctionData({
       abi: AQUA_ABI,
       functionName: 'dock',
-      args: [
-        app.toString(),
-        strategyHash.toString(),
-        tokens.map((t) => t.toString())
-      ]
+      args: [app.toString(), strategyHash.toString(), tokens.map((t) => t.toString())],
     })
 
     return new HexString(result)
@@ -68,7 +63,7 @@ export class AquaProtocolContract {
     return {
       to: contractAddress.toString(),
       data: this.encodeShipCallData(params).toString(),
-      value: 0n
+      value: 0n,
     }
   }
 
@@ -82,10 +77,9 @@ export class AquaProtocolContract {
     return {
       to: contractAddress.toString(),
       data: this.encodeDockCallData(params).toString(),
-      value: 0n
+      value: 0n,
     }
   }
-
 
   /**
    * Calculate strategy hash from strategy bytes
@@ -100,9 +94,7 @@ export class AquaProtocolContract {
     return AquaProtocolContract.buildShipTx(this.address, params)
   }
 
-
   public dock(params: DockArgs): CallInfo {
     return AquaProtocolContract.buildDockTx(this.address, params)
   }
-
 }

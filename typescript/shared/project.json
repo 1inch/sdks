@@ -38,7 +38,7 @@
     "type-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc --noEmit -p typescript/shared/tsconfig.lib.json"
+        "command": "tsc --noEmit -p typescript/shared/tsconfig.json"
       }
     }
   }

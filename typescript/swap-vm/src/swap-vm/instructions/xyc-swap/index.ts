@@ -1,2 +1,2 @@
 export * from './opcodes'
-export {XycSwapXDArgs} from './xyc-swap-xd-args'
+export { XycSwapXDArgs } from './xyc-swap-xd-args'

@@ -1,5 +1,5 @@
-import {DecayXDArgs} from './decay-xd-args'
-import {Opcode} from '../opcode'
+import { DecayXDArgs } from './decay-xd-args'
+import { Opcode } from '../opcode'
 
 /**
  * Applies time-based decay to balance adjustments

@@ -1,2 +1,2 @@
 export * from './opcodes'
-export {MinRateArgs} from './min-rate-args'
+export { MinRateArgs } from './min-rate-args'

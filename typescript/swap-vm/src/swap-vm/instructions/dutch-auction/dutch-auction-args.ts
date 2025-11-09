@@ -1,8 +1,8 @@
-import {HexString} from '@1inch/sdk-shared'
-import {UINT_16_MAX, UINT_32_MAX, UINT_40_MAX} from '@1inch/byte-utils'
+import { HexString } from '@1inch/sdk-shared'
+import { UINT_16_MAX, UINT_32_MAX, UINT_40_MAX } from '@1inch/byte-utils'
 import assert from 'node:assert'
-import {DutchAuctionArgsCoder} from './dutch-auction-args-coder'
-import {IArgsData} from '../types'
+import { DutchAuctionArgsCoder } from './dutch-auction-args-coder'
+import { IArgsData } from '../types'
 
 /**
  * @notice Dutch Auction instruction for time-based price decay with deadline
@@ -30,48 +30,45 @@ import {IArgsData} from '../types'
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/DutchAuction.sol#L66
  */
 export class DutchAuctionArgs implements IArgsData {
-    public static readonly CODER = new DutchAuctionArgsCoder()
+  public static readonly CODER = new DutchAuctionArgsCoder()
 
-    /**
-     * startTime - auction start time (uint40)
-     * duration - auction duration in seconds (uint16)
-     * decayFactor - price decay per second, 1e18 = no decay (uint32)
-     **/
-    constructor(
-        public readonly startTime: bigint,
-        public readonly duration: bigint,
-        public readonly decayFactor: bigint
-    ) {
-        assert(
-            startTime >= 0n && startTime <= UINT_40_MAX,
-            `Invalid startTime: ${startTime}. Must be a valid uint40`
-        )
-        assert(
-            duration >= 0n && duration <= UINT_16_MAX,
-            `Invalid duration: ${duration}. Must be a valid uint16`
-        )
-        assert(
-            decayFactor >= 0n && decayFactor <= UINT_32_MAX,
-            `Invalid decayFactor: ${decayFactor}. Must be a valid uint32`
-        )
-        assert(
-            decayFactor < 1e18,
-            `Decay factor should be less than 1e18: ${decayFactor}`
-        )
-    }
+  /**
+   * startTime - auction start time (uint40)
+   * duration - auction duration in seconds (uint16)
+   * decayFactor - price decay per second, 1e18 = no decay (uint32)
+   **/
+  constructor(
+    public readonly startTime: bigint,
+    public readonly duration: bigint,
+    public readonly decayFactor: bigint,
+  ) {
+    assert(
+      startTime >= 0n && startTime <= UINT_40_MAX,
+      `Invalid startTime: ${startTime}. Must be a valid uint40`,
+    )
+    assert(
+      duration >= 0n && duration <= UINT_16_MAX,
+      `Invalid duration: ${duration}. Must be a valid uint16`,
+    )
+    assert(
+      decayFactor >= 0n && decayFactor <= UINT_32_MAX,
+      `Invalid decayFactor: ${decayFactor}. Must be a valid uint32`,
+    )
+    assert(decayFactor < 1e18, `Decay factor should be less than 1e18: ${decayFactor}`)
+  }
 
-    /**
-     * Decodes hex data into DutchAuctionArgs instance
-     **/
-    static decode(data: HexString): DutchAuctionArgs {
-        return DutchAuctionArgs.CODER.decode(data)
-    }
+  /**
+   * Decodes hex data into DutchAuctionArgs instance
+   **/
+  static decode(data: HexString): DutchAuctionArgs {
+    return DutchAuctionArgs.CODER.decode(data)
+  }
 
-    toJSON(): Record<string, unknown> {
-        return {
-            startTime: this.startTime.toString(),
-            duration: this.duration.toString(),
-            decayFactor: this.decayFactor.toString()
-        }
+  toJSON(): Record<string, unknown> {
+    return {
+      startTime: this.startTime.toString(),
+      duration: this.duration.toString(),
+      decayFactor: this.decayFactor.toString(),
     }
+  }
 }

@@ -1,40 +1,35 @@
-import {Address, HexString} from '@1inch/sdk-shared'
-import {LimitSwapDirectionArgsCoder} from './limit-swap-direction-args-coder'
-import {IArgsData} from '../types'
+import { Address, HexString } from '@1inch/sdk-shared'
+import { LimitSwapDirectionArgsCoder } from './limit-swap-direction-args-coder'
+import { IArgsData } from '../types'
 
 /**
  * Arguments for limit swap instructions (limitSwap1D, limitSwapOnlyFull1D)
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/LimitSwap.sol#L27
  **/
 export class LimitSwapDirectionArgs implements IArgsData {
-    public static readonly CODER = new LimitSwapDirectionArgsCoder()
+  public static readonly CODER = new LimitSwapDirectionArgsCoder()
 
-    constructor(
-        /**
-         * true if tokenIn < tokenOut
-         **/
-        public readonly makerDirectionLt: boolean // true if tokenIn < tokenOut
-    ) {}
-
-    static fromTokens(
-        tokenIn: Address,
-        tokenOut: Address
-    ): LimitSwapDirectionArgs {
-        return new LimitSwapDirectionArgs(
-            BigInt(tokenIn.toString()) < BigInt(tokenOut.toString())
-        )
-    }
-
+  constructor(
     /**
-     * Decodes hex data into LimitSwapDirectionArgs instance
+     * true if tokenIn < tokenOut
      **/
-    static decode(data: HexString): LimitSwapDirectionArgs {
-        return LimitSwapDirectionArgs.CODER.decode(data)
-    }
+    public readonly makerDirectionLt: boolean, // true if tokenIn < tokenOut
+  ) {}
 
-    toJSON(): Record<string, unknown> {
-        return {
-            makerDirectionLt: this.makerDirectionLt
-        }
+  static fromTokens(tokenIn: Address, tokenOut: Address): LimitSwapDirectionArgs {
+    return new LimitSwapDirectionArgs(BigInt(tokenIn.toString()) < BigInt(tokenOut.toString()))
+  }
+
+  /**
+   * Decodes hex data into LimitSwapDirectionArgs instance
+   **/
+  static decode(data: HexString): LimitSwapDirectionArgs {
+    return LimitSwapDirectionArgs.CODER.decode(data)
+  }
+
+  toJSON(): Record<string, unknown> {
+    return {
+      makerDirectionLt: this.makerDirectionLt,
     }
+  }
 }

@@ -1,10 +1,7 @@
-import {StableSwap2DArgs} from './stable-swap-2d-args'
-import {Opcode} from '../opcode'
+import { StableSwap2DArgs } from './stable-swap-2d-args'
+import { Opcode } from '../opcode'
 
 /**
  * Stablecoin optimized swap using StableSwap algorithm (Curve-style)
  **/
-export const stableSwap2D = new Opcode(
-    Symbol('StableSwap.stableSwap2D'),
-    StableSwap2DArgs.CODER
-)
+export const stableSwap2D = new Opcode(Symbol('StableSwap.stableSwap2D'), StableSwap2DArgs.CODER)

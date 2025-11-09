@@ -1,7 +1,7 @@
-import {HexString} from '@1inch/sdk-shared'
+import { HexString } from '@1inch/sdk-shared'
 import assert from 'node:assert'
-import {JumpArgsCoder} from './jump-args-coder'
-import {IArgsData} from '../types'
+import { JumpArgsCoder } from './jump-args-coder'
+import { IArgsData } from '../types'
 
 const UINT_16_MAX = 0xffffn
 
@@ -10,25 +10,25 @@ const UINT_16_MAX = 0xffffn
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L10
  **/
 export class JumpArgs implements IArgsData {
-    public static readonly CODER = new JumpArgsCoder()
+  public static readonly CODER = new JumpArgsCoder()
 
-    constructor(public readonly nextPC: bigint) {
-        assert(
-            nextPC <= UINT_16_MAX && nextPC >= 0n,
-            `Invalid nextPC value: ${nextPC}. Must be between 0 and 65535`
-        )
-    }
+  constructor(public readonly nextPC: bigint) {
+    assert(
+      nextPC <= UINT_16_MAX && nextPC >= 0n,
+      `Invalid nextPC value: ${nextPC}. Must be between 0 and 65535`,
+    )
+  }
 
-    /**
-     * Decodes hex data into JumpArgs instance
-     **/
-    static decode(data: HexString): JumpArgs {
-        return JumpArgs.CODER.decode(data)
-    }
+  /**
+   * Decodes hex data into JumpArgs instance
+   **/
+  static decode(data: HexString): JumpArgs {
+    return JumpArgs.CODER.decode(data)
+  }
 
-    toJSON(): Record<string, unknown> {
-        return {
-            nextPC: this.nextPC
-        }
+  toJSON(): Record<string, unknown> {
+    return {
+      nextPC: this.nextPC,
     }
+  }
 }
