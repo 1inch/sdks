@@ -1,6 +1,7 @@
-import { Hex, isAddress } from 'viem'
+import { isAddress } from 'viem'
 import { add0x } from '@1inch/byte-utils'
 import assert from 'node:assert'
+import { Hex } from '../types'
 
 /**
  * Address domain class

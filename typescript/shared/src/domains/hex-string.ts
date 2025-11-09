@@ -1,7 +1,7 @@
 import { assertString } from '../validators/should-be-string'
 import { assertNotEmpty } from '../validators/should-not-be-empty'
 import { assertHexString } from '../validators/should-be-hex-string'
-import { Hex } from 'viem'
+import { Hex } from '../types'
 
 export class HexString {
   private readonly hexString: `0x${string}`

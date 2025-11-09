@@ -4,7 +4,7 @@ import {BytesBuilder, trim0x} from '@1inch/byte-utils'
 import assert from 'node:assert'
 import {QuoteArgs, QuoteNonViewArgs, SwapArgs, Order} from './types'
 import {TakerTraits} from '../swap-vm'
-import SWAP_VM_ABI from '../abi/SwapVM.abi.json' with {type: 'json'}
+import SWAP_VM_ABI from '../abi/SwapVM.abi.json'
 
 /**
  * SwapVM contract encoding/decoding utilities

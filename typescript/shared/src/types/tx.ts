@@ -1,4 +1,4 @@
-import { Hex } from 'viem'
+import { Hex } from "./bytes"
 
 /**
  * Call info type for transaction data
