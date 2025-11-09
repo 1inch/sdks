@@ -2,14 +2,17 @@ import { encodeFunctionData } from 'viem'
 import { CallInfo, Address, HexString } from '@1inch/sdk-shared'
 import { BytesBuilder, trim0x } from '@1inch/byte-utils'
 import assert from 'node:assert'
-import { QuoteArgs, QuoteNonViewArgs, SwapArgs, Order } from './types'
+import { QuoteArgs, QuoteNonViewArgs, SwapArgs } from './types'
 import { TakerTraits } from '../swap-vm'
 import SWAP_VM_ABI from '../abi/SwapVM.abi.json'
+import { Order } from '../swap-vm/order'
 
 /**
  * SwapVM contract encoding/decoding utilities
  */
 export class SwapVMContract {
+  constructor(public readonly address: Address) {}
+
   /**
    * Encode quote function call data
    * @see https://github.com/1inch/swap-vm/blob/main/src/SwapVM.sol#L84
@@ -56,6 +59,27 @@ export class SwapVMContract {
         args.tokenOut.toString(),
         args.amount,
         takerTraitsAndData.toString(),
+      ],
+    })
+
+    return new HexString(result)
+  }
+
+
+  /**
+   * Encode `hashOrder` function call data
+   * @see https://github.com/1inch/swap-vm/blob/main/src/SwapVM.sol#L70
+   */
+  static encodeHashOrderCallData(order: Order): HexString {
+    const result = encodeFunctionData({
+      abi: SWAP_VM_ABI,
+      functionName: 'hashOrder',
+      args: [
+        {
+          maker: order.maker.toString(),
+          traits: order.traits.asBigInt(),
+          program: order.program.toString(),
+        },
       ],
     })
 
@@ -124,6 +148,30 @@ export class SwapVMContract {
       data: this.encodeSwapCallData(args).toString(),
       value: 0n,
     }
+  }
+
+  static buildHashOrderTx(contractAddress: Address, order: Order): CallInfo {
+    return {
+      to: contractAddress.toString(),
+      data: this.encodeHashOrderCallData(order).toString(),
+      value: 0n,
+    }
+  }
+
+  public swap(args: SwapArgs): CallInfo {
+    return SwapVMContract.buildSwapTx(this.address, args)
+  }
+
+  public quoteNonView(args: QuoteNonViewArgs): CallInfo {
+    return SwapVMContract.buildQuoteNonViewTx(this.address, args)
+  }
+
+  public quote(args: QuoteArgs): CallInfo {
+    return SwapVMContract.buildQuoteTx(this.address, args)
+  }
+
+  public hashOrder(order: Order): CallInfo {
+    return SwapVMContract.buildHashOrderTx(this.address, order)
   }
 
   /**

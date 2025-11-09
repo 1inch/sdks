@@ -14,7 +14,7 @@ importers:
     devDependencies:
       '@1inch/aqua':
         specifier: github:1inch/aqua
-        version: '@1inch/aqua-protocol@git+https://git@github.com:1inch/aqua.git#d200986ddc5be34b7a870805de926eb0f6e005d7(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@22.18.12)(typescript@5.9.3))(typescript@5.9.3)'
+        version: '@1inch/aqua-protocol@git+https://git@github.com:1inch/aqua.git#ab84c95960157a0e86b1f2262c5c7f6ecf61d6a2(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@22.18.12)(typescript@5.9.3))(typescript@5.9.3)'
       '@1inch/eslint-config':
         specifier: ^3.0.6
         version: 3.0.8(bf40d92f0b39c90977e869891dfac768)
@@ -108,6 +108,9 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
+      vite-tsconfig-paths:
+        specifier: 5.1.4
+        version: 5.1.4(typescript@5.9.3)(vite@7.1.11(@types/node@22.18.12)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.1))
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@22.18.12)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -261,6 +264,9 @@ importers:
       '@types/node':
         specifier: ^22.13.0
         version: 22.18.12
+      dotenv:
+        specifier: 17.2.3
+        version: 17.2.3
       tsdown:
         specifier: ^0.2.17
         version: 0.2.17(@swc/core@1.13.5)(rollup@4.52.5)(typescript@5.9.3)
@@ -277,8 +283,8 @@ packages:
     resolution: {commit: a67f4875ce87c78c2296d3d5dd9cd8245c85635c, repo: git@github.com:1inch/aqua-protocol.git, type: git}
     version: 1.0.0
 
-  '@1inch/aqua-protocol@git+https://git@github.com:1inch/aqua.git#d200986ddc5be34b7a870805de926eb0f6e005d7':
-    resolution: {commit: d200986ddc5be34b7a870805de926eb0f6e005d7, repo: git@github.com:1inch/aqua.git, type: git}
+  '@1inch/aqua-protocol@git+https://git@github.com:1inch/aqua.git#ab84c95960157a0e86b1f2262c5c7f6ecf61d6a2':
+    resolution: {commit: ab84c95960157a0e86b1f2262c5c7f6ecf61d6a2, repo: git@github.com:1inch/aqua.git, type: git}
     version: 1.0.0
 
   '@1inch/byte-utils@3.0.0':
@@ -286,9 +292,6 @@ packages:
     engines: {node: '>=18.16.0'}
     peerDependencies:
       assert: ^2.0.0
-    peerDependenciesMeta:
-      assert:
-        optional: true
 
   '@1inch/byte-utils@3.1.7':
     resolution: {integrity: sha512-AXS9XWOPXnTYFYozc10fYE3PnplD9RmCzO57U4vzxzGQ0zgdeoTfYe8hXej/NctYJFcTL3PzyC0HZn2sZ7IWbA==, tarball: https://npm.pkg.github.com/download/@1inch/byte-utils/3.1.7/6d70a0ba1ca3c04a6c786f3ca2aa242d322d6c72}
@@ -5899,7 +5902,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@1inch/aqua-protocol@git+https://git@github.com:1inch/aqua.git#d200986ddc5be34b7a870805de926eb0f6e005d7(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@22.18.12)(typescript@5.9.3))(typescript@5.9.3)':
+  '@1inch/aqua-protocol@git+https://git@github.com:1inch/aqua.git#ab84c95960157a0e86b1f2262c5c7f6ecf61d6a2(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@22.18.12)(typescript@5.9.3))(typescript@5.9.3)':
     dependencies:
       '@1inch/solidity-utils': 6.8.0(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@22.18.12)(typescript@5.9.3))(typescript@5.9.3)
       '@openzeppelin/contracts': 5.4.0
@@ -5913,7 +5916,7 @@ snapshots:
       - utf-8-validate
 
   '@1inch/byte-utils@3.0.0(assert@2.1.0)':
-    optionalDependencies:
+    dependencies:
       assert: 2.1.0
 
   '@1inch/byte-utils@3.1.7(assert@2.1.0)':

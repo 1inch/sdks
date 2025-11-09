@@ -1,16 +1,6 @@
 import { Address, HexString } from '@1inch/sdk-shared'
-import { MakerTraits } from '../swap-vm/maker-traits'
 import { TakerTraits } from '../swap-vm'
-import { SwapVmProgram } from '../swap-vm/programs/swap-vm-program'
-
-export type Order = {
-  maker: Address
-  traits: MakerTraits
-  /**
-   * List of instructions to be executed (8 bit index, 8 bit args length, args)
-   */
-  program: SwapVmProgram
-}
+import { Order } from '../swap-vm/order'
 
 export type QuoteArgs = {
   order: Order

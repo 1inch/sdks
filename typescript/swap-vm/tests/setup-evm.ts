@@ -28,7 +28,7 @@ import { mainnet } from 'viem/chains'
 
 import Aqua from '@contracts/Aqua.sol/Aqua.json'
 import TestTrader from '@contracts/TestTrader.sol/TestTrader.json'
-import SwapVM from '@contracts/SwapVM.sol/SwapVM.json'
+import TestAquaSwapVMRouter from '@contracts/TestAquaSwapVMRouter.sol/TestAquaSwapVMRouter.json'
 
 import { TestWallet, ADDRESSES } from '@1inch/sdk-shared/test-utils'
 import { privateKeyToAccount } from 'viem/accounts'
@@ -155,7 +155,7 @@ async function deployContracts(transport: Transport, chain: Chain): Promise<Test
   })
 
   const aqua = await deploy(Aqua as ContractParams, [], deployer)
-  const swapVM = await deploy(SwapVM as ContractParams, [aqua, "TestSwapVM", "1.0"], deployer)
+  const swapVMAquaRouter = await deploy(TestAquaSwapVMRouter as ContractParams, [aqua], deployer)
   const testTrader = await deploy(
     TestTrader as ContractParams,
     [aqua, [ADDRESSES.WETH, ADDRESSES.USDC]],
@@ -165,7 +165,7 @@ async function deployContracts(transport: Transport, chain: Chain): Promise<Test
   return {
     aqua,
     testTrader,
-    swapVM,
+    swapVMAquaRouter,
   }
 }
 
@@ -231,7 +231,7 @@ type ContractParams = { abi: Abi; bytecode: { object: Hex } }
 export type TestAddresses = {
   aqua: Hex
   testTrader: Hex
-  swapVM: Hex
+  swapVMAquaRouter: Hex
 }
 
 export type TestClient<
