@@ -13,11 +13,11 @@ class EmptyCoder implements IArgsCoder<EmptyArgs> {
 }
 
 class EmptyArgs implements IArgsData {
-  public static readonly CODER = new EmptyCoder()
+  public static readonly CODER: EmptyCoder = new EmptyCoder()
 
   toJSON(): null {
     return null
   }
 }
 
-export const EMPTY_OPCODE = new Opcode(Symbol('empty'), EmptyArgs.CODER)
+export const EMPTY_OPCODE: Opcode<EmptyArgs> = new Opcode(Symbol('empty'), EmptyArgs.CODER)

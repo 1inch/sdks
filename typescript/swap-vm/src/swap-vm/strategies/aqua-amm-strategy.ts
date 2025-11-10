@@ -1,58 +1,98 @@
 import { Address } from '@1inch/sdk-shared'
 import { AquaProgramBuilder } from '../programs/aqua-program-builder'
 import { SwapVmProgram } from '../programs'
+import { concentrate, fee } from '../instructions'
+import { FlatFeeArgs } from '../instructions/fee'
 
 /**
  * Aqua AMM Strategy builder that mirrors AquaAMM.sol
  * @see https://github.com/1inch/swap-vm/blob/main/src/strategies/AquaAMM.sol
  */
 export class AquaAMMStrategy {
-  /**
-   * Build a program matching AquaAMM.sol buildProgram function
-   */
-  static buildProgram(params: {
-    tokenA: Address
-    tokenB: Address
-    feeBpsIn?: bigint
-    deltaA?: bigint
-    deltaB?: bigint
-    decayPeriod?: bigint
-    protocolFeeBpsIn?: bigint
-    feeReceiver?: Address
-    salt?: bigint
-  }): SwapVmProgram {
+  feeBpsIn?: number
+
+  deltas?: { a: bigint; b: bigint }
+
+  decayPeriod?: bigint
+
+  protocolFee?: {
+    bps: number
+    receiver: Address
+  }
+
+  salt?: bigint
+
+  constructor(
+    public readonly tokenA: Address,
+    public readonly tokenB: Address,
+  ) {}
+
+  static new(tokens: { tokenA: Address; tokenB: Address }): AquaAMMStrategy {
+    return new AquaAMMStrategy(tokens.tokenA, tokens.tokenB)
+  }
+
+  public withProtocolFee(bps: number, receiver: Address): this {
+    this.protocolFee = { bps, receiver }
+
+    return this
+  }
+
+  public withDeltas(a: bigint, b: bigint): this {
+    this.deltas = { a, b }
+
+    return this
+  }
+
+  public withDecayPeriod(decayPeriod: bigint): this {
+    this.decayPeriod = decayPeriod
+
+    return this
+  }
+
+  public withFeeTokenIn(bps: number): this {
+    this.feeBpsIn = bps
+
+    return this
+  }
+
+  public withSalt(salt: bigint): this {
+    this.salt = salt
+
+    return this
+  }
+
+  public build(): SwapVmProgram {
     const builder = new AquaProgramBuilder()
 
-    if ((params.deltaA && params.deltaA > 0n) || (params.deltaB && params.deltaB > 0n)) {
-      const tokenABigInt = BigInt(params.tokenA.toString())
-      const tokenBBigInt = BigInt(params.tokenB.toString())
-      const [deltaLt, deltaGt] =
-        tokenABigInt < tokenBBigInt
-          ? [params.deltaA || 0n, params.deltaB || 0n]
-          : [params.deltaB || 0n, params.deltaA || 0n]
+    if (this.deltas) {
+      const data = concentrate.ConcentrateGrowLiquidity2DArgs.fromTokenDeltas(
+        this.tokenA,
+        this.tokenB,
+        this.deltas.a || 0n,
+        this.deltas.b || 0n,
+      )
 
-      builder.concentrateGrowLiquidity2D({ deltaLt, deltaGt })
+      builder.add(concentrate.concentrateGrowLiquidity2D.createIx(data))
     }
 
-    if (params.decayPeriod && params.decayPeriod > 0n) {
-      builder.decayXD({ decayPeriod: params.decayPeriod })
+    if (this.decayPeriod) {
+      builder.decayXD({ decayPeriod: this.decayPeriod })
     }
 
-    if (params.feeBpsIn && params.feeBpsIn > 0n) {
-      builder.flatFeeAmountInXD({ fee: params.feeBpsIn })
+    if (this.feeBpsIn) {
+      const data = FlatFeeArgs.fromBps(this.feeBpsIn)
+      builder.add(fee.flatFeeAmountInXD.createIx(data))
     }
 
-    if (params.protocolFeeBpsIn && params.protocolFeeBpsIn > 0n && params.feeReceiver) {
-      builder.aquaProtocolFeeAmountOutXD({
-        fee: params.protocolFeeBpsIn,
-        to: params.feeReceiver,
-      })
+    if (this.protocolFee) {
+      const data = fee.ProtocolFeeArgs.fromBps(this.protocolFee.bps, this.protocolFee.receiver)
+      builder.add(fee.aquaProtocolFeeAmountOutXD.createIx(data))
     }
 
     builder.xycSwapXD()
 
-    if (params.salt && params.salt > 0n) {
-      builder.salt({ salt: params.salt })
+    if (this.salt) {
+      builder.salt({ salt: this.salt })
     }
 
     return builder.build()

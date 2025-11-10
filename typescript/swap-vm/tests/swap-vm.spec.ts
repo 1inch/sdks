@@ -35,7 +35,7 @@ describe('SwapVM', () => {
 
   test('should correct calculate order hash', async () => {
     const program = new AquaProgramBuilder()
-      .stableSwap2D({ A: 0n, fee: 0n, rateGt: 1n, rateLt: 1n })
+      .concentrateGrowLiquidity2D({ deltaGt: 1n, deltaLt: 2n })
       .build()
     const order = Order.new({
       maker: new Address(swapperAddress),
@@ -65,4 +65,6 @@ describe('SwapVM', () => {
 
     expect(calculatedHash.toString()).toEqual(hashFromContract)
   })
+  
+  test('should ')
 })

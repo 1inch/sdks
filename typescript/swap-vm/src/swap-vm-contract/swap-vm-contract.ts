@@ -65,7 +65,6 @@ export class SwapVMContract {
     return new HexString(result)
   }
 
-
   /**
    * Encode `hashOrder` function call data
    * @see https://github.com/1inch/swap-vm/blob/main/src/SwapVM.sol#L70
@@ -158,22 +157,6 @@ export class SwapVMContract {
     }
   }
 
-  public swap(args: SwapArgs): CallInfo {
-    return SwapVMContract.buildSwapTx(this.address, args)
-  }
-
-  public quoteNonView(args: QuoteNonViewArgs): CallInfo {
-    return SwapVMContract.buildQuoteNonViewTx(this.address, args)
-  }
-
-  public quote(args: QuoteArgs): CallInfo {
-    return SwapVMContract.buildQuoteTx(this.address, args)
-  }
-
-  public hashOrder(order: Order): CallInfo {
-    return SwapVMContract.buildHashOrderTx(this.address, order)
-  }
-
   /**
    * Build sigPlusTakerTraitsAndData parameter from components
    * Structure depends on whether signature is required or using Aqua
@@ -218,5 +201,21 @@ export class SwapVMContract {
       traitsBytes.toString() +
         (additionalData !== undefined ? trim0x(additionalData.toString()) : ''),
     )
+  }
+
+  public swap(args: SwapArgs): CallInfo {
+    return SwapVMContract.buildSwapTx(this.address, args)
+  }
+
+  public quoteNonView(args: QuoteNonViewArgs): CallInfo {
+    return SwapVMContract.buildQuoteNonViewTx(this.address, args)
+  }
+
+  public quote(args: QuoteArgs): CallInfo {
+    return SwapVMContract.buildQuoteTx(this.address, args)
+  }
+
+  public hashOrder(order: Order): CallInfo {
+    return SwapVMContract.buildHashOrderTx(this.address, order)
   }
 }

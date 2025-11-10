@@ -10,7 +10,8 @@ const UINT_64_MAX = 0xffffffffffffffffn
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L10
  **/
 export class OnlyTakerTokenSupplyShareGteArgs implements IArgsData {
-  public static readonly CODER = new OnlyTakerTokenSupplyShareGteArgsCoder()
+  public static readonly CODER: OnlyTakerTokenSupplyShareGteArgsCoder =
+    new OnlyTakerTokenSupplyShareGteArgsCoder()
 
   constructor(
     public readonly token: Address,

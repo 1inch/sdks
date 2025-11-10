@@ -9,10 +9,10 @@ describe('AquaAMMStrategy', () => {
 
   describe('buildProgram', () => {
     it('should build minimal program with just xycSwap', () => {
-      const program = AquaAMMStrategy.buildProgram({
+      const program = AquaAMMStrategy.new({
         tokenA: USDC,
         tokenB: WETH,
-      })
+      }).build()
 
       const decoded = AquaProgramBuilder.decode(program)
       const rebuilt = decoded.build()
@@ -21,17 +21,16 @@ describe('AquaAMMStrategy', () => {
     })
 
     it('should build with all parameters', () => {
-      const program = AquaAMMStrategy.buildProgram({
+      const program = AquaAMMStrategy.new({
         tokenA: USDC,
         tokenB: WETH,
-        deltaA: 100000n,
-        deltaB: 200000n,
-        decayPeriod: 3600n,
-        feeBpsIn: 30n,
-        protocolFeeBpsIn: 10n,
-        feeReceiver: new Address('0x0000000000000000000000000000000000000001'),
-        salt: 12345n,
       })
+        .withDeltas(100000n, 200000n)
+        .withDecayPeriod(3600n)
+        .withProtocolFee(0.1, new Address('0x0000000000000000000000000000000000000001'))
+        .withFeeTokenIn(0.5)
+        .withSalt(12345n)
+        .build()
 
       const decoded = AquaProgramBuilder.decode(program)
       const rebuilt = decoded.build()
@@ -39,12 +38,12 @@ describe('AquaAMMStrategy', () => {
     })
 
     it('should add concentrate when deltas are non-zero', () => {
-      const program = AquaAMMStrategy.buildProgram({
+      const program = AquaAMMStrategy.new({
         tokenA: USDC,
         tokenB: WETH,
-        deltaA: 100000n,
-        deltaB: 200000n,
       })
+        .withDeltas(100000n, 200000n)
+        .build()
 
       const decoded = AquaProgramBuilder.decode(program)
       const rebuilt = decoded.build()
@@ -53,11 +52,12 @@ describe('AquaAMMStrategy', () => {
     })
 
     it('should add decay when period is non-zero', () => {
-      const program = AquaAMMStrategy.buildProgram({
+      const program = AquaAMMStrategy.new({
         tokenA: USDC,
         tokenB: WETH,
-        decayPeriod: 600n,
       })
+        .withDecayPeriod(600n)
+        .build()
 
       const decoded = AquaProgramBuilder.decode(program)
       const rebuilt = decoded.build()
@@ -65,11 +65,12 @@ describe('AquaAMMStrategy', () => {
     })
 
     it('should add fee when feeBpsIn is non-zero', () => {
-      const program = AquaAMMStrategy.buildProgram({
+      const program = AquaAMMStrategy.new({
         tokenA: USDC,
         tokenB: WETH,
-        feeBpsIn: 30n,
       })
+        .withFeeTokenIn(0.03)
+        .build()
 
       const decoded = AquaProgramBuilder.decode(program)
       const rebuilt = decoded.build()
@@ -77,34 +78,25 @@ describe('AquaAMMStrategy', () => {
     })
 
     it('should add protocol fee when both fee and receiver provided', () => {
-      const program = AquaAMMStrategy.buildProgram({
+      const program = AquaAMMStrategy.new({
         tokenA: USDC,
         tokenB: WETH,
-        protocolFeeBpsIn: 10n,
-        feeReceiver: new Address('0x0000000000000000000000000000000000000001'),
       })
+        .withProtocolFee(0.1, new Address('0x0000000000000000000000000000000000000001'))
+        .build()
 
       const decoded = AquaProgramBuilder.decode(program)
       const rebuilt = decoded.build()
       expect(rebuilt.toString()).toBe(program.toString())
     })
 
-    it('should NOT add protocol fee without receiver', () => {
-      const program = AquaAMMStrategy.buildProgram({
-        tokenA: USDC,
-        tokenB: WETH,
-        protocolFeeBpsIn: 10n,
-      })
-
-      expect(program.toString()).toBe('0x1000')
-    })
-
     it('should add salt when non-zero', () => {
-      const program = AquaAMMStrategy.buildProgram({
+      const program = AquaAMMStrategy.new({
         tokenA: USDC,
         tokenB: WETH,
-        salt: 12345n,
       })
+        .withSalt(12345n)
+        .build()
 
       const decoded = AquaProgramBuilder.decode(program)
       const rebuilt = decoded.build()
@@ -112,19 +104,19 @@ describe('AquaAMMStrategy', () => {
     })
 
     it('should handle token ordering for concentrate', () => {
-      const program1 = AquaAMMStrategy.buildProgram({
+      const program1 = AquaAMMStrategy.new({
         tokenA: USDC,
         tokenB: WETH,
-        deltaA: 100000n,
-        deltaB: 200000n,
       })
+        .withDeltas(100000n, 200000n)
+        .build()
 
-      const program2 = AquaAMMStrategy.buildProgram({
+      const program2 = AquaAMMStrategy.new({
         tokenA: WETH,
         tokenB: USDC,
-        deltaA: 200000n,
-        deltaB: 100000n,
       })
+        .withDeltas(200000n, 100000n)
+        .build()
 
       const decoded1 = AquaProgramBuilder.decode(program1)
       const decoded2 = AquaProgramBuilder.decode(program2)

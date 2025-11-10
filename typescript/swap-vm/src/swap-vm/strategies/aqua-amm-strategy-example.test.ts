@@ -8,20 +8,21 @@ describe('AquaAMMStrategy Examples', () => {
   const WETH = new Address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2')
 
   it('Example: Minimal AMM', () => {
-    const program = AquaAMMStrategy.buildProgram({
+    const program = AquaAMMStrategy.new({
       tokenA: USDC,
       tokenB: WETH,
-    })
+    }).build()
 
     expect(program.toString()).toBe('0x1000')
   })
 
   it('Example: AMM with fee', () => {
-    const program = AquaAMMStrategy.buildProgram({
+    const program = AquaAMMStrategy.new({
       tokenA: USDC,
       tokenB: WETH,
-      feeBpsIn: 30n,
     })
+      .withFeeTokenIn(0.00003)
+      .build()
 
     const hex = program.toString()
     expect(hex).toContain('17')
@@ -29,42 +30,42 @@ describe('AquaAMMStrategy Examples', () => {
   })
 
   it('Example: Concentrated liquidity', () => {
-    const program = AquaAMMStrategy.buildProgram({
+    const program = AquaAMMStrategy.new({
       tokenA: USDC,
       tokenB: WETH,
-      deltaA: 100000n,
-      deltaB: 200000n,
-      feeBpsIn: 5n,
     })
+      .withDeltas(100000n, 200000n)
+      .withFeeTokenIn(0.05)
+      .build()
 
     const decoded = AquaProgramBuilder.decode(program)
     expect(decoded.build().toString()).toBe(program.toString())
   })
 
   it('Example: MEV-protected with decay', () => {
-    const program = AquaAMMStrategy.buildProgram({
+    const program = AquaAMMStrategy.new({
       tokenA: USDC,
       tokenB: WETH,
-      decayPeriod: 600n,
-      feeBpsIn: 30n,
     })
+      .withFeeTokenIn(0.03)
+      .withDecayPeriod(600n)
+      .build()
 
     const decoded = AquaProgramBuilder.decode(program)
     expect(decoded.build().toString()).toBe(program.toString())
   })
 
   it('Example: Full configuration', () => {
-    const program = AquaAMMStrategy.buildProgram({
+    const program = AquaAMMStrategy.new({
       tokenA: USDC,
       tokenB: WETH,
-      feeBpsIn: 30n,
-      deltaA: 50000n,
-      deltaB: 100000n,
-      decayPeriod: 3600n,
-      protocolFeeBpsIn: 10n,
-      feeReceiver: new Address('0x0000000000000000000000000000000000000001'),
-      salt: 12345n,
     })
+      .withProtocolFee(0.00001, new Address('0x0000000000000000000000000000000000000001'))
+      .withFeeTokenIn(3)
+      .withDeltas(50000n, 100000n)
+      .withDecayPeriod(3600n)
+      .withSalt(12345n)
+      .build()
 
     const decoded = AquaProgramBuilder.decode(program)
     expect(decoded.build().toString()).toBe(program.toString())

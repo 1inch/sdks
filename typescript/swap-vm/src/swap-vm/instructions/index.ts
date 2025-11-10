@@ -14,29 +14,32 @@ import * as twapSwap from './twap-swap'
 import * as stableSwap from './stable-swap'
 import * as fee from './fee'
 import * as extruction from './extruction'
+import { Opcode } from './opcode'
+import { IArgsData } from './types'
 
 export * from './types'
-export * from './balances'
-export * from './controls'
-export * from './invalidators'
-export * from './xyc-swap'
-export * from './concentrate'
-export * from './decay'
-export * from './limit-swap'
-export * from './min-rate'
-export * from './dutch-auction'
-export * from './oracle-price-adjuster'
-export * from './base-fee-adjuster'
-export * from './twap-swap'
-export * from './stable-swap'
-export * from './fee'
-export * from './extruction'
+export { EMPTY_OPCODE } from './empty'
+export * as balances from './balances'
+export * as controls from './controls'
+export * as invalidators from './invalidators'
+export * as xycSwap from './xyc-swap'
+export * as concentrate from './concentrate'
+export * as decay from './decay'
+export * as limitSwap from './limit-swap'
+export * as minRate from './min-rate'
+export * as dutchAuction from './dutch-auction'
+export * as oraclePriceAdjuster from './oracle-price-adjuster'
+export * as baseFeeAdjuster from './base-fee-adjuster'
+export * as twapSwap from './twap-swap'
+export * as stableSwap from './stable-swap'
+export * as fee from './fee'
+export * as extruction from './extruction'
 
 /**
  * Regular opcodes array - matching SwapVM contract exactly (44 opcodes)
  * @see https://github.com/1inch/swap-vm/blob/main/src/opcodes/Opcodes.sol#L46
  */
-export const allInstructions = [
+export const allInstructions: Opcode<IArgsData>[] = [
   /**
    * Debug slots (1-10) - reserved for debugging
    */
@@ -105,7 +108,7 @@ export const allInstructions = [
  * Aqua opcodes array - matching AquaSwapVM contract (29 opcodes)
  * @see https://github.com/1inch/swap-vm/blob/main/src/opcodes/AquaOpcodes.sol#L28
  */
-export const aquaInstructions = [
+export const aquaInstructions: Opcode<IArgsData>[] = [
   /**
    * Debug slots (1-10) - reserved for debugging
    */
