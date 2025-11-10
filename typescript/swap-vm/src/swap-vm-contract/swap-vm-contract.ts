@@ -65,7 +65,6 @@ export class SwapVMContract {
     return new HexString(result)
   }
 
-
   /**
    * Encode `hashOrder` function call data
    * @see https://github.com/1inch/swap-vm/blob/main/src/SwapVM.sol#L70

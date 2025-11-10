@@ -1,6 +1,6 @@
 {
   "name": "aqua",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "$schema": "./node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "{projectRoot}/src",
   "projectType": "library",
   "tags": ["typescript", "sdk"],
@@ -18,7 +18,7 @@
       "options": {
         "passWithNoTests": true,
         "coverage": true,
-        "reportsDirectory": "../../coverage/typescript/aqua"
+        "reportsDirectory": "./coverage/aqua"
       }
     },
     "test:e2e": {
@@ -33,7 +33,8 @@
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["{projectRoot}/**/*.ts"]
+        "lintFilePatterns": ["{projectRoot}/**/*.ts"],
+        "eslintConfig": "{workspaceRoot}/eslint.config.mjs"
       },
       "outputs": ["{options.outputFile}"]
     },

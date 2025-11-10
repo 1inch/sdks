@@ -1,14 +1,14 @@
 {
   "name": "cross-chain",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "typescript/cross-chain/src",
+  "$schema": "./node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "{projectRoot}/src",
   "projectType": "library",
   "tags": ["typescript", "sdk"],
   "targets": {
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "typescript/cross-chain",
+        "cwd": "{projectRoot}",
         "commands": ["tsdown"]
       }
     },
@@ -18,20 +18,21 @@
       "options": {
         "passWithNoTests": true,
         "coverage": true,
-        "reportsDirectory": "../../coverage/typescript/cross-chain"
+        "reportsDirectory": "./coverage/cross-chain"
       }
     },
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["typescript/cross-chain/**/*.ts"]
+        "lintFilePatterns": ["{projectRoot}/**/*.ts"],
+        "eslintConfig": "{workspaceRoot}/eslint.config.mjs"
       },
       "outputs": ["{options.outputFile}"]
     },
     "type-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc --noEmit -p typescript/cross-chain/tsconfig.lib.json"
+        "command": "tsc --noEmit -p {projectRoot}/tsconfig.lib.json"
       }
     }
   }

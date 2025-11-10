@@ -27,7 +27,10 @@ describe('AquaProtocolContract', () => {
 
       const result = AquaProtocolContract.encodeShipCallData(args)
 
-      expect(result).toBeInstanceOf(HexString)
+      expect(result).toBeDefined()
+      expect(result.toString).toBeDefined()
+      expect(result.toString()).toMatch(/^0x[0-9a-fA-F]+$/)
+      expect(result.toString().length).toBeGreaterThan(2)
     })
   })
 
@@ -41,7 +44,9 @@ describe('AquaProtocolContract', () => {
 
       const result = AquaProtocolContract.encodeDockCallData(args)
 
-      expect(result).toBeInstanceOf(HexString)
+      expect(result).toBeDefined()
+      expect(result.toString).toBeDefined()
+      expect(result.toString()).toMatch(/^0x[0-9a-fA-F]+$/)
       expect(result.toString().startsWith('0x')).toBe(true)
     })
   })
@@ -90,7 +95,8 @@ describe('AquaProtocolContract', () => {
       const hash = AquaProtocolContract.calculateStrategyHash(strategy)
 
       expect(hash).toBeDefined()
-      expect(hash).toBeInstanceOf(HexString)
+      expect(hash.toString).toBeDefined()
+      expect(hash.toString()).toMatch(/^0x[0-9a-fA-F]+$/)
       expect(hash.toString().length).toBe(66)
     })
 

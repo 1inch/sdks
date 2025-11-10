@@ -1,0 +1,5 @@
+packages:
+  # TypeScript SDKs
+  - '*'
+  - '!node_modules'
+  - '!.nx'

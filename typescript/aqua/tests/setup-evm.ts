@@ -1,6 +1,4 @@
-import { GenericContainer, StartedTestContainer } from 'testcontainers'
-// @ts-ignore
-import { LogWaitStrategy } from 'testcontainers/build/wait-strategies/log-wait-strategy'
+import { GenericContainer, StartedTestContainer, Wait } from 'testcontainers'
 import {
   parseEther,
   parseUnits,
@@ -61,13 +59,13 @@ export async function setupEvm(config: EvmNodeConfig): Promise<ReadyEvmFork> {
   const liqProvider = new TestWallet(
     '0x37d5819e14a620d31d0ba9aab2b5154aa000c5519ae602158ddbe6369dca91fb',
     transport,
-    chain
+    chain,
   )
 
   const swapper = await TestWallet.fromAddress(
     '0x1d83cc9b3Fe9Ee21c45282Bef1BEd27Dfa689EA2',
     transport,
-    chain
+    chain,
   )
   const addresses = await deployContracts(transport, chain)
   await setupBalances(liqProvider, swapper, transport, chain, addresses)
@@ -114,7 +112,7 @@ async function startNode(
 ): Promise<{
   localNode: StartedTestContainer
   provider: _Client
-  transport: Transport,
+  transport: Transport
   chain: Chain
 }> {
   const innerPort = 8545
@@ -124,7 +122,7 @@ async function startNode(
       `anvil -f ${forkUrl} --fork-header "${forkHeader || 'x-test: test'}" --chain-id ${chainId} --mnemonic 'hat hat horse border print cancel subway heavy copy alert eternal mask' --host 0.0.0.0`,
     ])
     // .withLogConsumer((s) => s.pipe(process.stdout))
-    .withWaitStrategy(new LogWaitStrategy('Listening on 0.0.0.0:8545', 1))
+    .withWaitStrategy(Wait.forLogMessage('Listening on 0.0.0.0:8545'))
     .withName(`anvil_aqua_tests_${chainId}_${Math.random()}`)
     .start()
 
@@ -135,13 +133,15 @@ async function startNode(
 
   return {
     localNode: anvil,
-    provider: createTestClient<'anvil', typeof transport, typeof chain, undefined, PublicRpcSchema>({
-      transport,
-      mode: 'anvil',
-      chain,
-    }).extend(publicActions) as unknown as _Client,
+    provider: createTestClient<'anvil', typeof transport, typeof chain, undefined, PublicRpcSchema>(
+      {
+        transport,
+        mode: 'anvil',
+        chain,
+      },
+    ).extend(publicActions) as unknown as _Client,
     transport,
-    chain
+    chain,
   }
 }
 
@@ -151,7 +151,7 @@ async function deployContracts(transport: Transport, chain: Chain): Promise<Test
       '0x3667482b9520ea17999acd812ad3db1ff29c12c006e756cdcb5fd6cc5d5a9b01',
     ),
     transport,
-    chain
+    chain,
   })
 
   const aqua = await deploy(Aqua as ContractParams, [], deployer)
@@ -191,14 +191,6 @@ async function setupBalances(
   // swapper have USDC
   await usdcDonor.transferToken(ADDRESSES.USDC, await swapper.getAddress(), parseUnits('10000', 6))
   await swapper.unlimitedApprove(ADDRESSES.USDC, addresses.testTrader)
-
-  console.log('swapper address is', await swapper.getAddress())
-  console.log('swapper USDC balance is', await swapper.tokenBalance(ADDRESSES.USDC))
-  console.log('swapper WETH balance is', await swapper.tokenBalance(ADDRESSES.WETH))
-
-  console.log('liquidity provider address is', await liqProvider.getAddress())
-  console.log('liquidity provider USDC balance is', await liqProvider.tokenBalance(ADDRESSES.USDC))
-  console.log('liquidity provider WETH balance is', await liqProvider.tokenBalance(ADDRESSES.WETH))
 }
 
 /**
@@ -216,7 +208,7 @@ async function deploy(
     bytecode: json.bytecode.object,
     args: params,
     account,
-    chain: deployer.chain
+    chain: deployer.chain,
   })
 
   // Get the contract address from the transaction receipt
@@ -240,15 +232,13 @@ export type TestClient<
   account extends Account | undefined = Account | undefined,
   includeActions extends boolean = true,
   rpcSchema extends RpcSchema | undefined = undefined,
-  mode extends 'anvil' = 'anvil'
+  mode extends 'anvil' = 'anvil',
 > = Prettify<
   { mode: mode } & Client<
     transport,
     chain,
     account,
-    rpcSchema extends RpcSchema
-    ? [...TestRpcSchema<mode>, ...rpcSchema]
-    : TestRpcSchema<mode>,
+    rpcSchema extends RpcSchema ? [...TestRpcSchema<mode>, ...rpcSchema] : TestRpcSchema<mode>,
     { mode: mode } & (includeActions extends true
       ? TestActions & PublicActions
       : Record<string, unknown>)

@@ -3,10 +3,7 @@ import {
   Account,
   Hex,
   TypedDataDefinition,
-  WalletClient,
-  PublicClient,
   createWalletClient,
-  createPublicClient,
   createTestClient,
   encodeFunctionData,
   getAddress,
@@ -26,21 +23,26 @@ import { ERC20_ABI } from '../abi/ERC20.abi.js'
 
 export class TestWallet {
   public provider: _Client
+
   private account: Account
 
   private transport: Transport
 
-  constructor(privateKeyOrAddress: Hex, transport: Transport, public readonly chain: Chain) {
+  constructor(
+    privateKeyOrAddress: Hex,
+    transport: Transport,
+    public readonly chain: Chain,
+  ) {
     this.account =
       typeof privateKeyOrAddress === 'string' && !isAddress(privateKeyOrAddress)
         ? privateKeyToAccount(privateKeyOrAddress)
-        : {type: 'json-rpc', address: privateKeyOrAddress}
+        : { type: 'json-rpc', address: privateKeyOrAddress }
 
     this.transport = transport
     this.provider = createWalletClient({
       transport,
       account: this.account,
-      chain
+      chain,
     }).extend(publicActions) as _Client
   }
 
@@ -52,7 +54,11 @@ export class TestWallet {
     return await account.signTypedData(typedData)
   }
 
-  public static async fromAddress(address: Hex, transport: Transport, chain: Chain): Promise<TestWallet> {
+  public static async fromAddress(
+    address: Hex,
+    transport: Transport,
+    chain: Chain,
+  ): Promise<TestWallet> {
     const client = createTestClient({
       transport,
       mode: 'anvil',
@@ -155,7 +161,9 @@ export class TestWallet {
     return TestWallet.signTypedData(this.account, typedData)
   }
 
-  async send(param: CallInfo & { allowFail?: boolean }): Promise<{ txHash: Hex; blockTimestamp: bigint; blockHash: Hex }> {
+  async send(
+    param: CallInfo & { allowFail?: boolean },
+  ): Promise<{ txHash: Hex; blockTimestamp: bigint; blockHash: Hex }> {
     const hash = await this.provider.sendTransaction({
       ...param,
       chain: this.provider.chain,
@@ -182,14 +190,17 @@ export class TestWallet {
   }
 }
 
-type _Client<chain extends Chain = Chain, account extends Account = Account, transport extends Transport = Transport, rpcSchema extends RpcSchema = RpcSchema> = Prettify<
+type _Client<
+  chain extends Chain = Chain,
+  account extends Account = Account,
+  transport extends Transport = Transport,
+  rpcSchema extends RpcSchema = RpcSchema,
+> = Prettify<
   Client<
     transport,
     chain,
     account,
-    rpcSchema extends RpcSchema
-    ? [...WalletRpcSchema, ...rpcSchema]
-    : WalletRpcSchema,
+    rpcSchema extends RpcSchema ? [...WalletRpcSchema, ...rpcSchema] : WalletRpcSchema,
     WalletActions<chain, account> & PublicActions<transport, chain, account>
   >
 >
