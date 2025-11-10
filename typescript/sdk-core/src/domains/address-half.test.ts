@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { add0x } from '@1inch/byte-utils'
-import { Address } from '@1inch/sdk-shared'
+import { Address } from '@1inch/sdk-core'
 import { AddressHalf } from './address-half'
 
 describe('AddressHalf', () => {

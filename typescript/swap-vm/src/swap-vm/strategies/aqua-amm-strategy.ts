@@ -1,4 +1,4 @@
-import { Address } from '@1inch/sdk-shared'
+import { Address } from '@1inch/sdk-core'
 import { AquaProgramBuilder } from '../programs/aqua-program-builder'
 import { SwapVmProgram } from '../programs'
 import { concentrate, fee } from '../instructions'

@@ -1,5 +1,5 @@
 import { BytesBuilder, BytesIter } from '@1inch/byte-utils'
-import { AddressHalf, HexString } from '@1inch/sdk-shared'
+import { AddressHalf, HexString } from '@1inch/sdk-core'
 import { InvalidateTokenIn1DArgs } from './invalidate-token-in-1d-args'
 import { IArgsCoder } from '../types'
 

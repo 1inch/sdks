@@ -10,7 +10,9 @@ sdks/
 │   ├── aqua/           # Aqua Protocol SDK
 │   ├── cross-chain/    # Cross-chain Protocol SDK
 │   ├── fusion/         # Fusion Protocol SDK
-│   └── limit-order/    # Limit Order Protocol SDK
+│   ├── limit-order/    # Limit Order Protocol SDK
+│   ├── sdk-core/       # Internal shared utilities (not published)
+│   └── swap-vm/        # Swap VM SDK
 ├── rust/               # Rust SDKs (future)
 └── python/             # Python SDKs (future)
 ```
@@ -31,7 +33,7 @@ pnpm install
 
 ## 📦 Available SDKs
 
-Each SDK is an independent package that can be used separately.
+Each SDK is an independent package that can be published and used separately.
 
 ### @1inch/aqua-sdk
 SDK for interacting with the 1inch Aqua Protocol.
@@ -99,6 +101,23 @@ pnpm limit-order:lint
 
 # Lint with auto-fix
 pnpm limit-order:lint:fix
+```
+
+### @1inch/swap-vm-sdk
+SDK for 1inch Swap VM operations.
+
+```bash
+# Build
+pnpm swap-vm:build
+
+# Test
+pnpm swap-vm:test
+
+# Lint
+pnpm swap-vm:lint
+
+# Lint with auto-fix
+pnpm swap-vm:lint:fix
 ```
 
 ## 🛠️ Development
@@ -200,6 +219,7 @@ Each SDK has independent versioning with specific tag patterns:
 - `cross-chain-v*.*.*` - @1inch/cross-chain-sdk  
 - `fusion-v*.*.*` - @1inch/fusion-sdk
 - `limit-order-v*.*.*` - @1inch/limit-order-sdk
+- `swap-vm-v*.*.*` - @1inch/swap-vm-sdk
 
 ## 🔧 Configuration
 

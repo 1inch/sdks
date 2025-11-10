@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { HexString } from '@1inch/sdk-shared'
+import { HexString } from '@1inch/sdk-core'
 import { UINT_64_MAX } from '@1inch/byte-utils'
 import { MinRateArgs } from './min-rate-args'
 

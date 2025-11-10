@@ -1,4 +1,4 @@
-import { Address, HexString } from '@1inch/sdk-shared'
+import { Address, HexString } from '@1inch/sdk-core'
 
 /**
  * Aqua Protocol types for the 4 core methods

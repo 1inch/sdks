@@ -1,4 +1,4 @@
-import { Address, HexString } from '@1inch/sdk-shared'
+import { Address, HexString } from '@1inch/sdk-core'
 import { TakerTraits } from '../swap-vm'
 import { Order } from '../swap-vm/order'
 

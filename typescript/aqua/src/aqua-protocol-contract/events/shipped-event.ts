@@ -1,5 +1,5 @@
 import { decodeEventLog, Log } from 'viem'
-import { Address, HexString } from '@1inch/sdk-shared'
+import { Address, HexString } from '@1inch/sdk-core'
 import { EventAction } from '../types'
 import AQUA_PROTOCOL_ABI from '../../abi/Aqua.abi.json'
 
@@ -19,6 +19,10 @@ export class ShippedEvent {
     public readonly strategy: HexString,
   ) {}
 
+  /**
+   * Creates a ShippedEvent from a Viem Log
+   * @throws Error if the log data is invalid or doesn't match the expected event structure
+   */
   static fromLog(log: Log): ShippedEvent {
     const decoded = decodeEventLog({
       abi: AQUA_PROTOCOL_ABI,

@@ -1,4 +1,4 @@
-import { Address, NetworkEnum } from '@1inch/sdk-shared'
+import { Address, NetworkEnum } from '@1inch/sdk-core'
 
 /**
  * Aqua Protocol contract addresses by chain ID

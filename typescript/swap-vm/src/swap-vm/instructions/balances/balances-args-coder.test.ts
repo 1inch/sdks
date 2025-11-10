@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Address, AddressHalf } from '@1inch/sdk-shared'
+import { Address, AddressHalf } from '@1inch/sdk-core'
 import { BalancesArgs } from './balances-args'
 import { BalancesArgsCoder } from './balances-args-coder'
 

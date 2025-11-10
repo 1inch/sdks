@@ -4,5 +4,5 @@ packages:
   - 'cross-chain'
   - 'fusion'
   - 'limit-order'
-  - 'shared'
+  - 'sdk-core'
   - 'swap-vm'

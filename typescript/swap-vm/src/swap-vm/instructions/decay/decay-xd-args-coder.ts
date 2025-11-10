@@ -1,5 +1,5 @@
 import { BytesBuilder, BytesIter } from '@1inch/byte-utils'
-import { HexString } from '@1inch/sdk-shared'
+import { HexString } from '@1inch/sdk-core'
 import { DecayXDArgs } from './decay-xd-args'
 import { IArgsCoder } from '../types'
 

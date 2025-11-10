@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Address, HexString } from '@1inch/sdk-shared'
+import { Address, HexString } from '@1inch/sdk-core'
 import { SwapVMContract } from './swap-vm-contract'
 import { MakerTraits, TakerTraits } from '../swap-vm'
 import { SwapVmProgram } from '../swap-vm/programs/swap-vm-program'

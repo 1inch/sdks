@@ -1,4 +1,4 @@
-import { HexString } from '@1inch/sdk-shared'
+import { HexString } from '@1inch/sdk-core'
 import { UINT_16_MAX } from '@1inch/byte-utils'
 import assert from 'node:assert'
 import { DecayXDArgsCoder } from './decay-xd-args-coder'

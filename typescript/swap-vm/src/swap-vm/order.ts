@@ -1,4 +1,4 @@
-import { Address, DataFor, HexString, NetworkEnum } from '@1inch/sdk-shared'
+import { Address, DataFor, HexString, NetworkEnum } from '@1inch/sdk-core'
 import { keccak256, encodeAbiParameters, hashTypedData } from 'viem'
 import { MakerTraits } from './maker-traits'
 import { SwapVmProgram } from './programs/swap-vm-program'

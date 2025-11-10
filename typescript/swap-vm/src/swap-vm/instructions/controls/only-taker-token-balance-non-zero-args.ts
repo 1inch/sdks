@@ -1,4 +1,4 @@
-import { Address, HexString } from '@1inch/sdk-shared'
+import { Address, HexString } from '@1inch/sdk-core'
 import { OnlyTakerTokenBalanceNonZeroArgsCoder } from './only-taker-token-balance-non-zero-args-coder'
 import { IArgsData } from '../types'
 

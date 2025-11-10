@@ -1,4 +1,4 @@
-import { Address, HexString } from '@1inch/sdk-shared'
+import { Address, HexString } from '@1inch/sdk-core'
 import { UINT_32_MAX, UINT_256_MAX } from '@1inch/byte-utils'
 import assert from 'node:assert'
 import { StableSwap2DArgsCoder } from './stable-swap-2d-args-coder'

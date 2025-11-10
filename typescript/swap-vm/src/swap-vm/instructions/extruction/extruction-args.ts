@@ -1,4 +1,4 @@
-import { Address, HexString } from '@1inch/sdk-shared'
+import { Address, HexString } from '@1inch/sdk-core'
 import { ExtructionArgsCoder } from './extruction-args-coder'
 import { IArgsData } from '../types'
 

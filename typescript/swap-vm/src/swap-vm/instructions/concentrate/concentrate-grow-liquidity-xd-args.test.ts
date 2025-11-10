@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Address, AddressHalf } from '@1inch/sdk-shared'
+import { Address, AddressHalf } from '@1inch/sdk-core'
 import { ConcentrateGrowLiquidityXDArgs } from './concentrate-grow-liquidity-xd-args'
 import { ConcentrateGrowLiquidityXDArgsCoder } from './concentrate-grow-liquidity-xd-args-coder'
 

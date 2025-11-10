@@ -1,4 +1,4 @@
-import { Address } from '@1inch/sdk-shared'
+import { Address } from '@1inch/sdk-core'
 
 export type MakerTraitsBuildArgs = {
   shouldUnwrapWeth?: boolean

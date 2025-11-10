@@ -1,4 +1,4 @@
-import { Address, HexString } from '@1inch/sdk-shared'
+import { Address, HexString } from '@1inch/sdk-core'
 import { LimitSwapDirectionArgsCoder } from './limit-swap-direction-args-coder'
 import { IArgsData } from '../types'
 

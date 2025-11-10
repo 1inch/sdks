@@ -1,5 +1,5 @@
 import { BytesBuilder, BytesIter, add0x } from '@1inch/byte-utils'
-import { Address, HexString } from '@1inch/sdk-shared'
+import { Address, HexString } from '@1inch/sdk-core'
 import { OnlyTakerTokenBalanceGteArgs } from './only-taker-token-balance-gte-args'
 import { IArgsCoder } from '../types'
 

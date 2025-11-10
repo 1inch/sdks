@@ -1,4 +1,4 @@
-import { HexString } from '@1inch/sdk-shared'
+import { HexString } from '@1inch/sdk-core'
 
 export interface IArgsCoder<T> {
   decode(data: HexString): T

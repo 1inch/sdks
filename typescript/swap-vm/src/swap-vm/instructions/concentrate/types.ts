@@ -1,4 +1,4 @@
-import { AddressHalf } from '@1inch/sdk-shared'
+import { AddressHalf } from '@1inch/sdk-core'
 
 export type TokenDelta = {
   readonly tokenHalf: AddressHalf

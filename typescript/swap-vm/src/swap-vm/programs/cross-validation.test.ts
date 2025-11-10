@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Address, AddressHalf } from '@1inch/sdk-shared'
+import { Address, AddressHalf } from '@1inch/sdk-core'
 import { SwapVmProgram } from '@1inch/swap-vm-sdk'
 import { RegularProgramBuilder } from './regular-program-builder'
 import { AquaProgramBuilder } from './aqua-program-builder'

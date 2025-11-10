@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Address, HexString } from '@1inch/sdk-shared'
+import { Address, HexString } from '@1inch/sdk-core'
 import { TakerTraits } from './taker-traits'
 
 describe('TakerTraits', () => {

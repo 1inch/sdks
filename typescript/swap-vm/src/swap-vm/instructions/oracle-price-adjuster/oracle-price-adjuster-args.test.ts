@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Address } from '@1inch/sdk-shared'
+import { Address } from '@1inch/sdk-core'
 import { UINT_16_MAX, UINT_64_MAX, UINT_8_MAX } from '@1inch/byte-utils'
 import { OraclePriceAdjusterArgs } from './oracle-price-adjuster-args'
 

@@ -1,4 +1,4 @@
-import { Address, HexString } from '@1inch/sdk-shared'
+import { Address, HexString } from '@1inch/sdk-core'
 import { BN, BytesBuilder, BytesIter } from '@1inch/byte-utils'
 import assert from 'assert'
 import { TakerTraitsBuildArgs } from './types'

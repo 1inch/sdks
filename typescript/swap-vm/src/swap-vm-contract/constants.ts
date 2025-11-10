@@ -1,4 +1,4 @@
-import { Address, NetworkEnum } from '@1inch/sdk-shared'
+import { Address, NetworkEnum } from '@1inch/sdk-core'
 
 /**
  * SwapVM contract addresses by chain ID

@@ -1,5 +1,5 @@
 import { BitMask, BN } from '@1inch/byte-utils'
-import { Address } from '@1inch/sdk-shared'
+import { Address } from '@1inch/sdk-core'
 import { MakerTraitsBuildArgs } from './types'
 
 /**

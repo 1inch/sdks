@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Address, AddressHalf, HexString } from '@1inch/sdk-shared'
+import { Address, AddressHalf, HexString } from '@1inch/sdk-core'
 import * as balances from '../instructions/balances'
 import * as controls from '../instructions/controls'
 import * as invalidators from '../instructions/invalidators'

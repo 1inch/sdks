@@ -1,4 +1,4 @@
-import { HexString } from '@1inch/sdk-shared'
+import { HexString } from '@1inch/sdk-core'
 import { UINT_24_MAX, UINT_64_MAX, UINT_96_MAX } from '@1inch/byte-utils'
 import assert from 'node:assert'
 import { BaseFeeAdjusterArgsCoder } from './base-fee-adjuster-args-coder'

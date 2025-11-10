@@ -1,7 +1,7 @@
 {
-  "name": "@1inch/sdk-shared",
+  "name": "@1inch/sdk-core",
   "version": "1.0.0",
-  "description": "Shared utilities and types for 1inch SDKs",
+  "description": "Core utilities and types for 1inch SDKs",
   "author": "@1inch",
   "homepage": "https://github.com/1inch/sdks#readme",
   "license": "MIT",
