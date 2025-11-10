@@ -17,8 +17,7 @@
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "passWithNoTests": true,
-        "coverage": true,
-        "reportsDirectory": "../../coverage/typescript/aqua"
+        "coverage": true
       }
     },
     "test:e2e": {
