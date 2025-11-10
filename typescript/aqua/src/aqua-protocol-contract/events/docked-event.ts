@@ -19,7 +19,7 @@ export class DockedEvent {
   ) {}
 
   /**
-   * Creates a DockedEvent from a Viem Log
+   * Creates a DockedEvent from
    * @throws Error if the log data is invalid or doesn't match the expected event structure
    */
   static fromLog(log: Log): DockedEvent {

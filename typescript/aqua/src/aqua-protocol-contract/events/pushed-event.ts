@@ -21,7 +21,7 @@ export class PushedEvent {
   ) {}
 
   /**
-   * Creates a PushedEvent from a Viem Log
+   * Creates a PushedEvent
    * @throws Error if the log data is invalid or doesn't match the expected event structure
    */
   static fromLog(log: Log): PushedEvent {
