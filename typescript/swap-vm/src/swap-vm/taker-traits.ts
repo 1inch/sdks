@@ -74,6 +74,8 @@ export class TakerTraits {
 
     if (args.isExactIn) {
       traits.withExactIn()
+    } else if (args.isExactIn === false) {
+      traits.withExactOut()
     }
 
     if (args.shouldUnwrapWeth) {
@@ -94,6 +96,8 @@ export class TakerTraits {
 
     if (args.useTransferFromAndAquaPush) {
       traits.withUseTransferFromAndAquaPush()
+    } else if (args.useTransferFromAndAquaPush === false) {
+      traits.withoutUseTransferFromAndAquaPush()
     }
 
     if (args.threshold) {

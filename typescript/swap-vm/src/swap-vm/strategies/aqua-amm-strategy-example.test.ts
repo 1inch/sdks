@@ -25,7 +25,7 @@ describe('AquaAMMStrategy Examples', () => {
       .build()
 
     const hex = program.toString()
-    expect(hex).toContain('17')
+    expect(hex).toContain('16')
     expect(hex).toContain('10')
   })
 

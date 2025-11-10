@@ -42,8 +42,8 @@
     ]
   },
   "workspaceLayout": {
-    "libsDir": "typescript",
-    "appsDir": "typescript"
+    "libsDir": ".",
+    "appsDir": "."
   },
   "cli": {
     "defaultCollection": "@nx/js",

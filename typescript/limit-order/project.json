@@ -1,14 +1,14 @@
 {
   "name": "limit-order",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "typescript/limit-order/src",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "limit-order/src",
   "projectType": "library",
   "tags": ["typescript", "sdk"],
   "targets": {
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "typescript/limit-order",
+        "cwd": "limit-order",
         "commands": ["tsdown"]
       }
     },
@@ -18,20 +18,20 @@
       "options": {
         "passWithNoTests": true,
         "coverage": true,
-        "reportsDirectory": "../../coverage/typescript/limit-order"
+        "reportsDirectory": "../coverage/limit-order"
       }
     },
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["typescript/limit-order/**/*.ts"]
+        "lintFilePatterns": ["limit-order/**/*.ts"]
       },
       "outputs": ["{options.outputFile}"]
     },
     "type-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc --noEmit -p typescript/limit-order/tsconfig.lib.json"
+        "command": "tsc --noEmit -p limit-order/tsconfig.lib.json"
       }
     }
   }

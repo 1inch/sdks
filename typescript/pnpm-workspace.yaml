@@ -1,0 +1,8 @@
+packages:
+  # SDK packages
+  - 'aqua'
+  - 'cross-chain'
+  - 'fusion'
+  - 'limit-order'
+  - 'shared'
+  - 'swap-vm'

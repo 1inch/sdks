@@ -45,7 +45,7 @@ export class MakerTraits {
   }
 
   static default(): MakerTraits {
-    return new MakerTraits(0n).enableUseOfAquaInsteadOfSignature()
+    return new MakerTraits(0n)
   }
 
   /**

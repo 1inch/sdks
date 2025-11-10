@@ -16,14 +16,15 @@
     "types": ["vitest/globals", "node"],
     "baseUrl": ".",
     "paths": {
-      "@1inch/sdk-shared": ["typescript/shared/src/index.ts"],
-      "@1inch/aqua-sdk": ["typescript/aqua/src/index.ts"],
-      "@1inch/cross-chain-sdk": ["typescript/cross-chain/src/index.ts"],
-      "@1inch/fusion-sdk": ["typescript/fusion/src/index.ts"],
-      "@1inch/limit-order-sdk": ["typescript/limit-order/src/index.ts"],
-      "@contracts/*": ["dist/contracts/*"],
-      "@1inch/swap-vm-sdk": ["typescript/swap-vm/src/index.ts"]
+      "@1inch/sdk-shared": ["shared/src/index.ts"],
+      "@1inch/aqua-sdk": ["aqua/src/index.ts"],
+      "@1inch/cross-chain-sdk": ["cross-chain/src/index.ts"],
+      "@1inch/fusion-sdk": ["fusion/src/index.ts"],
+      "@1inch/limit-order-sdk": ["limit-order/src/index.ts"],
+      "@contracts/*": ["../dist/contracts/*"],
+      "@1inch/swap-vm-sdk": ["swap-vm/src/index.ts"]
     }
   },
-  "exclude": ["node_modules", "tmp", "dist", "build", ".nx"]
+  "exclude": [
+    "node_modules", "tmp", "dist", "build", ".nx"]
 }
