@@ -1,5 +1,5 @@
+/* eslint-disable no-console */
 import { GenericContainer, StartedTestContainer } from 'testcontainers'
-// @ts-ignore
 import { LogWaitStrategy } from 'testcontainers/build/wait-strategies/log-wait-strategy'
 import {
   parseEther,
@@ -61,13 +61,13 @@ export async function setupEvm(config: EvmNodeConfig): Promise<ReadyEvmFork> {
   const liqProvider = new TestWallet(
     '0x37d5819e14a620d31d0ba9aab2b5154aa000c5519ae602158ddbe6369dca91fb',
     transport,
-    chain
+    chain,
   )
 
   const swapper = await TestWallet.fromAddress(
     '0x1d83cc9b3Fe9Ee21c45282Bef1BEd27Dfa689EA2',
     transport,
-    chain
+    chain,
   )
   const addresses = await deployContracts(transport, chain)
   await setupBalances(liqProvider, swapper, transport, chain, addresses)
@@ -114,7 +114,7 @@ async function startNode(
 ): Promise<{
   localNode: StartedTestContainer
   provider: _Client
-  transport: Transport,
+  transport: Transport
   chain: Chain
 }> {
   const innerPort = 8545
@@ -135,13 +135,15 @@ async function startNode(
 
   return {
     localNode: anvil,
-    provider: createTestClient<'anvil', typeof transport, typeof chain, undefined, PublicRpcSchema>({
-      transport,
-      mode: 'anvil',
-      chain,
-    }).extend(publicActions) as unknown as _Client,
+    provider: createTestClient<'anvil', typeof transport, typeof chain, undefined, PublicRpcSchema>(
+      {
+        transport,
+        mode: 'anvil',
+        chain,
+      },
+    ).extend(publicActions) as unknown as _Client,
     transport,
-    chain
+    chain,
   }
 }
 
@@ -151,7 +153,7 @@ async function deployContracts(transport: Transport, chain: Chain): Promise<Test
       '0x3667482b9520ea17999acd812ad3db1ff29c12c006e756cdcb5fd6cc5d5a9b01',
     ),
     transport,
-    chain
+    chain,
   })
 
   const aqua = await deploy(Aqua as ContractParams, [], deployer)
@@ -216,7 +218,7 @@ async function deploy(
     bytecode: json.bytecode.object,
     args: params,
     account,
-    chain: deployer.chain
+    chain: deployer.chain,
   })
 
   // Get the contract address from the transaction receipt
@@ -240,15 +242,13 @@ export type TestClient<
   account extends Account | undefined = Account | undefined,
   includeActions extends boolean = true,
   rpcSchema extends RpcSchema | undefined = undefined,
-  mode extends 'anvil' = 'anvil'
+  mode extends 'anvil' = 'anvil',
 > = Prettify<
   { mode: mode } & Client<
     transport,
     chain,
     account,
-    rpcSchema extends RpcSchema
-    ? [...TestRpcSchema<mode>, ...rpcSchema]
-    : TestRpcSchema<mode>,
+    rpcSchema extends RpcSchema ? [...TestRpcSchema<mode>, ...rpcSchema] : TestRpcSchema<mode>,
     { mode: mode } & (includeActions extends true
       ? TestActions & PublicActions
       : Record<string, unknown>)

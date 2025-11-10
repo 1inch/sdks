@@ -1,11 +1,12 @@
 import 'dotenv/config'
 import { Address, NetworkEnum } from '@1inch/sdk-shared'
-import { Hex } from 'viem'
-import { ABI } from '@1inch/aqua-sdk'
-import { ReadyEvmFork, setupEvm } from './setup-evm.js'
+import { ADDRESSES } from '@1inch/sdk-shared/test-utils'
+import { Hex, parseUnits } from 'viem'
+import { ABI, AquaProtocolContract } from '@1inch/aqua-sdk'
+import { ReadyEvmFork } from './setup-evm.js'
 import { Order } from '../src/swap-vm/order.js'
 import { MakerTraits } from '../src/swap-vm/maker-traits.js'
-import { AquaProgramBuilder } from '../src'
+import { AquaAMMStrategy, AquaProgramBuilder, SwapVMContract, TakerTraits } from '../src'
 import { SWAP_VM_ABI } from '../src/abi/SwapVM.abi.js'
 
 describe('SwapVM', () => {
@@ -28,7 +29,7 @@ describe('SwapVM', () => {
   }
 
   beforeAll(async () => {
-    forkNode = await setupEvm({ chainId: 1 })
+    forkNode = await ReadyEvmFork.setup({ chainId: 1 })
     liqProviderAddress = await forkNode.liqProvider.getAddress()
     swapperAddress = await forkNode.swapper.getAddress()
   })
@@ -65,6 +66,54 @@ describe('SwapVM', () => {
 
     expect(calculatedHash.toString()).toEqual(hashFromContract)
   })
-  
-  test('should ')
+
+  test('should swap by AquaAMMStrategy', async () => {
+    const liquidityProvider = forkNode.liqProvider
+    const swapper = forkNode.swapper
+
+    const aqua = new AquaProtocolContract(new Address(forkNode.addresses.aqua))
+    const swapVM = new SwapVMContract(new Address(forkNode.addresses.swapVMAquaRouter))
+
+    const USDC = new Address(ADDRESSES.USDC)
+    const WETH = new Address(ADDRESSES.WETH)
+
+    const program = AquaAMMStrategy.new({
+      tokenA: USDC,
+      tokenB: WETH,
+    }).build()
+
+    const order = Order.new({
+      maker: new Address(liqProviderAddress),
+      program,
+      traits: MakerTraits.default(),
+    })
+
+    const tx = aqua.ship({
+      app: new Address(forkNode.addresses.aqua),
+      strategy: order.abiEncode(),
+      amountsAndTokens: [
+        {
+          amount: parseUnits('10000', 6),
+          token: USDC,
+        },
+        {
+          amount: parseUnits('5', 18),
+          token: WETH,
+        },
+      ],
+    })
+
+    await liquidityProvider.send(tx)
+
+    const swap = swapVM.swap({
+      order,
+      amount: parseUnits('100', 6),
+      takerTraits: TakerTraits.default(),
+      tokenIn: USDC,
+      tokenOut: WETH,
+    })
+
+    const { txHash: swapTx } = await swapper.send({ ...swap, allowFail: true })
+    await forkNode.printTrace(swapTx)
+  })
 })
