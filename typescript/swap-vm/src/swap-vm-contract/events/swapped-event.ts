@@ -17,7 +17,7 @@ export class SwappedEvent {
     public readonly tokenOut: Address,
     public readonly amountIn: bigint,
     public readonly amountOut: bigint,
-  ) { }
+  ) {}
 
   static new(data: DataFor<SwappedEvent>): SwappedEvent {
     return new SwappedEvent(
