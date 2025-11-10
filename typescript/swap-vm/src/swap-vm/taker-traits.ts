@@ -63,7 +63,7 @@ export class TakerTraits {
   }
 
   static default(): TakerTraits {
-    return new TakerTraits(0n, {}).withExactIn()
+    return new TakerTraits(0n, {}).withExactIn().withUseTransferFromAndAquaPush()
   }
 
   /**

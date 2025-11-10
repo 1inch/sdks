@@ -81,13 +81,31 @@ export class ReadyEvmFork {
   public async trace(txHash: string): Promise<string> {
     const { output } = await this.localNode.exec(`cast run ${txHash}`)
 
-    return output
+    const mappings = [
+      [this.addresses.aqua, 'aqua'],
+      [this.addresses.swapVMAquaRouter, 'swapVMAquaRouter'],
+      [ADDRESSES.USDC, 'USDC'],
+      [ADDRESSES.WETH, 'WETH'],
+      [await this.liqProvider.getAddress(), 'liqProvider'],
+      [await this.swapper.getAddress(), 'swapper'],
+    ]
+
+    const formatted = mappings.reduce(
+      (acc, [address, label]) => acc.replaceAll(new RegExp(address, 'gi'), label),
+      output,
+    )
+
+    return formatted
   }
 
   public async printTrace(txHash: string): Promise<void> {
-    const { output } = await this.localNode.exec(`cast run ${txHash}`)
+    const trace = await this.trace(txHash)
 
-    console.log(output)
+    console.log(trace)
+  }
+
+  public async walletForAddress(addr: Hex): Promise<TestWallet> {
+    return TestWallet.fromAddress(addr, this.liqProvider.transport, this.liqProvider.chain)
   }
 }
 
@@ -201,7 +219,7 @@ async function setupBalances(
 
   // swapper have USDC
   await usdcDonor.transferToken(ADDRESSES.USDC, await swapper.getAddress(), parseUnits('10000', 6))
-  await swapper.unlimitedApprove(ADDRESSES.USDC, addresses.testTrader)
+  await swapper.unlimitedApprove(ADDRESSES.USDC, addresses.swapVMAquaRouter)
 
   console.log('swapper address is', await swapper.getAddress())
   console.log('swapper USDC balance is', await swapper.tokenBalance(ADDRESSES.USDC))

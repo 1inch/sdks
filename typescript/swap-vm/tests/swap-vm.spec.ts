@@ -1,7 +1,8 @@
+/* eslint-disable max-lines-per-function */
 import 'dotenv/config'
 import { Address, NetworkEnum } from '@1inch/sdk-shared'
 import { ADDRESSES } from '@1inch/sdk-shared/test-utils'
-import { Hex, parseUnits } from 'viem'
+import { decodeFunctionResult, Hex, parseUnits } from 'viem'
 import { ABI, AquaProtocolContract } from '@1inch/aqua-sdk'
 import { ReadyEvmFork } from './setup-evm.js'
 import { Order } from '../src/swap-vm/order.js'
@@ -88,8 +89,17 @@ describe('SwapVM', () => {
       traits: MakerTraits.default(),
     })
 
+    const strategyHash = order
+      .hash({
+        chainId: forkNode.chainId as NetworkEnum,
+        name: 'TestAquaSwapVMRouter',
+        version: '1.0',
+        verifyingContract: new Address(forkNode.addresses.swapVMAquaRouter),
+      })
+      .toString()
+
     const tx = aqua.ship({
-      app: new Address(forkNode.addresses.aqua),
+      app: new Address(forkNode.addresses.swapVMAquaRouter),
       strategy: order.abiEncode(),
       amountsAndTokens: [
         {
@@ -105,15 +115,188 @@ describe('SwapVM', () => {
 
     await liquidityProvider.send(tx)
 
-    const swap = swapVM.swap({
+    const providerWethBalanceBefore = await getAquaBalance(
+      liqProviderAddress,
+      forkNode.addresses.swapVMAquaRouter,
+      strategyHash,
+      ADDRESSES.WETH,
+    )
+    const providerUsdcBalanceBefore = await getAquaBalance(
+      liqProviderAddress,
+      forkNode.addresses.swapVMAquaRouter,
+      strategyHash,
+      ADDRESSES.USDC,
+    )
+    const swapperWethBalanceBefore = await swapper.tokenBalance(ADDRESSES.WETH)
+    const swapperUsdcBalanceBefore = await swapper.tokenBalance(ADDRESSES.USDC)
+
+    const srcAmount = parseUnits('100', 6)
+
+    const swapParams = {
       order,
-      amount: parseUnits('100', 6),
+      amount: srcAmount,
       takerTraits: TakerTraits.default(),
       tokenIn: USDC,
       tokenOut: WETH,
+    }
+
+    // Simulate the call to get the dstAmount
+    const simulateResult = await forkNode.provider.call({
+      account: swapperAddress,
+      ...swapVM.quote(swapParams),
     })
 
-    const { txHash: swapTx } = await swapper.send({ ...swap, allowFail: true })
-    await forkNode.printTrace(swapTx)
+    const [_, dstAmount] = decodeFunctionResult({
+      abi: SWAP_VM_ABI,
+      functionName: 'quote',
+      data: simulateResult.data!,
+    })
+
+    const swap = swapVM.swap(swapParams)
+
+    await swapper.send(swap)
+
+    const providerWethBalanceAfter = await getAquaBalance(
+      liqProviderAddress,
+      forkNode.addresses.swapVMAquaRouter,
+      strategyHash,
+      ADDRESSES.WETH,
+    )
+    const providerUsdcBalanceAfter = await getAquaBalance(
+      liqProviderAddress,
+      forkNode.addresses.swapVMAquaRouter,
+      strategyHash,
+      ADDRESSES.USDC,
+    )
+
+    expect(providerWethBalanceAfter).to.equal(providerWethBalanceBefore - dstAmount)
+    expect(providerUsdcBalanceAfter).to.equal(providerUsdcBalanceBefore + srcAmount)
+
+    const swapperWethBalanceAfter = await swapper.tokenBalance(ADDRESSES.WETH)
+    const swapperUsdcBalanceAfter = await swapper.tokenBalance(ADDRESSES.USDC)
+    expect(swapperWethBalanceAfter).to.equal(swapperWethBalanceBefore + dstAmount)
+    expect(swapperUsdcBalanceAfter).to.equal(swapperUsdcBalanceBefore - srcAmount)
+  })
+
+  test('should swap by AquaAMMStrategy with protocol fee', async () => {
+    const liquidityProvider = forkNode.liqProvider
+    const swapper = forkNode.swapper
+
+    const aqua = new AquaProtocolContract(new Address(forkNode.addresses.aqua))
+    const swapVM = new SwapVMContract(new Address(forkNode.addresses.swapVMAquaRouter))
+
+    const USDC = new Address(ADDRESSES.USDC)
+    const WETH = new Address(ADDRESSES.WETH)
+
+    const protocolAddress = Address.fromBigInt(0xdeadbeefn)
+
+    const feeBps = 100
+    const program = AquaAMMStrategy.new({
+      tokenA: USDC,
+      tokenB: WETH,
+    })
+      .withProtocolFee(feeBps, protocolAddress)
+      .build()
+
+    const order = Order.new({
+      maker: new Address(liqProviderAddress),
+      program,
+      traits: MakerTraits.default(),
+    })
+
+    const strategyHash = order
+      .hash({
+        chainId: forkNode.chainId as NetworkEnum,
+        name: 'TestAquaSwapVMRouter',
+        version: '1.0',
+        verifyingContract: new Address(forkNode.addresses.swapVMAquaRouter),
+      })
+      .toString()
+
+    const tx = aqua.ship({
+      app: new Address(forkNode.addresses.swapVMAquaRouter),
+      strategy: order.abiEncode(),
+      amountsAndTokens: [
+        {
+          amount: parseUnits('10000', 6),
+          token: USDC,
+        },
+        {
+          amount: parseUnits('5', 18),
+          token: WETH,
+        },
+      ],
+    })
+
+    await liquidityProvider.send(tx)
+
+    const providerWethBalanceBefore = await getAquaBalance(
+      liqProviderAddress,
+      forkNode.addresses.swapVMAquaRouter,
+      strategyHash,
+      ADDRESSES.WETH,
+    )
+    const providerUsdcBalanceBefore = await getAquaBalance(
+      liqProviderAddress,
+      forkNode.addresses.swapVMAquaRouter,
+      strategyHash,
+      ADDRESSES.USDC,
+    )
+    const swapperWethBalanceBefore = await swapper.tokenBalance(ADDRESSES.WETH)
+    const swapperUsdcBalanceBefore = await swapper.tokenBalance(ADDRESSES.USDC)
+    const protocol = await forkNode.walletForAddress(protocolAddress.toString())
+    const protocolWethBalanceBefore = await protocol.tokenBalance(ADDRESSES.WETH)
+
+    const srcAmount = parseUnits('100', 6)
+
+    const swapParams = {
+      order,
+      amount: srcAmount,
+      takerTraits: TakerTraits.default(),
+      tokenIn: USDC,
+      tokenOut: WETH,
+    }
+
+    // Simulate the call to get the dstAmount
+    const simulateResult = await forkNode.provider.call({
+      account: swapperAddress,
+      ...swapVM.quote(swapParams),
+    })
+
+    const [_, dstAmount] = decodeFunctionResult({
+      abi: SWAP_VM_ABI,
+      functionName: 'quote',
+      data: simulateResult.data!,
+    })
+
+    const swap = swapVM.swap(swapParams)
+
+    const { txHash: _swapTx } = await swapper.send({ ...swap, allowFail: false })
+    // await forkNode.printTrace(swapTx)
+
+    const providerWethBalanceAfter = await getAquaBalance(
+      liqProviderAddress,
+      forkNode.addresses.swapVMAquaRouter,
+      strategyHash,
+      ADDRESSES.WETH,
+    )
+    const providerUsdcBalanceAfter = await getAquaBalance(
+      liqProviderAddress,
+      forkNode.addresses.swapVMAquaRouter,
+      strategyHash,
+      ADDRESSES.USDC,
+    )
+    const protocolWethBalanceAfter = await protocol.tokenBalance(ADDRESSES.WETH)
+
+    const protocolFee = dstAmount / 99n // 100 bps = 1%
+    expect(protocolWethBalanceAfter - protocolWethBalanceBefore).to.equal(protocolFee)
+
+    expect(providerWethBalanceAfter).to.equal(providerWethBalanceBefore - dstAmount - protocolFee)
+    expect(providerUsdcBalanceAfter).to.equal(providerUsdcBalanceBefore + srcAmount)
+
+    const swapperWethBalanceAfter = await swapper.tokenBalance(ADDRESSES.WETH)
+    const swapperUsdcBalanceAfter = await swapper.tokenBalance(ADDRESSES.USDC)
+    expect(swapperWethBalanceAfter).to.equal(swapperWethBalanceBefore + dstAmount)
+    expect(swapperUsdcBalanceAfter).to.equal(swapperUsdcBalanceBefore - srcAmount)
   })
 })

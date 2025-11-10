@@ -140,7 +140,7 @@ export const aquaInstructions: Opcode<IArgsData>[] = [
   concentrate.concentrateGrowLiquidityXD, // 18 - CONCENTRATE_GROW_LIQUIDITY_XD
   concentrate.concentrateGrowLiquidity2D, // 19 - CONCENTRATE_GROW_LIQUIDITY_2D
   decay.decayXD, // 20 - DECAY_XD
-  stableSwap.stableSwap2D, // 21 - STABLE_SWAP_2D
+  // stableSwap.stableSwap2D, // 21 - STABLE_SWAP_2D
   controls.salt, // 22 - SALT
   fee.flatFeeXD, // 23 - FLAT_FEE_XD
   fee.flatFeeAmountInXD, // 24 - FLAT_FEE_AMOUNT_IN_XD

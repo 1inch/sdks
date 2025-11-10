@@ -1,14 +1,5 @@
 export const SWAP_VM_ABI = [
   {
-    type: 'constructor',
-    inputs: [
-      { name: 'aqua', type: 'address', internalType: 'address' },
-      { name: 'name', type: 'string', internalType: 'string' },
-      { name: 'version', type: 'string', internalType: 'string' },
-    ],
-    stateMutability: 'nonpayable',
-  },
-  {
     type: 'function',
     name: 'AQUA',
     inputs: [],

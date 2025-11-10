@@ -94,7 +94,7 @@ export class SwapVMContract {
       args.order,
       args.takerTraits,
       args.signature,
-      args.additionalData,
+      args.takerData,
     )
 
     const result = encodeFunctionData({

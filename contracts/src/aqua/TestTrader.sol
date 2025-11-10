@@ -1,8 +1,8 @@
 pragma solidity ^0.8.30;
 
-import {IAqua, IERC20} from "@1inch/aqua/Aqua.sol";
-import {IAquaTakerCallback} from "@1inch/aqua/interfaces/IAquaTakerCallback.sol";
-import {XYCSwap} from "@1inch/aqua/apps/XYCSwap.sol";
+import {IAqua, IERC20} from "@1inch/aqua/src/Aqua.sol";
+import {IAquaTakerCallback} from "@1inch/aqua/src/interfaces/IAquaTakerCallback.sol";
+import {XYCSwap} from "@1inch/aqua/src/apps/XYCSwap.sol";
 
 contract TestTrader is IAquaTakerCallback {
     IAqua public immutable AQUA;
