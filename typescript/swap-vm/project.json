@@ -1,13 +1,13 @@
 {
   "name": "swap-vm",
-  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "{projectRoot}/src",
   "projectType": "library",
   "targets": {
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "{projectRoot}",
+        "cwd": "typescript/swap-vm",
         "commands": ["tsdown"]
       }
     },
@@ -15,7 +15,7 @@
       "executor": "@nx/eslint:lint",
       "options": {
         "lintFilePatterns": ["{projectRoot}/**/*.ts"],
-        "eslintConfig": "eslint.config.mjs"
+        "eslintConfig": "typescript/eslint.config.mjs"
       }
     },
     "test": {

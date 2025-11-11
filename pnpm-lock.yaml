@@ -115,7 +115,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.0)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.1)
 
-  aqua:
+  typescript/aqua:
     dependencies:
       '@1inch/sdk-core':
         specifier: workspace:*
@@ -143,7 +143,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.0)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.1)
 
-  cross-chain:
+  typescript/cross-chain:
     dependencies:
       axios:
         specifier: '>=1 <2'
@@ -171,7 +171,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.0)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.1)
 
-  fusion:
+  typescript/fusion:
     dependencies:
       axios:
         specifier: '>=1 <2'
@@ -196,7 +196,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.0)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.1)
 
-  limit-order:
+  typescript/limit-order:
     dependencies:
       axios:
         specifier: '>=1 <2'
@@ -221,7 +221,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.0)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.1)
 
-  sdk-core:
+  typescript/sdk-core:
     dependencies:
       tslib:
         specifier: ^2.8.1
@@ -243,7 +243,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.0)(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.1)
 
-  swap-vm:
+  typescript/swap-vm:
     dependencies:
       '@1inch/byte-utils':
         specifier: ^3.1.7
@@ -294,9 +294,6 @@ packages:
     engines: {node: '>=22'}
     peerDependencies:
       assert: ^2.0.0
-    peerDependenciesMeta:
-      assert:
-        optional: true
 
   '@1inch/eslint-config@3.0.8':
     resolution: {integrity: sha512-QJFaI2caKUjdeHMVhWyqWYhjNRZkkqkZcMHMmJHqfOnkICrqMRWvTZgy+VIVRBf0epoNu1LXcMdUVwWjtDrfVA==, tarball: https://npm.pkg.github.com/download/@1inch/eslint-config/3.0.8/9257c78ce276a32ba5a5d486afe2efde0f20094b}
@@ -5902,7 +5899,7 @@ snapshots:
       assert: 2.1.0
 
   '@1inch/byte-utils@3.1.7(assert@2.1.0)':
-    optionalDependencies:
+    dependencies:
       assert: 2.1.0
 
   '@1inch/eslint-config@3.0.8(44e1d464b929a8f6a62931c785175afe)':
@@ -8654,7 +8651,6 @@ snapshots:
       object-is: 1.1.6
       object.assign: 4.1.7
       util: 0.12.5
-    optional: true
 
   assertion-error@1.1.0: {}
 
@@ -10321,7 +10317,6 @@ snapshots:
     dependencies:
       call-bind: 1.0.8
       define-properties: 1.2.1
-    optional: true
 
   is-negative-zero@2.0.3: {}
 
@@ -10886,7 +10881,6 @@ snapshots:
     dependencies:
       call-bind: 1.0.8
       define-properties: 1.2.1
-    optional: true
 
   object-keys@1.1.1: {}
 

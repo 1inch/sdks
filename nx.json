@@ -16,11 +16,11 @@
       "outputs": ["{projectRoot}/dist"]
     },
     "test": {
-      "inputs": ["default", "^production", "{workspaceRoot}/vitest.preset.js", "{projectRoot}/vitest.config.{j,t}s"],
+      "inputs": ["default", "^production", "{workspaceRoot}/typescript/vitest.preset.mjs", "{projectRoot}/vitest.config.{j,t}s"],
       "dependsOn": ["^build"]
     },
     "lint": {
-      "inputs": ["default", "{workspaceRoot}/.eslintrc.json"]
+      "inputs": ["default", "{workspaceRoot}/typescript/eslint.config.mjs"]
     },
     "test:e2e": {
       "inputs": ["default", "^production"],
@@ -42,8 +42,8 @@
     ]
   },
   "workspaceLayout": {
-    "libsDir": ".",
-    "appsDir": "."
+    "libsDir": "typescript",
+    "appsDir": "typescript"
   },
   "cli": {
     "defaultCollection": "@nx/js",

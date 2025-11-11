@@ -1,6 +1,6 @@
 {
   "name": "sdk-core",
-  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "sdk-core/src",
   "projectType": "library",
   "tags": ["typescript", "core"],
@@ -8,14 +8,14 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "sdk-core",
+        "cwd": "typescript/sdk-core",
         "commands": ["tsdown"]
       }
     },
     "node-version": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "sdk-core",
+        "cwd": "typescript/sdk-core",
         "commands": ["node -e \"console.log(process.version)\""]
       }
     },
@@ -25,20 +25,21 @@
       "options": {
         "passWithNoTests": true,
         "coverage": true,
-        "reportsDirectory": "../coverage/sdk-core"
+        "reportsDirectory": "../../coverage/typescript/sdk-core"
       }
     },
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["sdk-core/**/*.ts"]
+        "lintFilePatterns": ["typescript/sdk-core/**/*.ts"],
+        "eslintConfig": "typescript/eslint.config.mjs"
       },
       "outputs": ["{options.outputFile}"]
     },
     "type-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc --noEmit -p sdk-core/tsconfig.json"
+        "command": "tsc --noEmit -p typescript/sdk-core/tsconfig.json"
       }
     }
   }
