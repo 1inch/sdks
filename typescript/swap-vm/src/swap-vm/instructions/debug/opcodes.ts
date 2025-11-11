@@ -6,6 +6,15 @@ import { PrintAmountForSwapArgs } from './print-amount-for-swap'
 import { PrintFreeMemoryPointerArgs } from './print-free-memory-pointer'
 import { PrintGasLeftArgs } from './print-gas-left'
 import { Opcode } from '../opcode'
+export {
+  DebugEmptyArgs,
+  PrintSwapRegistersArgs,
+  PrintSwapQueryArgs,
+  PrintContextArgs,
+  PrintAmountForSwapArgs,
+  PrintFreeMemoryPointerArgs,
+  PrintGasLeftArgs,
+}
 
 /**
  * Debug empty opcode - placeholder

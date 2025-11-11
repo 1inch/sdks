@@ -19,8 +19,11 @@ export class AquaProgramBuilder extends ProgramBuilder {
     return new AquaProgramBuilder().decode(program)
   }
 
+  /**
+   * Enables debug mode for the program
+   * WARNING: Debug instructions will throw an error if debug mode is not enabled
+   */
   public withDebug(): this {
-    // Inject debug opcodes into slots 1-6
     this.instructionsSet[0] = debug.printSwapRegisters
     this.instructionsSet[1] = debug.printSwapQuery
     this.instructionsSet[2] = debug.printContext
@@ -221,6 +224,66 @@ export class AquaProgramBuilder extends ProgramBuilder {
    **/
   public aquaProtocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
     super.add(fee.aquaProtocolFeeAmountOutXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
+
+    return this
+  }
+
+  /**
+   * DEBUG: Prints current swap registers (amounts and tokens)
+   * WARNING: Requires withDebug() to be called first, otherwise will throw an error
+   */
+  public debugPrintSwapRegisters(): this {
+    super.add(debug.printSwapRegisters.createIx(new debug.PrintSwapRegistersArgs()))
+
+    return this
+  }
+
+  /**
+   * DEBUG: Prints current swap query state
+   * WARNING: Requires withDebug() to be called first, otherwise will throw an error
+   */
+  public debugPrintSwapQuery(): this {
+    super.add(debug.printSwapQuery.createIx(new debug.PrintSwapQueryArgs()))
+
+    return this
+  }
+
+  /**
+   * DEBUG: Prints execution context information
+   * WARNING: Requires withDebug() to be called first, otherwise will throw an error
+   */
+  public debugPrintContext(): this {
+    super.add(debug.printContext.createIx(new debug.PrintContextArgs()))
+
+    return this
+  }
+
+  /**
+   * DEBUG: Prints calculated amount for swap
+   * WARNING: Requires withDebug() to be called first, otherwise will throw an error
+   */
+  public debugPrintAmountForSwap(): this {
+    super.add(debug.printAmountForSwap.createIx(new debug.PrintAmountForSwapArgs()))
+
+    return this
+  }
+
+  /**
+   * DEBUG: Prints current free memory pointer value
+   * WARNING: Requires withDebug() to be called first, otherwise will throw an error
+   */
+  public debugPrintFreeMemoryPointer(): this {
+    super.add(debug.printFreeMemoryPointer.createIx(new debug.PrintFreeMemoryPointerArgs()))
+
+    return this
+  }
+
+  /**
+   * DEBUG: Prints remaining gas
+   * WARNING: Requires withDebug() to be called first, otherwise will throw an error
+   */
+  public debugPrintGasLeft(): this {
+    super.add(debug.printGasLeft.createIx(new debug.PrintGasLeftArgs()))
 
     return this
   }

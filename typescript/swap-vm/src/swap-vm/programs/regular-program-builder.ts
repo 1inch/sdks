@@ -17,6 +17,13 @@ import * as twapSwap from '../instructions/twap-swap'
 import * as stableSwap from '../instructions/stable-swap'
 import * as fee from '../instructions/fee'
 import * as extruction from '../instructions/extruction'
+import * as debug from '../instructions/debug/opcodes'
+import { PrintSwapRegistersArgs } from '../instructions/debug/print-swap-registers'
+import { PrintSwapQueryArgs } from '../instructions/debug/print-swap-query'
+import { PrintContextArgs } from '../instructions/debug/print-context'
+import { PrintAmountForSwapArgs } from '../instructions/debug/print-amount-for-swap'
+import { PrintFreeMemoryPointerArgs } from '../instructions/debug/print-free-memory-pointer'
+import { PrintGasLeftArgs } from '../instructions/debug/print-gas-left'
 
 export class RegularProgramBuilder extends ProgramBuilder {
   constructor() {
@@ -25,6 +32,22 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   static decode(program: SwapVmProgram): RegularProgramBuilder {
     return new RegularProgramBuilder().decode(program)
+  }
+
+  /**
+   * Enables debug mode for the program
+   * WARNING: Debug instructions will throw an error if debug mode is not enabled
+   */
+  public withDebug(): this {
+    // Inject debug opcodes into slots 1-6
+    this.instructionsSet[0] = debug.printSwapRegisters
+    this.instructionsSet[1] = debug.printSwapQuery
+    this.instructionsSet[2] = debug.printContext
+    this.instructionsSet[3] = debug.printAmountForSwap
+    this.instructionsSet[4] = debug.printFreeMemoryPointer
+    this.instructionsSet[5] = debug.printGasLeft
+
+    return this
   }
 
   /**
@@ -411,6 +434,66 @@ export class RegularProgramBuilder extends ProgramBuilder {
    **/
   public aquaProtocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
     super.add(fee.aquaProtocolFeeAmountOutXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
+
+    return this
+  }
+
+  /**
+   * DEBUG: Prints current swap registers (amounts and tokens)
+   * WARNING: Requires withDebug() to be called first, otherwise will throw an error
+   */
+  public debugPrintSwapRegisters(): this {
+    super.add(debug.printSwapRegisters.createIx(new PrintSwapRegistersArgs()))
+
+    return this
+  }
+
+  /**
+   * DEBUG: Prints current swap query state
+   * WARNING: Requires withDebug() to be called first, otherwise will throw an error
+   */
+  public debugPrintSwapQuery(): this {
+    super.add(debug.printSwapQuery.createIx(new PrintSwapQueryArgs()))
+
+    return this
+  }
+
+  /**
+   * DEBUG: Prints execution context information
+   * WARNING: Requires withDebug() to be called first, otherwise will throw an error
+   */
+  public debugPrintContext(): this {
+    super.add(debug.printContext.createIx(new PrintContextArgs()))
+
+    return this
+  }
+
+  /**
+   * DEBUG: Prints calculated amount for swap
+   * WARNING: Requires withDebug() to be called first, otherwise will throw an error
+   */
+  public debugPrintAmountForSwap(): this {
+    super.add(debug.printAmountForSwap.createIx(new PrintAmountForSwapArgs()))
+
+    return this
+  }
+
+  /**
+   * DEBUG: Prints current free memory pointer value
+   * WARNING: Requires withDebug() to be called first, otherwise will throw an error
+   */
+  public debugPrintFreeMemoryPointer(): this {
+    super.add(debug.printFreeMemoryPointer.createIx(new PrintFreeMemoryPointerArgs()))
+
+    return this
+  }
+
+  /**
+   * DEBUG: Prints remaining gas
+   * WARNING: Requires withDebug() to be called first, otherwise will throw an error
+   */
+  public debugPrintGasLeft(): this {
+    super.add(debug.printGasLeft.createIx(new PrintGasLeftArgs()))
 
     return this
   }

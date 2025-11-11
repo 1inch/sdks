@@ -16,10 +16,6 @@ export class ProgramBuilder {
     return this.ixsSet
   }
 
-  set instructionsSet(ixsSet: IOpcode[]) {
-    this.ixsSet = ixsSet
-  }
-
   /**
    * Decodes a SwapVM program into builder instructions
    **/
