@@ -26,7 +26,7 @@ export class Order {
     return new Order(data.maker, data.traits, data.program)
   }
 
-  public hash(domain: {
+  public hash(domain?: {
     chainId: NetworkEnum
     name: string
     verifyingContract: Address
@@ -35,6 +35,8 @@ export class Order {
     if (this.traits.isUseOfAquaInsteadOfSignatureEnabled()) {
       return new HexString(keccak256(this.abiEncode().toString()))
     }
+
+    assert(domain, 'domain info required if isUseOfAquaInsteadOfSignatureEnabled is false')
 
     return new HexString(
       hashTypedData({
