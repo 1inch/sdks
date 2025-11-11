@@ -1,21 +1,34 @@
 import type { DataFor } from '@1inch/sdk-core'
 import { ProgramBuilder } from './program-builder'
 import { SwapVmProgram } from './swap-vm-program'
-import { productionRegistry } from '../instructions'
+import { aquaInstructions } from '../instructions'
 import * as controls from '../instructions/controls'
 import * as xycSwap from '../instructions/xyc-swap'
 import * as concentrate from '../instructions/concentrate'
 import * as decay from '../instructions/decay'
 import * as stableSwap from '../instructions/stable-swap'
 import * as fee from '../instructions/fee'
+import * as debug from '../instructions/debug/opcodes'
 
 export class AquaProgramBuilder extends ProgramBuilder {
   constructor() {
-    super([...productionRegistry.getAquaInstructions()])
+    super([...aquaInstructions])
   }
 
   static decode(program: SwapVmProgram): AquaProgramBuilder {
     return new AquaProgramBuilder().decode(program)
+  }
+
+  public withDebug(): this {
+    // Inject debug opcodes into slots 1-6
+    this.instructionsSet[0] = debug.printSwapRegisters
+    this.instructionsSet[1] = debug.printSwapQuery
+    this.instructionsSet[2] = debug.printContext
+    this.instructionsSet[3] = debug.printAmountForSwap
+    this.instructionsSet[4] = debug.printFreeMemoryPointer
+    this.instructionsSet[5] = debug.printGasLeft
+
+    return this
   }
 
   /**

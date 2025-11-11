@@ -10,16 +10,16 @@ import { Opcode } from '../opcode'
 /**
  * Debug empty opcode - placeholder
  */
-export const debugEmpty = new Opcode(Symbol('debug.Empty'), DebugEmptyArgs.CODER)
+export const debugEmpty = new Opcode(Symbol('Debug.Empty'), DebugEmptyArgs.CODER)
 
 export const printSwapRegisters = new Opcode(
-  Symbol('debug.printSwapRegisters'),
+  Symbol('Debug.printSwapRegisters'),
   PrintSwapRegistersArgs.CODER,
 )
 
-export const printSwapQuery = new Opcode(Symbol('debug.printSwapQuery'), PrintSwapQueryArgs.CODER)
+export const printSwapQuery = new Opcode(Symbol('Debug.printSwapQuery'), PrintSwapQueryArgs.CODER)
 
-export const printContext = new Opcode(Symbol('debug.printContext'), PrintContextArgs.CODER)
+export const printContext = new Opcode(Symbol('Debug.printContext'), PrintContextArgs.CODER)
 
 export const printAmountForSwap = new Opcode(
   Symbol('debug.printAmountForSwap'),
@@ -27,8 +27,8 @@ export const printAmountForSwap = new Opcode(
 )
 
 export const printFreeMemoryPointer = new Opcode(
-  Symbol('debug.printFreeMemoryPointer'),
+  Symbol('Debug.printFreeMemoryPointer'),
   PrintFreeMemoryPointerArgs.CODER,
 )
 
-export const printGasLeft = new Opcode(Symbol('debug.printGasLeft'), PrintGasLeftArgs.CODER)
+export const printGasLeft = new Opcode(Symbol('Debug.printGasLeft'), PrintGasLeftArgs.CODER)

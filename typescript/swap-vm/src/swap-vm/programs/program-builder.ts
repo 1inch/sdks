@@ -12,6 +12,14 @@ export class ProgramBuilder {
 
   public constructor(private readonly ixsSet: IOpcode[]) {}
 
+  get instructionsSet(): IOpcode[] {
+    return this.ixsSet
+  }
+
+  set instructionsSet(ixsSet: IOpcode[]) {
+    this.ixsSet = ixsSet
+  }
+
   /**
    * Decodes a SwapVM program into builder instructions
    **/

@@ -1,4 +1,3 @@
-import { HexString } from '@1inch/sdk-core'
 import { IArgsData } from '../types'
 
 /**
@@ -6,10 +5,6 @@ import { IArgsData } from '../types'
  * Debug instructions don't have parameters, they just print/log state
  */
 export abstract class DebugArgs implements IArgsData {
-  static decode(_data: HexString): DebugArgs {
-    throw new Error('Must be implemented by subclass')
-  }
-
   toJSON(): null {
     return null
   }
