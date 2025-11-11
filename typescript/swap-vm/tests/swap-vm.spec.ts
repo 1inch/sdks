@@ -1,7 +1,7 @@
 /* eslint-disable max-lines-per-function */
 import 'dotenv/config'
 import { Address, HexString, NetworkEnum } from '@1inch/sdk-core'
-import { ADDRESSES } from '@1inch/sdk-shared/test-utils'
+import { ADDRESSES } from '@1inch/sdk-core/test-utils'
 import { decodeFunctionResult, Hex, parseUnits } from 'viem'
 import { ABI, AquaProtocolContract } from '@1inch/aqua-sdk'
 import { ReadyEvmFork } from './setup-evm.js'
@@ -322,7 +322,7 @@ describe('SwapVM', () => {
     await swapper.unlimitedApprove(swapVM.address.toString(), USDC.toString())
 
     class OnlyAllowedTakerArgs implements IArgsData {
-      constructor(public readonly allowedTaker: Address) {}
+      constructor(public readonly allowedTaker: Address) { }
 
       toJSON(): Record<string, unknown> | null {
         return { allowedTaker: this.allowedTaker.toString() }
