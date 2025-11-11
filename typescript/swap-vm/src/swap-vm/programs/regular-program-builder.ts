@@ -1,7 +1,7 @@
 import type { DataFor } from '@1inch/sdk-core'
 import { ProgramBuilder } from './program-builder'
 import { SwapVmProgram } from './swap-vm-program'
-import { allInstructions } from '../instructions'
+import { productionRegistry } from '../instructions'
 import * as balances from '../instructions/balances'
 import * as controls from '../instructions/controls'
 import * as invalidators from '../instructions/invalidators'
@@ -20,7 +20,7 @@ import * as extruction from '../instructions/extruction'
 
 export class RegularProgramBuilder extends ProgramBuilder {
   constructor() {
-    super([...allInstructions])
+    super([...productionRegistry.getAllInstructions()])
   }
 
   static decode(program: SwapVmProgram): RegularProgramBuilder {

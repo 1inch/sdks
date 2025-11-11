@@ -1,7 +1,8 @@
 import { Address } from '@1inch/sdk-core'
 import { AquaProgramBuilder } from '../programs/aqua-program-builder'
 import { SwapVmProgram } from '../programs'
-import { concentrate, fee } from '../instructions'
+import * as concentrate from '../instructions/concentrate'
+import * as fee from '../instructions/fee'
 import { FlatFeeArgs } from '../instructions/fee'
 
 /**

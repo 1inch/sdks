@@ -1,7 +1,7 @@
 import type { DataFor } from '@1inch/sdk-core'
 import { ProgramBuilder } from './program-builder'
 import { SwapVmProgram } from './swap-vm-program'
-import { aquaInstructions } from '../instructions'
+import { productionRegistry } from '../instructions'
 import * as controls from '../instructions/controls'
 import * as xycSwap from '../instructions/xyc-swap'
 import * as concentrate from '../instructions/concentrate'
@@ -11,7 +11,7 @@ import * as fee from '../instructions/fee'
 
 export class AquaProgramBuilder extends ProgramBuilder {
   constructor() {
-    super([...aquaInstructions])
+    super([...productionRegistry.getAquaInstructions()])
   }
 
   static decode(program: SwapVmProgram): AquaProgramBuilder {
