@@ -10,7 +10,7 @@ import { Opcode } from '../opcode'
 /**
  * Debug empty opcode - placeholder
  */
-export const debugEmpty = new Opcode(Symbol('debug-empty'), DebugEmptyArgs.CODER)
+export const debugEmpty = new Opcode(Symbol('debug.Empty'), DebugEmptyArgs.CODER)
 
 export const printSwapRegisters = new Opcode(
   Symbol('debug.printSwapRegisters'),
