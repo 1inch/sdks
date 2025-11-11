@@ -1,17 +1,21 @@
-import {assertHexString, assertNotEmpty, assertString} from '@1inch/sdk-shared'
+import { assertHexString } from '@1inch/sdk-core'
 
+/**
+ * Represents encoded SwapVM program bytecode
+ **/
 export class SwapVmProgram {
-    private readonly value: `0x${string}`
+  private readonly value: `0x${string}`
 
-    constructor(val: unknown) {
-        assertString(val)
-        assertNotEmpty(val)
-        assertHexString(val)
+  constructor(val: string) {
+    assertHexString(val)
 
-        this.value = val
-    }
+    this.value = val
+  }
 
-    toString(): string {
-        return this.value
-    }
+  /**
+   * Returns the program bytecode as a hex string
+   **/
+  toString(): `0x${string}` {
+    return this.value
+  }
 }

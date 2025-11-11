@@ -1,7 +1,7 @@
 {
   "name": "fusion",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "typescript/fusion/src",
+  "sourceRoot": "fusion/src",
   "projectType": "library",
   "tags": ["typescript", "sdk"],
   "targets": {
@@ -18,13 +18,14 @@
       "options": {
         "passWithNoTests": true,
         "coverage": true,
-        "reportsDirectory": "../../coverage/typescript/fusion"
+        "reportsDirectory": "../coverage/fusion"
       }
     },
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["typescript/fusion/**/*.ts"]
+        "lintFilePatterns": ["typescript/fusion/**/*.ts"],
+        "eslintConfig": "typescript/eslint.config.mjs"
       },
       "outputs": ["{options.outputFile}"]
     },

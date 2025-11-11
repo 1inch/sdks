@@ -1,0 +1,5 @@
+@1inch/aqua/=node_modules/@1inch/aqua
+@1inch/aqua-protocol/=node_modules/@1inch/aqua/
+@1inch/swap-vm/=node_modules/@1inch/swap-vm/src/
+forge-std/=node_modules/.pnpm/node_modules/forge-std/src/
+@1inch/solidity-utils/=node_modules/.pnpm/node_modules/@1inch/solidity-utils/

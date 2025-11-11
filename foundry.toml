@@ -1,0 +1,11 @@
+[profile.default]
+solc = "0.8.30"
+src = 'contracts/src'
+out = 'dist/contracts'
+libs = ['node_modules', 'node_modules/.pnpm/node_modules']
+
+via_ir = true
+optimizer_runs = 1000000
+eth-rpc-url = 'http://localhost:8545'
+
+fs_permissions = [{ access = "read", path = "dist/contracts" }, { access = "read-write", path = ".forge-snapshots/" }]

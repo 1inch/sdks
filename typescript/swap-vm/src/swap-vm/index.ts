@@ -1,3 +1,6 @@
 export * from './maker-traits'
 export * from './taker-traits'
 export * from './types'
+export * from './programs'
+export * from './instructions'
+export * from './strategies'

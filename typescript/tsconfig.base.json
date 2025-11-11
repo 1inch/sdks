@@ -1,0 +1,30 @@
+{
+  "extends": "@1inch/tsconfig",
+  "compilerOptions": {
+    "target": "ES2021",
+    "lib": ["ES2021"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "allowArbitraryExtensions": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "types": ["vitest/globals", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "@1inch/sdk-core": ["sdk-core/src/index.ts"],
+      "@1inch/aqua-sdk": ["aqua/src/index.ts"],
+      "@1inch/cross-chain-sdk": ["cross-chain/src/index.ts"],
+      "@1inch/fusion-sdk": ["fusion/src/index.ts"],
+      "@1inch/limit-order-sdk": ["limit-order/src/index.ts"],
+      "@contracts/*": ["../dist/contracts/*"],
+      "@1inch/swap-vm-sdk": ["swap-vm/src/index.ts"]
+    }
+  },
+  "exclude": [
+    "node_modules", "tmp", "dist", "build", ".nx"]
+}
