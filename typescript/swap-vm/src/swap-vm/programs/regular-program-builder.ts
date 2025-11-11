@@ -18,12 +18,6 @@ import * as stableSwap from '../instructions/stable-swap'
 import * as fee from '../instructions/fee'
 import * as extruction from '../instructions/extruction'
 import * as debug from '../instructions/debug/opcodes'
-import { PrintSwapRegistersArgs } from '../instructions/debug/print-swap-registers'
-import { PrintSwapQueryArgs } from '../instructions/debug/print-swap-query'
-import { PrintContextArgs } from '../instructions/debug/print-context'
-import { PrintAmountForSwapArgs } from '../instructions/debug/print-amount-for-swap'
-import { PrintFreeMemoryPointerArgs } from '../instructions/debug/print-free-memory-pointer'
-import { PrintGasLeftArgs } from '../instructions/debug/print-gas-left'
 
 export class RegularProgramBuilder extends ProgramBuilder {
   constructor() {
@@ -40,12 +34,12 @@ export class RegularProgramBuilder extends ProgramBuilder {
    */
   public withDebug(): this {
     // Inject debug opcodes into slots 1-6
-    this.instructionsSet[0] = debug.printSwapRegisters
-    this.instructionsSet[1] = debug.printSwapQuery
-    this.instructionsSet[2] = debug.printContext
-    this.instructionsSet[3] = debug.printAmountForSwap
-    this.instructionsSet[4] = debug.printFreeMemoryPointer
-    this.instructionsSet[5] = debug.printGasLeft
+    this.ixsSet[0] = debug.printSwapRegisters
+    this.ixsSet[1] = debug.printSwapQuery
+    this.ixsSet[2] = debug.printContext
+    this.ixsSet[3] = debug.printAmountForSwap
+    this.ixsSet[4] = debug.printFreeMemoryPointer
+    this.ixsSet[5] = debug.printGasLeft
 
     return this
   }
@@ -443,7 +437,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
    * WARNING: Requires withDebug() to be called first, otherwise will throw an error
    */
   public debugPrintSwapRegisters(): this {
-    super.add(debug.printSwapRegisters.createIx(new PrintSwapRegistersArgs()))
+    super.add(debug.printSwapRegisters.createIx(new debug.PrintSwapRegistersArgs()))
 
     return this
   }
@@ -453,7 +447,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
    * WARNING: Requires withDebug() to be called first, otherwise will throw an error
    */
   public debugPrintSwapQuery(): this {
-    super.add(debug.printSwapQuery.createIx(new PrintSwapQueryArgs()))
+    super.add(debug.printSwapQuery.createIx(new debug.PrintSwapQueryArgs()))
 
     return this
   }
@@ -463,7 +457,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
    * WARNING: Requires withDebug() to be called first, otherwise will throw an error
    */
   public debugPrintContext(): this {
-    super.add(debug.printContext.createIx(new PrintContextArgs()))
+    super.add(debug.printContext.createIx(new debug.PrintContextArgs()))
 
     return this
   }
@@ -473,7 +467,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
    * WARNING: Requires withDebug() to be called first, otherwise will throw an error
    */
   public debugPrintAmountForSwap(): this {
-    super.add(debug.printAmountForSwap.createIx(new PrintAmountForSwapArgs()))
+    super.add(debug.printAmountForSwap.createIx(new debug.PrintAmountForSwapArgs()))
 
     return this
   }
@@ -483,7 +477,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
    * WARNING: Requires withDebug() to be called first, otherwise will throw an error
    */
   public debugPrintFreeMemoryPointer(): this {
-    super.add(debug.printFreeMemoryPointer.createIx(new PrintFreeMemoryPointerArgs()))
+    super.add(debug.printFreeMemoryPointer.createIx(new debug.PrintFreeMemoryPointerArgs()))
 
     return this
   }
@@ -493,7 +487,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
    * WARNING: Requires withDebug() to be called first, otherwise will throw an error
    */
   public debugPrintGasLeft(): this {
-    super.add(debug.printGasLeft.createIx(new PrintGasLeftArgs()))
+    super.add(debug.printGasLeft.createIx(new debug.PrintGasLeftArgs()))
 
     return this
   }

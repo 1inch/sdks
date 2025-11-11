@@ -10,11 +10,7 @@ import { EMPTY_OPCODE } from '../instructions/empty'
 export class ProgramBuilder {
   protected program: IInstruction<IArgsData>[] = []
 
-  public constructor(private readonly ixsSet: IOpcode[]) {}
-
-  get instructionsSet(): IOpcode[] {
-    return this.ixsSet
-  }
+  public constructor(protected readonly ixsSet: IOpcode[]) {}
 
   /**
    * Decodes a SwapVM program into builder instructions

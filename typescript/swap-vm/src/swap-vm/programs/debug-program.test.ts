@@ -10,12 +10,12 @@ describe('Debug Program Functionality', () => {
 
       builder.withDebug()
 
-      expect(builder['instructionsSet'][0]).toBe(debug.printSwapRegisters)
-      expect(builder['instructionsSet'][1]).toBe(debug.printSwapQuery)
-      expect(builder['instructionsSet'][2]).toBe(debug.printContext)
-      expect(builder['instructionsSet'][3]).toBe(debug.printAmountForSwap)
-      expect(builder['instructionsSet'][4]).toBe(debug.printFreeMemoryPointer)
-      expect(builder['instructionsSet'][5]).toBe(debug.printGasLeft)
+      expect(builder['ixsSet'][0]).toBe(debug.printSwapRegisters)
+      expect(builder['ixsSet'][1]).toBe(debug.printSwapQuery)
+      expect(builder['ixsSet'][2]).toBe(debug.printContext)
+      expect(builder['ixsSet'][3]).toBe(debug.printAmountForSwap)
+      expect(builder['ixsSet'][4]).toBe(debug.printFreeMemoryPointer)
+      expect(builder['ixsSet'][5]).toBe(debug.printGasLeft)
     })
 
     it('should allow chaining of debug methods after withDebug()', () => {
@@ -55,12 +55,12 @@ describe('Debug Program Functionality', () => {
 
       builder.withDebug()
 
-      expect(builder['instructionsSet'][0]).toBe(debug.printSwapRegisters)
-      expect(builder['instructionsSet'][1]).toBe(debug.printSwapQuery)
-      expect(builder['instructionsSet'][2]).toBe(debug.printContext)
-      expect(builder['instructionsSet'][3]).toBe(debug.printAmountForSwap)
-      expect(builder['instructionsSet'][4]).toBe(debug.printFreeMemoryPointer)
-      expect(builder['instructionsSet'][5]).toBe(debug.printGasLeft)
+      expect(builder['ixsSet'][0]).toBe(debug.printSwapRegisters)
+      expect(builder['ixsSet'][1]).toBe(debug.printSwapQuery)
+      expect(builder['ixsSet'][2]).toBe(debug.printContext)
+      expect(builder['ixsSet'][3]).toBe(debug.printAmountForSwap)
+      expect(builder['ixsSet'][4]).toBe(debug.printFreeMemoryPointer)
+      expect(builder['ixsSet'][5]).toBe(debug.printGasLeft)
     })
 
     it('should allow chaining of debug methods after withDebug()', () => {

@@ -24,12 +24,12 @@ export class AquaProgramBuilder extends ProgramBuilder {
    * WARNING: Debug instructions will throw an error if debug mode is not enabled
    */
   public withDebug(): this {
-    this.instructionsSet[0] = debug.printSwapRegisters
-    this.instructionsSet[1] = debug.printSwapQuery
-    this.instructionsSet[2] = debug.printContext
-    this.instructionsSet[3] = debug.printAmountForSwap
-    this.instructionsSet[4] = debug.printFreeMemoryPointer
-    this.instructionsSet[5] = debug.printGasLeft
+    this.ixsSet[0] = debug.printSwapRegisters
+    this.ixsSet[1] = debug.printSwapQuery
+    this.ixsSet[2] = debug.printContext
+    this.ixsSet[3] = debug.printAmountForSwap
+    this.ixsSet[4] = debug.printFreeMemoryPointer
+    this.ixsSet[5] = debug.printGasLeft
 
     return this
   }
