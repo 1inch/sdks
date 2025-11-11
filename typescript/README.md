@@ -23,12 +23,16 @@ sdks/
 
 - Node.js >= 22.0.0
 - pnpm >= 8.0.0
+- Foundry/Forge (for contract compilation)
 
 ### Installation
 
 ```bash
 # Install dependencies
 pnpm install
+
+# Build Solidity contracts (required for tests and linting)
+pnpm build:contracts
 ```
 
 ## 📦 Available SDKs
@@ -125,6 +129,9 @@ pnpm swap-vm:lint:fix
 ### Common Commands
 
 ```bash
+# Build Solidity contracts (required before first lint)
+pnpm build:contracts
+
 # Build all SDKs
 pnpm build
 
@@ -143,8 +150,14 @@ pnpm lint:types
 # Format code
 pnpm format
 
+# Format check
+pnpm format:check
+
 # Clean build artifacts
 pnpm clean
+
+# Reset NX cache
+pnpm reset
 
 # View dependency graph in browser (no files created)
 pnpm graph:view
@@ -167,20 +180,22 @@ pnpm affected:lint:fix   # Lints and fixes only changed SDKs
 Each SDK can be developed independently:
 
 ```bash
-# Navigate to SDK directory
-cd typescript/aqua
+# From the root directory
 
-# Install dependencies
-pnpm install
+# Build contracts first (if not already done)
+pnpm build:contracts
 
-# Build
-pnpm build
+# Build specific SDK
+pnpm aqua:build
 
-# Run tests
-pnpm test
+# Test specific SDK
+pnpm aqua:test
 
-# Type check
-pnpm type-check
+# Lint specific SDK
+pnpm aqua:lint
+
+# Type check all SDKs
+pnpm lint:types
 ```
 
 ## 🚀 Release & Publishing
@@ -225,8 +240,9 @@ Each SDK has independent versioning with specific tag patterns:
 
 - **TypeScript**: Uses `@1inch/tsconfig` as base configuration
 - **ESLint**: Uses `@1inch/eslint-config` for code style
-- **Testing**: Jest with SWC for fast test execution
-- **Building**: SWC for fast TypeScript compilation
+- **Testing**: Vitest for fast test execution
+- **Building**: tsdown for TypeScript compilation
+- **Contracts**: Forge/Foundry for Solidity compilation
 
 ## 📝 License
 
