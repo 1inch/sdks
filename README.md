@@ -138,7 +138,7 @@ pnpm clean:graph
 
 # Work with affected packages only (used in CI for PRs)
 pnpm affected:build      # Builds only changed SDKs
-pnpm affected:test       # Tests only changed SDKs  
+pnpm affected:test       # Tests only changed SDKs
 pnpm affected:lint       # Lints only changed SDKs
 pnpm affected:lint:fix   # Lints and fixes only changed SDKs
 ```
@@ -197,7 +197,7 @@ pnpm publish dist --access=public
 
 Each SDK has independent versioning with specific tag patterns:
 - `aqua-v*.*.*` - @1inch/aqua-sdk
-- `cross-chain-v*.*.*` - @1inch/cross-chain-sdk  
+- `cross-chain-v*.*.*` - @1inch/cross-chain-sdk
 - `fusion-v*.*.*` - @1inch/fusion-sdk
 - `limit-order-v*.*.*` - @1inch/limit-order-sdk
 
@@ -207,7 +207,3 @@ Each SDK has independent versioning with specific tag patterns:
 - **ESLint**: Uses `@1inch/eslint-config` for code style
 - **Testing**: Jest with SWC for fast test execution
 - **Building**: SWC for fast TypeScript compilation
-
-## 📝 License
-
-MIT

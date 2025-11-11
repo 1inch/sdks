@@ -3,7 +3,7 @@ import { IArgsCoder, IArgsData, IInstruction, IOpcode } from './types'
 
 export class Opcode<T extends IArgsData> implements IOpcode<T> {
   constructor(
-    public id: symbol,
+    public readonly id: symbol,
     public readonly coder: IArgsCoder<T>,
   ) {}
 

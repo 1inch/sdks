@@ -68,8 +68,8 @@ export class AquaAMMStrategy {
       const data = concentrate.ConcentrateGrowLiquidity2DArgs.fromTokenDeltas(
         this.tokenA,
         this.tokenB,
-        this.deltas.a || 0n,
-        this.deltas.b || 0n,
+        this.deltas.a,
+        this.deltas.b,
       )
 
       builder.add(concentrate.concentrateGrowLiquidity2D.createIx(data))
