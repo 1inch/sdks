@@ -16,7 +16,12 @@
       "outputs": ["{projectRoot}/dist"]
     },
     "test": {
-      "inputs": ["default", "^production", "{workspaceRoot}/typescript/vitest.preset.mjs", "{projectRoot}/vitest.config.{j,t}s"],
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/typescript/vitest.preset.mjs",
+        "{projectRoot}/vitest.config.{j,t}s"
+      ],
       "dependsOn": ["^build"]
     },
     "lint": {
@@ -29,9 +34,7 @@
   },
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
-    "sharedGlobals": [
-      "{workspaceRoot}/.github/workflows/*"
-    ],
+    "sharedGlobals": ["{workspaceRoot}/.github/workflows/*"],
     "production": [
       "default",
       "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
@@ -59,6 +62,9 @@
         "buildable": true
       }
     }
+  },
+  "tui": {
+    "enabled": false
   },
   "plugins": [
     {

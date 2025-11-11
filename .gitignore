@@ -7,6 +7,7 @@ node_modules
 .vscode
 *.swp
 *.swo
+.zed
 
 # System
 .DS_Store
@@ -59,4 +60,3 @@ temp
 
 # Documentation build
 docs/_build
-

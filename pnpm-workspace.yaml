@@ -1,8 +1,20 @@
 packages:
-  # SDK packages
-  - 'typescript/aqua'
-  - 'typescript/cross-chain'
-  - 'typescript/fusion'
-  - 'typescript/limit-order'
-  - 'typescript/sdk-core'
-  - 'typescript/swap-vm'
+  - typescript/aqua
+  - typescript/cross-chain
+  - typescript/fusion
+  - typescript/limit-order
+  - typescript/sdk-core
+  - typescript/swap-vm
+
+ignoredBuiltDependencies:
+  - ssh2
+
+onlyBuiltDependencies:
+  - '@swc/core'
+  - cpu-features
+  - esbuild
+  - keccak
+  - nx
+  - protobufjs
+  - secp256k1
+  - unrs-resolver

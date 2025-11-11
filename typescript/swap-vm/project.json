@@ -7,15 +7,15 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "typescript/swap-vm",
+        "cwd": "{projectRoot}",
         "commands": ["tsdown"]
       }
     },
     "lint": {
-      "executor": "@nx/eslint:lint",
+      "executor": "nx:run-commands",
       "options": {
-        "lintFilePatterns": ["{projectRoot}/**/*.ts"],
-        "eslintConfig": "typescript/eslint.config.mjs"
+        "cwd": "{projectRoot}",
+        "commands": ["pnpm lint"]
       }
     },
     "test": {
