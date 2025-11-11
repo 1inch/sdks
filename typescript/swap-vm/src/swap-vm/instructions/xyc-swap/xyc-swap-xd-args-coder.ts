@@ -1,4 +1,4 @@
-import { HexString } from '@1inch/sdk-shared'
+import { HexString } from '@1inch/sdk-core'
 import { XycSwapXDArgs } from './xyc-swap-xd-args'
 import { IArgsCoder } from '../types'
 

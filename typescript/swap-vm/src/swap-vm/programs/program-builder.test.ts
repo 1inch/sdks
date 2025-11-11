@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Address, AddressHalf, HexString } from '@1inch/sdk-shared'
+import { Address, AddressHalf, HexString } from '@1inch/sdk-core'
 import * as balances from '../instructions/balances'
 import * as controls from '../instructions/controls'
 import * as invalidators from '../instructions/invalidators'
@@ -17,6 +17,7 @@ import * as fee from '../instructions/fee'
 import * as extruction from '../instructions/extruction'
 import { RegularProgramBuilder } from './'
 
+// eslint-disable-next-line max-lines-per-function
 describe('ProgramBuilder', () => {
   const USDC = new Address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
   const WETH = new Address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2')

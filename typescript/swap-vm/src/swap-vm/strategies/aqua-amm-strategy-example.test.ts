@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Address } from '@1inch/sdk-shared'
+import { Address } from '@1inch/sdk-core'
 import { AquaAMMStrategy } from './aqua-amm-strategy'
 import { AquaProgramBuilder } from '../programs/aqua-program-builder'
 
@@ -25,7 +25,7 @@ describe('AquaAMMStrategy Examples', () => {
       .build()
 
     const hex = program.toString()
-    expect(hex).toContain('17')
+    expect(hex).toContain('16')
     expect(hex).toContain('10')
   })
 

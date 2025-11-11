@@ -1,8 +1,8 @@
 /* eslint-disable max-lines-per-function */
 import 'dotenv/config'
-import { Address, HexString } from '@1inch/sdk-shared'
+import { Address, HexString } from '@1inch/sdk-core'
 import { encodeAbiParameters, encodeFunctionData, Hex, parseUnits } from 'viem'
-import { ADDRESSES } from '@1inch/sdk-shared/test-utils'
+import { ADDRESSES } from '@1inch/sdk-core/test-utils'
 import { ReadyEvmFork, setupEvm } from './setup-evm.js'
 
 import { AquaProtocolContract } from '../src/aqua-protocol-contract/aqua-protocol-contract.js'

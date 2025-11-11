@@ -1,5 +1,5 @@
 import { BytesBuilder, BytesIter } from '@1inch/byte-utils'
-import { Address, HexString } from '@1inch/sdk-shared'
+import { Address, HexString } from '@1inch/sdk-core'
 import { OraclePriceAdjusterArgs } from './oracle-price-adjuster-args'
 import { IArgsCoder } from '../types'
 

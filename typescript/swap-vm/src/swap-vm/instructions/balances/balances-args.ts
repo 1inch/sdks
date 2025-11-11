@@ -1,4 +1,4 @@
-import { HexString } from '@1inch/sdk-shared'
+import { HexString } from '@1inch/sdk-core'
 import { TokenBalance } from './types'
 import { BalancesArgsCoder } from './balances-args-coder'
 import { IArgsData } from '../types'

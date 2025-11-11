@@ -1,4 +1,4 @@
-import { HexString } from '@1inch/sdk-shared'
+import { HexString } from '@1inch/sdk-core'
 import { IArgsCoder, IArgsData } from './types'
 import { Opcode } from './opcode'
 

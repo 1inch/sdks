@@ -1,5 +1,5 @@
 import { BytesBuilder, BytesIter, add0x } from '@1inch/byte-utils'
-import { HexString } from '@1inch/sdk-shared'
+import { HexString } from '@1inch/sdk-core'
 import { StableSwap2DArgs } from './stable-swap-2d-args'
 import { IArgsCoder } from '../types'
 

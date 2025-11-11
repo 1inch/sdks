@@ -31,7 +31,7 @@ import TestTrader from '@contracts/TestTrader.sol/TestTrader.json'
 import TestAquaSwapVMRouter from '@contracts/TestAquaSwapVMRouter.sol/TestAquaSwapVMRouter.json'
 import TestCustomSwapVM from '@contracts/TestCustomSwapVM.sol/TestCustomSwapVM.json'
 
-import { TestWallet, ADDRESSES } from '@1inch/sdk-shared/test-utils'
+import { TestWallet, ADDRESSES } from '@1inch/sdk-core/test-utils'
 import { privateKeyToAccount } from 'viem/accounts'
 
 export type EvmNodeConfig = {

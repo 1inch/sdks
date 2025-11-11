@@ -1,4 +1,4 @@
-import { HexString } from '@1inch/sdk-shared'
+import { HexString } from '@1inch/sdk-core'
 import assert from 'node:assert'
 import { JumpArgsCoder } from './jump-args-coder'
 import { IArgsData } from '../types'

@@ -48,7 +48,7 @@
   },
   "dependencies": {
     "@1inch/byte-utils": "^3.1.7",
-    "@1inch/sdk-shared": "workspace:*",
+    "@1inch/sdk-core": "workspace:*",
     "tslib": "^2.8.1"
   },
   "devDependencies": {

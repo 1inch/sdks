@@ -1,5 +1,5 @@
 import { decodeEventLog, Log } from 'viem'
-import { Address, HexString } from '@1inch/sdk-shared'
+import { Address, HexString } from '@1inch/sdk-core'
 import { EventAction } from '../types'
 import AQUA_PROTOCOL_ABI from '../../abi/Aqua.abi.json'
 
@@ -18,6 +18,10 @@ export class DockedEvent {
     public readonly strategyHash: HexString,
   ) {}
 
+  /**
+   * Creates a DockedEvent from
+   * @throws Error if the log data is invalid or doesn't match the expected event structure
+   */
   static fromLog(log: Log): DockedEvent {
     const decoded = decodeEventLog({
       abi: AQUA_PROTOCOL_ABI,

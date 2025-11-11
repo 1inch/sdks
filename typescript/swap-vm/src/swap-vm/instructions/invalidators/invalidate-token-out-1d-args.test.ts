@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Address, AddressHalf } from '@1inch/sdk-shared'
+import { Address, AddressHalf } from '@1inch/sdk-core'
 import { InvalidateTokenOut1DArgs } from './invalidate-token-out-1d-args'
 import { InvalidateTokenOut1DArgsCoder } from './invalidate-token-out-1d-args-coder'
 

@@ -1,7 +1,7 @@
 {
   "name": "limit-order",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "typescript/limit-order/src",
+  "sourceRoot": "limit-order/src",
   "projectType": "library",
   "tags": ["typescript", "sdk"],
   "targets": {
@@ -18,13 +18,14 @@
       "options": {
         "passWithNoTests": true,
         "coverage": true,
-        "reportsDirectory": "../../coverage/typescript/limit-order"
+        "reportsDirectory": "../coverage/limit-order"
       }
     },
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["typescript/limit-order/**/*.ts"]
+        "lintFilePatterns": ["typescript/limit-order/**/*.ts"],
+        "eslintConfig": "typescript/eslint.config.mjs"
       },
       "outputs": ["{options.outputFile}"]
     },

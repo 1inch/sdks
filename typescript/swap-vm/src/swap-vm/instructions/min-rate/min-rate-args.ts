@@ -1,4 +1,4 @@
-import { Address, HexString } from '@1inch/sdk-shared'
+import { Address, HexString } from '@1inch/sdk-core'
 import { UINT_64_MAX } from '@1inch/byte-utils'
 import assert from 'node:assert'
 import { MinRateArgsCoder } from './min-rate-args-coder'

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Address } from '@1inch/sdk-shared'
+import { Address } from '@1inch/sdk-core'
 import { MakerTraits } from './maker-traits'
 
 describe('MakerTraits', () => {

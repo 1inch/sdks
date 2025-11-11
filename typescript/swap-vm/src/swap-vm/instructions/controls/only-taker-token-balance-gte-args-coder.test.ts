@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Address } from '@1inch/sdk-shared'
+import { Address } from '@1inch/sdk-core'
 import { OnlyTakerTokenBalanceGteArgs } from './only-taker-token-balance-gte-args'
 import { OnlyTakerTokenBalanceGteArgsCoder } from './only-taker-token-balance-gte-args-coder'
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { HexString } from '@1inch/sdk-shared'
+import { HexString } from '@1inch/sdk-core'
 import { LimitSwapDirectionArgs } from './limit-swap-direction-args'
 
 describe('LimitSwapDirectionArgs', () => {

@@ -1,4 +1,4 @@
-import { AddressHalf, HexString } from '@1inch/sdk-shared'
+import { AddressHalf, HexString } from '@1inch/sdk-core'
 import { InvalidateTokenIn1DArgsCoder } from './invalidate-token-in-1d-args-coder'
 import { IArgsData } from '../types'
 

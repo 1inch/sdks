@@ -1,7 +1,8 @@
 packages:
-  # TypeScript SDKs
-  - 'typescript/*'
-  
-  # Future SDKs (when needed)
-  # - 'java/*'
-  # - 'python/*'
+  # SDK packages
+  - 'typescript/aqua'
+  - 'typescript/cross-chain'
+  - 'typescript/fusion'
+  - 'typescript/limit-order'
+  - 'typescript/sdk-core'
+  - 'typescript/swap-vm'

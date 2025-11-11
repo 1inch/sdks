@@ -1,5 +1,5 @@
 import { BytesBuilder, BytesIter, trim0x, add0x } from '@1inch/byte-utils'
-import { HexString } from '@1inch/sdk-shared'
+import { HexString } from '@1inch/sdk-core'
 import { SwapVmProgram } from './swap-vm-program'
 import { IArgsData, IInstruction, IOpcode } from '../instructions'
 import { EMPTY_OPCODE } from '../instructions/empty'

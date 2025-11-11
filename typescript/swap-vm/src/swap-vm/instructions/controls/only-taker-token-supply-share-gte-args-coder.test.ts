@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Address } from '@1inch/sdk-shared'
+import { Address } from '@1inch/sdk-core'
 import { UINT_64_MAX } from '@1inch/byte-utils'
 import { OnlyTakerTokenSupplyShareGteArgs } from './only-taker-token-supply-share-gte-args'
 import { OnlyTakerTokenSupplyShareGteArgsCoder } from './only-taker-token-supply-share-gte-args-coder'

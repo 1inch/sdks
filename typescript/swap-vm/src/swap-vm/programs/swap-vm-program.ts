@@ -1,4 +1,4 @@
-import { assertHexString } from '@1inch/sdk-shared'
+import { assertHexString } from '@1inch/sdk-core'
 
 /**
  * Represents encoded SwapVM program bytecode

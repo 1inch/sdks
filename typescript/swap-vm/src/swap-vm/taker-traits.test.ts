@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Address, HexString } from '@1inch/sdk-shared'
+import { Address, HexString } from '@1inch/sdk-core'
 import { TakerTraits } from './taker-traits'
 
 describe('TakerTraits', () => {
@@ -16,7 +16,7 @@ describe('TakerTraits', () => {
       expect(traits.hasThreshold()).toBe(false)
       expect(traits.hasCustomReceiver()).toBe(false)
       expect(traits.isFirstTransferFromTaker()).toBe(false)
-      expect(traits.isUseTransferFromAndAquaPush()).toBe(false)
+      expect(traits.isUseTransferFromAndAquaPush()).toBe(true)
       expect(traits.getThreshold()).toBe(undefined)
       expect(traits.getTo()).toBe(undefined)
     })
@@ -187,7 +187,7 @@ describe('TakerTraits', () => {
       })
 
       const flags = traits.getFlags()
-      expect(flags.value).toBe(7n)
+      expect(flags.value).toBe(135n)
     })
   })
 

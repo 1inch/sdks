@@ -1,5 +1,5 @@
 import { encodeFunctionData } from 'viem'
-import { CallInfo, Address, HexString } from '@1inch/sdk-shared'
+import { CallInfo, Address, HexString } from '@1inch/sdk-core'
 import { BytesBuilder, trim0x } from '@1inch/byte-utils'
 import assert from 'node:assert'
 import { QuoteArgs, QuoteNonViewArgs, SwapArgs } from './types'

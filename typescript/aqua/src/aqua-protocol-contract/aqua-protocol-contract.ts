@@ -1,5 +1,5 @@
 import { encodeFunctionData, keccak256 } from 'viem'
-import { CallInfo, Address, HexString } from '@1inch/sdk-shared'
+import { CallInfo, Address, HexString } from '@1inch/sdk-core'
 import { ShipArgs, DockArgs } from './types'
 import { AQUA_ABI } from '../abi/Aqua.abi'
 

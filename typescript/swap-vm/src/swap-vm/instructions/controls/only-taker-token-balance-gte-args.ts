@@ -1,4 +1,4 @@
-import { Address, HexString } from '@1inch/sdk-shared'
+import { Address, HexString } from '@1inch/sdk-core'
 import assert from 'node:assert'
 import { OnlyTakerTokenBalanceGteArgsCoder } from './only-taker-token-balance-gte-args-coder'
 import { IArgsData } from '../types'

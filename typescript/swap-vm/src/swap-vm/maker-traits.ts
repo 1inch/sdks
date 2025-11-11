@@ -1,5 +1,5 @@
 import { BitMask, BN } from '@1inch/byte-utils'
-import { Address } from '@1inch/sdk-shared'
+import { Address } from '@1inch/sdk-core'
 import { MakerTraitsBuildArgs } from './types'
 
 /**
@@ -45,7 +45,7 @@ export class MakerTraits {
   }
 
   static default(): MakerTraits {
-    return new MakerTraits(0n).enableUseOfAquaInsteadOfSignature()
+    return new MakerTraits(0n)
   }
 
   /**
