@@ -60,3 +60,6 @@ temp
 
 # Documentation build
 docs/_build
+
+# Npm
+.npmrc
