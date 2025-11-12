@@ -1,4 +1,4 @@
-# @1inch/aqua - TypeScript SDK for 1inch Aqua Protocol
+# @1inch/aqua-sdk - TypeScript SDK for 1inch Aqua Protocol
 
 A TypeScript SDK for encoding, decoding, and interacting with the 1inch Aqua Protocol smart contract. This SDK provides utilities for building transactions and parsing events for the Aqua Protocol's core operations.
 
@@ -49,7 +49,7 @@ const shipTx = aqua.ship({
 console.log(shipTx) // { to: '0x...', data: '0x...', value: 0n }
 ```
 
-## Core Functions
+## Core Operations
 
 ### Ship
 
@@ -62,16 +62,16 @@ const shipTx = aqua.ship({
   amountsAndTokens: [
     {
       token: new Address('0x...'),
-      amount: BigInt('1000000000000000000'),
+      amount: 1000000000000000000n,
     },
   ],
 })
 ```
 
 **Parameters:**
-- `app`: Address of the application contract
-- `strategy`: Strategy bytes containing execution logic
-- `amountsAndTokens`: Array of token addresses and amounts
+- `app` - Address of the application contract
+- `strategy` - Strategy bytes containing execution logic
+- `amountsAndTokens` - Array of token addresses and amounts to ship
 
 **Returns:** `CallInfo` object with encoded transaction data
 
@@ -93,9 +93,9 @@ const dockTx = aqua.dock({
 ```
 
 **Parameters:**
-- `app`: Address of the application contract
-- `strategyHash`: Keccak256 hash of the strategy bytes
-- `tokens`: Array of token addresses to withdraw
+- `app` - Address of the application contract
+- `strategyHash` - Keccak256 hash of the strategy bytes
+- `tokens` - Array of token addresses to withdraw
 
 **Returns:** `CallInfo` object with encoded transaction data
 
@@ -103,7 +103,7 @@ const dockTx = aqua.dock({
 
 ### Pushed Event
 
-Emitted when funds are pushed to strategy.
+Emitted when funds are pushed to a strategy.
 
 ```typescript
 import { PushedEvent } from '@1inch/aqua-sdk'
@@ -121,7 +121,7 @@ console.log(event.amount)       // bigint
 
 ### Pulled Event
 
-Emitted when funds are pulled from strategy.
+Emitted when funds are pulled from a strategy.
 
 ```typescript
 import { PulledEvent } from '@1inch/aqua-sdk'
@@ -141,7 +141,7 @@ const event = ShippedEvent.fromLog(log)
 
 ### Docked Event
 
-Emitted when a liquidity order is completed.
+Emitted when a liquidity strategy is completed.
 
 ```typescript
 import { DockedEvent } from '@1inch/aqua-sdk'
@@ -168,6 +168,8 @@ const hash = AquaProtocolContract.calculateStrategyHash(strategy)
 Manually encode function call data if needed.
 
 ```typescript
+import { AquaProtocolContract } from '@1inch/aqua-sdk'
+
 const encoded = AquaProtocolContract.encodeShipCallData({
   app: new Address('0x...'),
   strategy: new HexString('0x...'),
@@ -217,17 +219,15 @@ const arbitrumAddress = AQUA_CONTRACT_ADDRESSES[NetworkEnum.ARBITRUM]
 
 The SDK exports:
 
-- **`AquaProtocolContract`**: Main contract class for encoding/decoding and building transactions
-- **`AQUA_CONTRACT_ADDRESSES`**: Pre-configured contract addresses by network
-- **`AQUA_ABI`**: Contract ABI from `ABI` export
-- **Types**:
+- **[`AquaProtocolContract`](./src/aqua-protocol-contract/aqua-protocol-contract.ts)** - Main contract class for encoding, decoding, and building transactions
+- **[`AQUA_CONTRACT_ADDRESSES`](./src/aqua-protocol-contract/constants.ts)** - Pre-configured contract addresses by network
+- **[`ABI`](./src/abi/)** - Contract ABI exports
+- **[Types](./src/aqua-protocol-contract/types.ts)**:
   - `ShipArgs`
   - `DockArgs`
-  - `PushArgs`
-  - `PullArgs`
   - `AmountsAndTokens`
   - `EventAction`
-- **Event Classes**:
+- **[Event Classes](./src/aqua-protocol-contract/events/)**:
   - `PushedEvent`
   - `PulledEvent`
   - `ShippedEvent`
