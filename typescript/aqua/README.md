@@ -6,7 +6,7 @@ A TypeScript SDK for encoding, decoding, and interacting with the 1inch Aqua Pro
 
 The Aqua Protocol is a decentralized protocol for liquidity management. This SDK simplifies integration by providing:
 
-- **Encoding/Decoding**: Build typed call data for `ship`, `dock`, `push`, and `pull` operations
+- **Encoding/Decoding**: Build typed call data for `ship`, `dock` operations
 - **Event Parsing**: Decode and parse `Pushed`, `Pulled`, `Shipped`, and `Docked` events
 - **Multi-Chain Support**: Pre-configured addresses for 13+ blockchain networks
 
@@ -141,7 +141,7 @@ const event = ShippedEvent.fromLog(log)
 
 ### Docked Event
 
-Emitted when a liquidity strategy is completed.
+Emitted when a liquidity strategy is closed.
 
 ```typescript
 import { DockedEvent } from '@1inch/aqua-sdk'
