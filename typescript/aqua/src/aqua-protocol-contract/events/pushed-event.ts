@@ -1,16 +1,11 @@
 import { decodeEventLog, Log } from 'viem'
 import { Address, HexString } from '@1inch/sdk-core'
-import { EventAction } from '../types'
-import AQUA_PROTOCOL_ABI from '../../abi/Aqua.abi.json'
+import { AQUA_ABI } from '../../abi/Aqua.abi'
 
 export class PushedEvent {
   public static TOPIC: HexString = new HexString(
     '0x3f18354abbd5306dd1665c2c90f614a4559e39dd620d04fbe5458e613b6588f3',
   )
-
-  public static eventName = 'Pushed'
-
-  private readonly action = EventAction.Pushed
 
   constructor(
     public readonly maker: Address,
@@ -26,19 +21,13 @@ export class PushedEvent {
    */
   static fromLog(log: Log): PushedEvent {
     const decoded = decodeEventLog({
-      abi: AQUA_PROTOCOL_ABI,
+      abi: AQUA_ABI,
       data: log.data,
       topics: log.topics,
-      eventName: PushedEvent.eventName,
+      eventName: 'Pushed',
     })
 
-    const args = decoded.args as unknown as {
-      maker: string
-      app: string
-      strategyHash: string
-      token: string
-      amount: bigint
-    }
+    const args = decoded.args
 
     return new PushedEvent(
       new Address(args.maker),

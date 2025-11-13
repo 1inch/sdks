@@ -28,10 +28,3 @@ export type ShipDecodedResult = {
   functionName: string
   decodedArgs: ShipArgs
 }
-
-export enum EventAction {
-  Pushed = 'pushed',
-  Pulled = 'pulled',
-  Shipped = 'shipped',
-  Docked = 'docked',
-}

@@ -232,3 +232,191 @@ The SDK exports:
   - `PulledEvent`
   - `ShippedEvent`
   - `DockedEvent`
+
+## Real-Life Examples
+
+### Example 1: Ship Liquidity to [XYCSwap.sol](https://github.com/1inch/aqua/blob/0637013a51cd56851f7b143a1f4500fdc93726cc/src/apps/XYCSwap.sol) aqua app
+
+Initialize a liquidity strategy by depositing tokens into Aqua's virtual balance system.
+
+```typescript
+import {
+  AquaProtocolContract,
+  Address,
+  HexString,
+  AQUA_CONTRACT_ADDRESSES,
+  NetworkEnum
+} from '@1inch/aqua-sdk'
+import { encodeAbiParameters, parseUnits, privateKeyToAddress, privateKeyToAccount, mainnet, http } from 'viem'
+
+
+const makerPrivateKey = '0x'
+const maker = privateKeyToAddress(makerPrivateKey)
+const app = '0xTODO_REPLACE'
+const WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+const USDC = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+
+// Define strategy based on the smart contract app structure. Each Aqua app can have it's own strategy schema
+const strategyData = {
+  maker,
+  token0: WETH,
+  token1: USDC,
+  feeBps: 0n,
+  salt: '0x0000000000000000000000000000000000000000000000000000000000000001',
+}
+
+// Encode strategy as bytes
+const strategy = encodeAbiParameters(
+  [
+    {
+      name: 'strategy',
+      type: 'tuple',
+      components: [
+        { name: 'maker', type: 'address' },
+        { name: 'token0', type: 'address' },
+        { name: 'token1', type: 'address' },
+        { name: 'feeBps', type: 'uint256' },
+        { name: 'salt', type: 'bytes32' },
+      ],
+    },
+  ],
+  [strategyData],
+)
+
+// Initialize Aqua contract
+const aqua = new AquaProtocolContract(AQUA_CONTRACT_ADDRESSES[NetworkEnum.ETHEREUM])
+
+// Create ship transaction
+const shipTx = aqua.ship({
+  app: new Address(app),
+  strategy: new HexString(strategy),
+  amountsAndTokens: [
+    {
+      token: new Address(USDC),
+      amount: parseUnits('4000', 6),
+    },
+    {
+      token: new Address(WETH),
+      amount: parseUnits('1', 18),
+    },
+  ],
+})
+
+// Send transaction
+const wallet = createWalletClient({
+  chain: mainnet,
+  transport: http(),
+  account: privateKeyToAccount(makerPrivateKey)
+})
+await wallet.sendTransaction(shipTx)
+```
+
+**Full test example:** [tests/aqua.spec.ts - should ship](https://github.com/1inch/sdks/blob/master/typescript/aqua/tests/aqua.spec.ts#L27)
+
+### Example 2: Execute a Swap through [XYCSwap.sol](https://github.com/1inch/aqua/blob/0637013a51cd56851f7b143a1f4500fdc93726cc/src/apps/XYCSwap.sol) aqua app
+
+Execute a swap against liquidity provided through Aqua. [TestTrader.sol](https://github.com/1inch/sdks/blob/0a276af00b91b287cc4c4f04402c44e02afffa44/contracts/src/aqua/TestTrader.sol#L7) helper contract is used as an approve holder and router.
+
+```typescript
+import {
+  encodeFunctionData,
+  encodeAbiParameters,
+  parseUnits,
+} from 'viem'
+
+// Use the same strategy from ship
+const strategy = '0x...'
+
+// Calculate strategy hash for reference
+const strategyHash = AquaProtocolContract.calculateStrategyHash(
+  new HexString(strategy),
+).toString()
+
+// Define swap parameters
+const srcAmount = parseUnits('10', 6) // 10 USDC
+const srcToken = '0xUSDC...'
+const isZeroForOne = srcToken === strategyData.token0
+
+// Encode the swap call to helper contract
+const swapData = encodeFunctionData({
+  abi: [
+    {
+      type: 'function',
+      name: 'swap',
+      inputs: [
+        {
+          name: 'app',
+          type: 'address',
+          internalType: 'contract XYCSwap',
+        },
+        {
+          name: 'strategy',
+          type: 'tuple',
+          internalType: 'struct XYCSwap.Strategy',
+          components: [
+            { name: 'maker', type: 'address' },
+            { name: 'token0', type: 'address' },
+            { name: 'token1', type: 'address' },
+            { name: 'feeBps', type: 'uint256' },
+            { name: 'salt', type: 'bytes32' },
+          ],
+        },
+        { name: 'zeroForOne', type: 'bool' },
+        { name: 'amountIn', type: 'uint256' },
+      ],
+      outputs: [{ name: 'amountOut', type: 'uint256' }],
+      stateMutability: 'nonpayable',
+    },
+  ],
+  functionName: 'swap',
+  args: ['0xXYCSwapAddress', strategyData, isZeroForOne, srcAmount],
+})
+
+const routerAddress = '0xTestTraderAddress'
+
+// give erc20 approve to routerAddress
+await signer.approve(srcToken, routerAddress)
+
+// Execute swap
+const swapTx = await signer.sendTransaction({
+  to: routerAddress,
+  data: swapData,
+})
+
+await provider.waitForTransactionReceipt({ hash: swapTx })
+```
+
+**Full test example:** [tests/aqua.spec.ts - should swap](https://github.com/1inch/sdks/blob/master/typescript/aqua/tests/aqua.spec.ts#L142)
+
+### Example 3: Dock Liquidity
+
+Withdraw all liquidity from a strategy and close it.
+
+```typescript
+import {
+  AquaProtocolContract,
+  Address,
+  HexString,
+} from '@1inch/aqua-sdk'
+
+// Calculate or retrieve strategy hash
+const aqua = new AquaProtocolContract(new Address('0xAquaContractAddress'))
+
+// Create dock transaction
+const dockTx = aqua.dock({
+  app: new Address('0xXYCSwapAddress'),
+  strategyHash: new HexString(strategyHash),
+  tokens: [
+    new Address('0xUSDC...'),
+    new Address('0xWETH...'),
+  ],
+})
+
+// Send transaction
+await signer.sendTransaction(dockTx)
+
+// After transaction is confirmed, all virtual balances are withdrawn
+// and the strategy is closed
+```
+
+**Full test example:** [tests/aqua.spec.ts - should dock](https://github.com/1inch/sdks/blob/master/typescript/aqua/tests/aqua.spec.ts#L320)

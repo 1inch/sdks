@@ -12,7 +12,7 @@ import { TakerTraitsBuildArgs } from './types'
  * bit 2 `HAS_PRE_TRANSFER_IN_BIT_FLAG`           - if set, call pre-transfer-in hook
  * bit 3 `IS_STRICT_THRESHOLD_BIT_FLAG`           - if set, require exact threshold amount match
  * bit 4 `HAS_THRESHOLD_BIT_FLAG`                 - if set, threshold amount follows flags byte
- * bit 5 `HAS_CUSTOM_RECEIVER_BIT_FLAG`                        - if set, custom receiver address follows threshold
+ * bit 5 `HAS_CUSTOM_RECEIVER_BIT_FLAG`           - if set, custom receiver address follows threshold
  * bit 6 `IS_FIRST_TRANSFER_FROM_TAKER_BIT_FLAG`  - if set, transfer from taker happens first
  * bit 7 `USE_TRANSFER_FROM_AND_AQUA_PUSH`        - if set, use transferFrom + Aqua push pattern
  *
