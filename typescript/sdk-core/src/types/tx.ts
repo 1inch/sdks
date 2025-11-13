@@ -1,4 +1,4 @@
-import { Hex } from './bytes'
+import type { Hex } from './bytes'
 
 /**
  * Call info type for transaction data

@@ -1,7 +1,7 @@
-import { HexString } from '@1inch/sdk-core'
+import type { HexString } from '@1inch/sdk-core'
 import assert from 'node:assert'
 import { JumpArgsCoder } from './jump-args-coder'
-import { IArgsData } from '../types'
+import type { IArgsData } from '../types'
 
 const UINT_16_MAX = 0xffffn
 

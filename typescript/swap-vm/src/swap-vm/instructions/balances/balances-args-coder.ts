@@ -1,8 +1,8 @@
 import { AddressHalf, HexString } from '@1inch/sdk-core'
 import { add0x, BytesBuilder, BytesIter } from '@1inch/byte-utils'
 import { BalancesArgs } from './balances-args'
-import { TokenBalance } from './types'
-import { IArgsCoder } from '../types'
+import type { TokenBalance } from './types'
+import type { IArgsCoder } from '../types'
 
 export class BalancesArgsCoder implements IArgsCoder<BalancesArgs> {
   encode(args: BalancesArgs): HexString {

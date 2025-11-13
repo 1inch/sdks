@@ -1,7 +1,7 @@
 import { BytesBuilder, BytesIter, add0x } from '@1inch/byte-utils'
 import { HexString } from '@1inch/sdk-core'
 import { SaltArgs } from './salt-args'
-import { IArgsCoder } from '../types'
+import type { IArgsCoder } from '../types'
 
 export class SaltArgsCoder implements IArgsCoder<SaltArgs> {
   encode(args: SaltArgs): HexString {

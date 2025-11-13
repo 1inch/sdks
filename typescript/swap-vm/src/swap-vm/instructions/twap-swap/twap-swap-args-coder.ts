@@ -1,7 +1,7 @@
 import { BytesBuilder, BytesIter, add0x } from '@1inch/byte-utils'
 import { HexString } from '@1inch/sdk-core'
 import { TWAPSwapArgs } from './twap-swap-args'
-import { IArgsCoder } from '../types'
+import type { IArgsCoder } from '../types'
 
 export class TWAPSwapArgsCoder implements IArgsCoder<TWAPSwapArgs> {
   encode(args: TWAPSwapArgs): HexString {

@@ -3,8 +3,8 @@ import { Address, AddressHalf } from '@1inch/sdk-core'
 import { RegularProgramBuilder } from './regular-program-builder'
 import { AquaProgramBuilder } from './aqua-program-builder'
 import { SwapVmProgram } from '../programs/swap-vm-program'
-import * as balances from '../instructions/balances'
-import * as controls from '../instructions/controls'
+import type * as balances from '../instructions/balances'
+import type * as controls from '../instructions/controls'
 
 describe('Cross-validation with Solidity', () => {
   it('should match Solidity test_PartialFillLimitOrder structure', () => {

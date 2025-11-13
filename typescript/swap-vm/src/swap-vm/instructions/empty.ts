@@ -1,5 +1,5 @@
 import { HexString } from '@1inch/sdk-core'
-import { IArgsCoder, IArgsData } from './types'
+import type { IArgsCoder, IArgsData } from './types'
 import { Opcode } from './opcode'
 
 class EmptyCoder implements IArgsCoder<EmptyArgs> {

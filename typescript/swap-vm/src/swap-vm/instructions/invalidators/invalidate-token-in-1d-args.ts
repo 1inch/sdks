@@ -1,6 +1,6 @@
-import { AddressHalf, HexString } from '@1inch/sdk-core'
+import type { AddressHalf, HexString } from '@1inch/sdk-core'
 import { InvalidateTokenIn1DArgsCoder } from './invalidate-token-in-1d-args-coder'
-import { IArgsData } from '../types'
+import type { IArgsData } from '../types'
 
 /**
  * Arguments for invalidateTokenIn1D instruction to invalidate by token input

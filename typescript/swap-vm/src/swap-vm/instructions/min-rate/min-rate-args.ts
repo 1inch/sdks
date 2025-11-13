@@ -1,8 +1,8 @@
-import { Address, HexString } from '@1inch/sdk-core'
+import type { Address, HexString } from '@1inch/sdk-core'
 import { UINT_64_MAX } from '@1inch/byte-utils'
 import assert from 'node:assert'
 import { MinRateArgsCoder } from './min-rate-args-coder'
-import { IArgsData } from '../types'
+import type { IArgsData } from '../types'
 
 /**
  * Arguments for min rate instructions (requireMinRate1D, adjustMinRate1D)

@@ -1,7 +1,7 @@
 import { Address, HexString } from '@1inch/sdk-core'
 import { BN, BytesBuilder, BytesIter } from '@1inch/byte-utils'
 import assert from 'assert'
-import { TakerTraitsBuildArgs } from './types'
+import type { TakerTraitsBuildArgs } from './types'
 
 /**
  * The TakerTraits is packed bytes structure encoding taker swap preferences.

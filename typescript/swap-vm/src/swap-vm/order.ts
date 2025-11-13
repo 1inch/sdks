@@ -1,7 +1,8 @@
-import { Address, DataFor, HexString, NetworkEnum } from '@1inch/sdk-core'
+import type { Address, DataFor, NetworkEnum } from '@1inch/sdk-core'
+import { HexString } from '@1inch/sdk-core'
 import { keccak256, encodeAbiParameters, hashTypedData } from 'viem'
-import { MakerTraits } from './maker-traits'
-import { SwapVmProgram } from './programs/swap-vm-program'
+import type { MakerTraits } from './maker-traits'
+import type { SwapVmProgram } from './programs/swap-vm-program'
 
 export class Order {
   static ABI = {

@@ -1,7 +1,7 @@
 import { BytesBuilder, BytesIter, add0x } from '@1inch/byte-utils'
 import { HexString } from '@1inch/sdk-core'
 import { DutchAuctionArgs } from './dutch-auction-args'
-import { IArgsCoder } from '../types'
+import type { IArgsCoder } from '../types'
 
 export class DutchAuctionArgsCoder implements IArgsCoder<DutchAuctionArgs> {
   encode(args: DutchAuctionArgs): HexString {

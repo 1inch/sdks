@@ -1,6 +1,6 @@
 import { HexString } from '@1inch/sdk-core'
 import { DebugArgs } from './debug-args'
-import { IArgsCoder } from '../types'
+import type { IArgsCoder } from '../types'
 
 class PrintSwapRegistersArgsCoder implements IArgsCoder<PrintSwapRegistersArgs> {
   encode(_args: PrintSwapRegistersArgs): HexString {

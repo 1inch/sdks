@@ -1,4 +1,4 @@
-import { IArgsData, IInstruction, IOpcode } from './types'
+import type { IArgsData, IInstruction, IOpcode } from './types'
 
 export class Instruction<T extends IArgsData> implements IInstruction<T> {
   constructor(

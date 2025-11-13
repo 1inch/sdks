@@ -1,6 +1,6 @@
 import type { DataFor } from '@1inch/sdk-core'
 import { ProgramBuilder } from './program-builder'
-import { SwapVmProgram } from './swap-vm-program'
+import type { SwapVmProgram } from './swap-vm-program'
 import { allInstructions } from '../instructions'
 import * as balances from '../instructions/balances'
 import * as controls from '../instructions/controls'

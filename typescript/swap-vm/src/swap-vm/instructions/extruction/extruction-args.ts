@@ -1,6 +1,6 @@
-import { Address, HexString } from '@1inch/sdk-core'
+import type { Address, HexString } from '@1inch/sdk-core'
 import { ExtructionArgsCoder } from './extruction-args-coder'
-import { IArgsData } from '../types'
+import type { IArgsData } from '../types'
 
 /**
  * Arguments for extruction instruction to call external contract logic

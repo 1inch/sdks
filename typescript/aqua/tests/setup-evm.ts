@@ -1,17 +1,13 @@
 /* eslint-disable no-console */
-import { GenericContainer, StartedTestContainer } from 'testcontainers'
+import type { StartedTestContainer } from 'testcontainers'
+import { GenericContainer } from 'testcontainers'
 import { LogWaitStrategy } from 'testcontainers/build/wait-strategies/log-wait-strategy'
-import {
-  parseEther,
-  parseUnits,
-  createTestClient,
-  http,
+import type {
   WalletClient,
   Abi,
   Transport,
   Hex,
   ContractConstructorArgs,
-  createWalletClient,
   RpcSchema,
   PublicRpcSchema,
   Chain,
@@ -21,6 +17,13 @@ import {
   TestRpcSchema,
   Client,
   PublicActions,
+} from 'viem'
+import {
+  parseEther,
+  parseUnits,
+  createTestClient,
+  http,
+  createWalletClient,
   publicActions,
 } from 'viem'
 

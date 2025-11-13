@@ -1,6 +1,6 @@
-import { Address, HexString } from '@1inch/sdk-core'
+import type { Address, HexString } from '@1inch/sdk-core'
 import { LimitSwapDirectionArgsCoder } from './limit-swap-direction-args-coder'
-import { IArgsData } from '../types'
+import type { IArgsData } from '../types'
 
 /**
  * Arguments for limit swap instructions (limitSwap1D, limitSwapOnlyFull1D)

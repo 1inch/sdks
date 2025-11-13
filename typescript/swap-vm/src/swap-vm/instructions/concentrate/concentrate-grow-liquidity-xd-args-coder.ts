@@ -1,8 +1,8 @@
 import { BytesBuilder, BytesIter } from '@1inch/byte-utils'
 import { AddressHalf, HexString } from '@1inch/sdk-core'
 import { ConcentrateGrowLiquidityXDArgs } from './concentrate-grow-liquidity-xd-args'
-import { TokenDelta } from './types'
-import { IArgsCoder } from '../types'
+import type { TokenDelta } from './types'
+import type { IArgsCoder } from '../types'
 
 export class ConcentrateGrowLiquidityXDArgsCoder
   implements IArgsCoder<ConcentrateGrowLiquidityXDArgs>

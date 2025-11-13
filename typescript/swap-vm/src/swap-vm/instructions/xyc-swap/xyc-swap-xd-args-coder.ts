@@ -1,6 +1,6 @@
 import { HexString } from '@1inch/sdk-core'
 import { XycSwapXDArgs } from './xyc-swap-xd-args'
-import { IArgsCoder } from '../types'
+import type { IArgsCoder } from '../types'
 
 export class XycSwapXDArgsCoder implements IArgsCoder<XycSwapXDArgs> {
   encode(_args: XycSwapXDArgs): HexString {

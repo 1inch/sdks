@@ -1,7 +1,7 @@
-import { HexString } from '@1inch/sdk-core'
-import { TokenBalance } from './types'
+import type { HexString } from '@1inch/sdk-core'
+import type { TokenBalance } from './types'
 import { BalancesArgsCoder } from './balances-args-coder'
-import { IArgsData } from '../types'
+import type { IArgsData } from '../types'
 
 /**
  * Arguments for setBalances and balances instructions containing token-amount pairs

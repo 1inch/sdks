@@ -1,8 +1,8 @@
-import { HexString } from '@1inch/sdk-core'
+import type { HexString } from '@1inch/sdk-core'
 import { UINT_256_MAX } from '@1inch/byte-utils'
 import assert from 'node:assert'
 import { TWAPSwapArgsCoder } from './twap-swap-args-coder'
-import { IArgsData } from '../types'
+import type { IArgsData } from '../types'
 
 /**
  * @notice TWAP Hook with exponential dutch auction and illiquidity handling

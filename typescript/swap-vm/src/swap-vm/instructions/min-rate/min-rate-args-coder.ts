@@ -1,7 +1,7 @@
 import { BytesBuilder, BytesIter, add0x } from '@1inch/byte-utils'
 import { HexString } from '@1inch/sdk-core'
 import { MinRateArgs } from './min-rate-args'
-import { IArgsCoder } from '../types'
+import type { IArgsCoder } from '../types'
 
 export class MinRateArgsCoder implements IArgsCoder<MinRateArgs> {
   encode(args: MinRateArgs): HexString {

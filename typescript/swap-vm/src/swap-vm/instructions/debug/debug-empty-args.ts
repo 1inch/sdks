@@ -1,5 +1,5 @@
 import { HexString } from '@1inch/sdk-core'
-import { IArgsData, IArgsCoder } from '../types'
+import type { IArgsData, IArgsCoder } from '../types'
 
 class DebugEmptyArgsCoder implements IArgsCoder<DebugEmptyArgs> {
   encode(_args: DebugEmptyArgs): HexString {

@@ -1,5 +1,5 @@
 import { assertHexString } from '../validators/should-be-hex-string'
-import { Hex } from '../types'
+import type { Hex } from '../types'
 
 export class HexString {
   static EMPTY: HexString = new HexString('0x')

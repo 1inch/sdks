@@ -1,15 +1,9 @@
-import {
+import type {
   Transport,
   Account,
   Hex,
   TypedDataDefinition,
-  createWalletClient,
-  createTestClient,
-  encodeFunctionData,
-  getAddress,
-  isAddress,
   Chain,
-  publicActions,
   Prettify,
   Client,
   PublicActions,
@@ -17,8 +11,16 @@ import {
   WalletActions,
   WalletRpcSchema,
 } from 'viem'
+import {
+  createWalletClient,
+  createTestClient,
+  encodeFunctionData,
+  getAddress,
+  isAddress,
+  publicActions,
+} from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
-import { CallInfo } from '../types/tx.js'
+import type { CallInfo } from '../types/tx.js'
 import { ERC20_ABI } from '../abi/ERC20.abi.js'
 
 export class TestWallet {

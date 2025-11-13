@@ -1,7 +1,7 @@
 import { BytesBuilder, BytesIter } from '@1inch/byte-utils'
 import { HexString } from '@1inch/sdk-core'
 import { ConcentrateGrowLiquidity2DArgs } from './concentrate-grow-liquidity-2d-args'
-import { IArgsCoder } from '../types'
+import type { IArgsCoder } from '../types'
 
 export class ConcentrateGrowLiquidity2DArgsCoder
   implements IArgsCoder<ConcentrateGrowLiquidity2DArgs>

@@ -1,11 +1,12 @@
 import { encodeFunctionData } from 'viem'
-import { CallInfo, Address, HexString } from '@1inch/sdk-core'
+import type { CallInfo, Address } from '@1inch/sdk-core'
+import { HexString } from '@1inch/sdk-core'
 import { BytesBuilder, trim0x } from '@1inch/byte-utils'
 import assert from 'node:assert'
-import { QuoteArgs, QuoteNonViewArgs, SwapArgs } from './types'
-import { TakerTraits } from '../swap-vm'
+import type { QuoteArgs, QuoteNonViewArgs, SwapArgs } from './types'
+import type { TakerTraits } from '../swap-vm'
 import SWAP_VM_ABI from '../abi/SwapVM.abi.json'
-import { Order } from '../swap-vm/order'
+import type { Order } from '../swap-vm/order'
 
 /**
  * SwapVM contract encoding/decoding utilities

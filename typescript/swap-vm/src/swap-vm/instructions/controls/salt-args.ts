@@ -1,8 +1,8 @@
-import { HexString } from '@1inch/sdk-core'
+import type { HexString } from '@1inch/sdk-core'
 import { UINT_64_MAX } from '@1inch/byte-utils'
 import assert from 'node:assert'
 import { SaltArgsCoder } from './salt-args-coder'
-import { IArgsData } from '../types'
+import type { IArgsData } from '../types'
 
 /**
  * Arguments for salt instruction used to add uniqueness to order hashes

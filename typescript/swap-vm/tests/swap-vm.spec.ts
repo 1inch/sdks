@@ -1,17 +1,18 @@
 /* eslint-disable max-lines-per-function */
 import 'dotenv/config'
-import { Address, HexString, NetworkEnum } from '@1inch/sdk-core'
+import type { NetworkEnum } from '@1inch/sdk-core'
+import { Address, HexString } from '@1inch/sdk-core'
 import { ADDRESSES } from '@1inch/sdk-core/test-utils'
-import { decodeFunctionResult, Hex, parseUnits } from 'viem'
+import type { Hex } from 'viem'
+import { decodeFunctionResult, parseUnits } from 'viem'
 import { ABI, AquaProtocolContract } from '@1inch/aqua-sdk'
 import { ReadyEvmFork } from './setup-evm.js'
 import { Order } from '../src/swap-vm/order.js'
 import { MakerTraits } from '../src/swap-vm/maker-traits.js'
+import type { IArgsCoder, IArgsData } from '../src'
 import {
   AquaAMMStrategy,
   AquaProgramBuilder,
-  IArgsCoder,
-  IArgsData,
   ProgramBuilder,
   SwapVMContract,
   TakerTraits,

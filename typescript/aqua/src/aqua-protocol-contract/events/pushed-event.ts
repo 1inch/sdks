@@ -1,4 +1,5 @@
-import { decodeEventLog, Log } from 'viem'
+import type { Log } from 'viem'
+import { decodeEventLog } from 'viem'
 import { Address, HexString } from '@1inch/sdk-core'
 import { AQUA_ABI } from '../../abi/Aqua.abi'
 

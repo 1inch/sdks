@@ -1,7 +1,7 @@
 import { BytesBuilder, BytesIter } from '@1inch/byte-utils'
 import { Address, HexString } from '@1inch/sdk-core'
 import { ExtructionArgs } from './extruction-args'
-import { IArgsCoder } from '../types'
+import type { IArgsCoder } from '../types'
 
 export class ExtructionArgsCoder implements IArgsCoder<ExtructionArgs> {
   encode(args: ExtructionArgs): HexString {

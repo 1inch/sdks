@@ -1,5 +1,7 @@
-import { decodeEventLog, Log } from 'viem'
-import { Address, DataFor, HexString } from '@1inch/sdk-core'
+import type { Log } from 'viem'
+import { decodeEventLog } from 'viem'
+import type { DataFor } from '@1inch/sdk-core'
+import { Address, HexString } from '@1inch/sdk-core'
 import { SWAP_VM_ABI } from '../../abi/SwapVM.abi'
 
 export class SwappedEvent {

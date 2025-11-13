@@ -1,6 +1,6 @@
 import { BitMask, BN } from '@1inch/byte-utils'
 import { Address } from '@1inch/sdk-core'
-import { MakerTraitsBuildArgs } from './types'
+import type { MakerTraitsBuildArgs } from './types'
 
 /**
  * The MakerTraits type is a uint256, and different parts of the number are used to encode different traits.

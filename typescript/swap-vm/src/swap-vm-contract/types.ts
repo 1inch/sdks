@@ -1,6 +1,6 @@
-import { Address, HexString } from '@1inch/sdk-core'
-import { TakerTraits } from '../swap-vm'
-import { Order } from '../swap-vm/order'
+import type { Address, HexString } from '@1inch/sdk-core'
+import type { TakerTraits } from '../swap-vm'
+import type { Order } from '../swap-vm/order'
 
 type SwapVmSwapInfo = {
   order: Order

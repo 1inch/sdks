@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { Address, HexString } from '@1inch/sdk-core'
-import { DockArgs, ShipArgs } from './types'
+import type { DockArgs, ShipArgs } from './types'
 import { AquaProtocolContract } from './aqua-protocol-contract'
 
 describe('AquaProtocolContract', () => {

@@ -1,7 +1,7 @@
 import { BytesBuilder, BytesIter } from '@1inch/byte-utils'
 import { Address, HexString } from '@1inch/sdk-core'
 import { OraclePriceAdjusterArgs } from './oracle-price-adjuster-args'
-import { IArgsCoder } from '../types'
+import type { IArgsCoder } from '../types'
 
 export class OraclePriceAdjusterArgsCoder implements IArgsCoder<OraclePriceAdjusterArgs> {
   encode(args: OraclePriceAdjusterArgs): HexString {

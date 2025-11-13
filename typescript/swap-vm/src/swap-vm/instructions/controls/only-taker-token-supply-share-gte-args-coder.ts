@@ -1,7 +1,7 @@
 import { BytesBuilder, BytesIter, add0x } from '@1inch/byte-utils'
 import { Address, HexString } from '@1inch/sdk-core'
 import { OnlyTakerTokenSupplyShareGteArgs } from './only-taker-token-supply-share-gte-args'
-import { IArgsCoder } from '../types'
+import type { IArgsCoder } from '../types'
 
 export class OnlyTakerTokenSupplyShareGteArgsCoder
   implements IArgsCoder<OnlyTakerTokenSupplyShareGteArgs>

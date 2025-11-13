@@ -1,6 +1,6 @@
-import { Address, HexString } from '@1inch/sdk-core'
+import type { Address, HexString } from '@1inch/sdk-core'
 import { OnlyTakerTokenBalanceNonZeroArgsCoder } from './only-taker-token-balance-non-zero-args-coder'
-import { IArgsData } from '../types'
+import type { IArgsData } from '../types'
 
 /**
  * Arguments for checking if taker holds any amount of a token

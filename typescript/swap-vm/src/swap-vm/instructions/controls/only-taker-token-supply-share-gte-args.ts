@@ -1,7 +1,7 @@
-import { Address, HexString } from '@1inch/sdk-core'
+import type { Address, HexString } from '@1inch/sdk-core'
 import assert from 'node:assert'
 import { OnlyTakerTokenSupplyShareGteArgsCoder } from './only-taker-token-supply-share-gte-args-coder'
-import { IArgsData } from '../types'
+import type { IArgsData } from '../types'
 
 const UINT_64_MAX = 0xffffffffffffffffn
 

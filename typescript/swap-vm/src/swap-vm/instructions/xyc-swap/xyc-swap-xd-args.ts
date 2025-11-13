@@ -1,6 +1,6 @@
-import { HexString } from '@1inch/sdk-core'
+import type { HexString } from '@1inch/sdk-core'
 import { XycSwapXDArgsCoder } from './xyc-swap-xd-args-coder'
-import { IArgsData } from '../types'
+import type { IArgsData } from '../types'
 
 /**
  * Arguments for xycSwapXD instruction (no arguments required)

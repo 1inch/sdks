@@ -1,7 +1,7 @@
 import { BytesBuilder, BytesIter } from '@1inch/byte-utils'
 import { AddressHalf, HexString } from '@1inch/sdk-core'
 import { InvalidateTokenOut1DArgs } from './invalidate-token-out-1d-args'
-import { IArgsCoder } from '../types'
+import type { IArgsCoder } from '../types'
 
 export class InvalidateTokenOut1DArgsCoder implements IArgsCoder<InvalidateTokenOut1DArgs> {
   encode(args: InvalidateTokenOut1DArgs): HexString {

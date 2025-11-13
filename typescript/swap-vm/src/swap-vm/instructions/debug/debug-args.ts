@@ -1,4 +1,4 @@
-import { IArgsData } from '../types'
+import type { IArgsData } from '../types'
 
 /**
  * Base class for all debug instruction arguments

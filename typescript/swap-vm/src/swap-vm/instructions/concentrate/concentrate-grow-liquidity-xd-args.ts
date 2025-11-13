@@ -1,9 +1,9 @@
-import { HexString } from '@1inch/sdk-core'
+import type { HexString } from '@1inch/sdk-core'
 import { UINT_256_MAX } from '@1inch/byte-utils'
 import assert from 'node:assert'
 import { ConcentrateGrowLiquidityXDArgsCoder } from './concentrate-grow-liquidity-xd-args-coder'
-import { TokenDelta } from './types'
-import { IArgsData } from '../types'
+import type { TokenDelta } from './types'
+import type { IArgsData } from '../types'
 
 /**
  * Arguments for concentrateGrowLiquidityXD instruction with multiple token deltas

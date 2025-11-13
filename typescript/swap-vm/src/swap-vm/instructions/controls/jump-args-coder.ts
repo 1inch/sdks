@@ -1,7 +1,7 @@
 import { BytesBuilder, BytesIter, add0x } from '@1inch/byte-utils'
 import { HexString } from '@1inch/sdk-core'
 import { JumpArgs } from './jump-args'
-import { IArgsCoder } from '../types'
+import type { IArgsCoder } from '../types'
 
 export class JumpArgsCoder implements IArgsCoder<JumpArgs> {
   encode(args: JumpArgs): HexString {
