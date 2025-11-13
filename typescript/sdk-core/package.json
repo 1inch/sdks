@@ -1,8 +1,12 @@
 {
   "name": "@1inch/sdk-core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Core utilities and types for 1inch SDKs",
   "author": "@1inch",
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@github.com:1inch/sdks.git"
+  },
   "homepage": "https://github.com/1inch/sdks#readme",
   "license": "MIT",
   "main": "./dist/index.js",

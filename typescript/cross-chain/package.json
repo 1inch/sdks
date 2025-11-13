@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "description": "1inch Cross-chain Protocol SDK",
   "author": "@1inch",
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@github.com:1inch/sdks.git"
+  },
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",

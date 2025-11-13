@@ -36,6 +36,10 @@
   ],
   "author": "@1inch",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@github.com:1inch/sdks.git"
+  },
   "engines": {
     "node": ">=22.0.0",
     "pnpm": ">=10.0.0"
