@@ -43,7 +43,6 @@ describe('MakerTraits', () => {
       expect(traits.shouldUnwrapWeth()).toBe(false)
     })
 
-
     it('should set and unset useAquaInsteadOfSignature flag', () => {
       const traits = MakerTraits.default()
 
@@ -61,7 +60,6 @@ describe('MakerTraits', () => {
       expect(traits.allowsZeroAmountIn()).toBe(true)
     })
   })
-
 
   describe('receiver', () => {
     it('should set and get receiver', () => {
