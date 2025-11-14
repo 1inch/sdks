@@ -239,18 +239,16 @@ The SDK exports:
 
 Initialize a liquidity strategy by depositing tokens into Aqua's virtual balance system.
 
-```typescript
-import {
-  AquaProtocolContract,
-  Address,
-  HexString,
-  AQUA_CONTRACT_ADDRESSES,
-  NetworkEnum
-} from '@1inch/aqua-sdk'
-import { encodeAbiParameters, parseUnits, privateKeyToAddress, privateKeyToAccount, mainnet, http } from 'viem'
+```typescriptimport { AquaProtocolContract, Address, HexString, AQUA_CONTRACT_ADDRESSES, NetworkEnum } from '@1inch/aqua-sdk'
+import { encodeAbiParameters, parseUnits, http, createWalletClient, isHex } from 'viem'
+import { privateKeyToAccount, privateKeyToAddress } from 'viem/accounts'
+import { mainnet } from 'viem/chains'
+import assert from 'node:assert'
+import 'dotenv/config'
 
+const makerPrivateKey = process.env.MAKER_PRIVATE_KEY
 
-const makerPrivateKey = '0x'
+assert(isHex(makerPrivateKey))
 const maker = privateKeyToAddress(makerPrivateKey)
 const app = '0xTODO_REPLACE'
 const WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
@@ -262,8 +260,8 @@ const strategyData = {
   token0: WETH,
   token1: USDC,
   feeBps: 0n,
-  salt: '0x0000000000000000000000000000000000000000000000000000000000000001',
-}
+  salt: '0x0000000000000000000000000000000000000000000000000000000000000001'
+} as const
 
 // Encode strategy as bytes
 const strategy = encodeAbiParameters(
@@ -276,12 +274,14 @@ const strategy = encodeAbiParameters(
         { name: 'token0', type: 'address' },
         { name: 'token1', type: 'address' },
         { name: 'feeBps', type: 'uint256' },
-        { name: 'salt', type: 'bytes32' },
-      ],
-    },
+        { name: 'salt', type: 'bytes32' }
+      ]
+    }
   ],
-  [strategyData],
+  [strategyData]
 )
+
+console.log('Encoded strategy:', strategy)
 
 // Initialize Aqua contract
 const aqua = new AquaProtocolContract(AQUA_CONTRACT_ADDRESSES[NetworkEnum.ETHEREUM])
@@ -293,13 +293,13 @@ const shipTx = aqua.ship({
   amountsAndTokens: [
     {
       token: new Address(USDC),
-      amount: parseUnits('4000', 6),
+      amount: parseUnits('4000', 6)
     },
     {
       token: new Address(WETH),
-      amount: parseUnits('1', 18),
-    },
-  ],
+      amount: parseUnits('1', 18)
+    }
+  ]
 })
 
 // Send transaction
@@ -308,7 +308,9 @@ const wallet = createWalletClient({
   transport: http(),
   account: privateKeyToAccount(makerPrivateKey)
 })
+
 await wallet.sendTransaction(shipTx)
+
 ```
 
 **Full test example:** [tests/aqua.spec.ts - should ship](https://github.com/1inch/sdks/blob/master/typescript/aqua/tests/aqua.spec.ts#L27)
@@ -319,25 +321,58 @@ Execute a swap against liquidity provided through Aqua. [TestTrader.sol](https:/
 
 ```typescript
 import {
-  encodeFunctionData,
-  encodeAbiParameters,
   parseUnits,
+  http,
+  createWalletClient,
+  isHex,
+  encodeFunctionData,
+  decodeAbiParameters,
+  publicActions
 } from 'viem'
+import { privateKeyToAccount } from 'viem/accounts'
+import { mainnet } from 'viem/chains'
+import assert from 'node:assert'
+import 'dotenv/config'
 
-// Use the same strategy from ship
-const strategy = '0x...'
+const takerPrivateKey = process.env.TAKER_PRIVATE_KEY
 
-// Calculate strategy hash for reference
-const strategyHash = AquaProtocolContract.calculateStrategyHash(
-  new HexString(strategy),
-).toString()
+assert(isHex(takerPrivateKey))
+const USDC = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+const app = '0xTODOReplace'
+const routerAddress = '0xTestTraderAddress'
+
+const strategy = '0x' // parsed from ship events or fetched from api
+
+// Send transaction
+const wallet = createWalletClient({
+  chain: mainnet,
+  transport: http(),
+  account: privateKeyToAccount(takerPrivateKey)
+}).extend(publicActions)
+
+// decode data based on specified by app format
+const [strategyData] = decodeAbiParameters(
+  [
+    {
+      type: 'tuple',
+      components: [
+        { name: 'maker', type: 'address' },
+        { name: 'token0', type: 'address' },
+        { name: 'token1', type: 'address' },
+        { name: 'feeBps', type: 'uint256' },
+        { name: 'salt', type: 'bytes32' }
+      ]
+    }
+  ],
+  strategy
+)
 
 // Define swap parameters
 const srcAmount = parseUnits('10', 6) // 10 USDC
-const srcToken = '0xUSDC...'
-const isZeroForOne = srcToken === strategyData.token0
+const srcToken = USDC
+const isZeroForOne = strategyData.token0 === srcToken
 
-// Encode the swap call to helper contract
+// Encode the swap call to helper Router contract
 const swapData = encodeFunctionData({
   abi: [
     {
@@ -346,44 +381,58 @@ const swapData = encodeFunctionData({
       inputs: [
         {
           name: 'app',
-          type: 'address',
-          internalType: 'contract XYCSwap',
+          type: 'address'
         },
         {
           name: 'strategy',
           type: 'tuple',
-          internalType: 'struct XYCSwap.Strategy',
           components: [
             { name: 'maker', type: 'address' },
             { name: 'token0', type: 'address' },
             { name: 'token1', type: 'address' },
             { name: 'feeBps', type: 'uint256' },
-            { name: 'salt', type: 'bytes32' },
-          ],
+            { name: 'salt', type: 'bytes32' }
+          ]
         },
         { name: 'zeroForOne', type: 'bool' },
-        { name: 'amountIn', type: 'uint256' },
+        { name: 'amountIn', type: 'uint256' }
       ],
       outputs: [{ name: 'amountOut', type: 'uint256' }],
-      stateMutability: 'nonpayable',
-    },
+      stateMutability: 'nonpayable'
+    }
   ],
   functionName: 'swap',
-  args: ['0xXYCSwapAddress', strategyData, isZeroForOne, srcAmount],
+  args: [app, strategyData, isZeroForOne, srcAmount]
 })
-
-const routerAddress = '0xTestTraderAddress'
 
 // give erc20 approve to routerAddress
-await signer.approve(srcToken, routerAddress)
-
-// Execute swap
-const swapTx = await signer.sendTransaction({
-  to: routerAddress,
-  data: swapData,
+await wallet.writeContract({
+  abi: [
+    {
+      type: 'function',
+      name: 'approve',
+      inputs: [
+        { name: 'spender', type: 'address', internalType: 'address' },
+        { name: 'value', type: 'uint256', internalType: 'uint256' }
+      ],
+      outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
+      stateMutability: 'nonpayable'
+    }
+  ],
+  address: srcToken,
+  account: wallet.account,
+  functionName: 'approve',
+  chain: wallet.chain,
+  args: [routerAddress, srcAmount]
 })
 
-await provider.waitForTransactionReceipt({ hash: swapTx })
+// Execute swap
+const swapTx = await wallet.sendTransaction({
+  to: routerAddress,
+  data: swapData
+})
+
+await wallet.waitForTransactionReceipt({ hash: swapTx })
 ```
 
 **Full test example:** [tests/aqua.spec.ts - should swap](https://github.com/1inch/sdks/blob/master/typescript/aqua/tests/aqua.spec.ts#L142)
@@ -393,27 +442,40 @@ await provider.waitForTransactionReceipt({ hash: swapTx })
 Withdraw all liquidity from a strategy and close it.
 
 ```typescript
-import {
-  AquaProtocolContract,
-  Address,
-  HexString,
-} from '@1inch/aqua-sdk'
+import { AquaProtocolContract, Address, HexString, AQUA_CONTRACT_ADDRESSES, NetworkEnum } from '@1inch/aqua-sdk'
+import { http, createWalletClient, isHex } from 'viem'
+import { privateKeyToAccount } from 'viem/accounts'
+import { mainnet } from 'viem/chains'
+import assert from 'node:assert'
+import 'dotenv/config'
 
-// Calculate or retrieve strategy hash
-const aqua = new AquaProtocolContract(new Address('0xAquaContractAddress'))
+const makerPrivateKey = process.env.MAKER_PRIVATE_KEY
 
-// Create dock transaction
-const dockTx = aqua.dock({
-  app: new Address('0xXYCSwapAddress'),
-  strategyHash: new HexString(strategyHash),
-  tokens: [
-    new Address('0xUSDC...'),
-    new Address('0xWETH...'),
-  ],
+assert(isHex(makerPrivateKey))
+const app = '0xTODO_REPLACE'
+const WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+const USDC = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+
+const strategy = '0x' // parsed from ship events or fetched from api
+
+// Initialize Aqua contract
+const aqua = new AquaProtocolContract(AQUA_CONTRACT_ADDRESSES[NetworkEnum.ETHEREUM])
+
+// Create ship transaction
+const shipTx = aqua.dock({
+  app: new Address(app),
+  strategyHash: AquaProtocolContract.calculateStrategyHash(new HexString(strategy)),
+  tokens: [new Address(USDC), new Address(WETH)]
 })
 
 // Send transaction
-await signer.sendTransaction(dockTx)
+const wallet = createWalletClient({
+  chain: mainnet,
+  transport: http(),
+  account: privateKeyToAccount(makerPrivateKey)
+})
+
+await wallet.sendTransaction(shipTx)
 
 // After transaction is confirmed, all virtual balances are withdrawn
 // and the strategy is closed

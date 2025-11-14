@@ -156,7 +156,7 @@ async function startNode(
     ])
     // .withLogConsumer((s) => s.pipe(process.stdout))
     .withWaitStrategy(new LogWaitStrategy('Listening on 0.0.0.0:8545', 1))
-    .withName(`anvil_aqua_tests_${chainId}_${Math.random()}`)
+    .withName(`anvil_swap_vm_tests_${chainId}_${Math.random()}`)
     .start()
 
   const url = `http://127.0.0.1:${anvil.getMappedPort(innerPort)}`
