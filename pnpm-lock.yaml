@@ -13,14 +13,14 @@ importers:
         version: 3.0.0(assert@2.1.0)
     devDependencies:
       '@1inch/aqua':
-        specifier: github:1inch/aqua
-        version: git+https://git@github.com:1inch/aqua.git#0637013a51cd56851f7b143a1f4500fdc93726cc(ts-node@10.9.2(@swc/core@1.15.1)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)
+        specifier: github:1inch/aqua#a7eb2858d76aee98e697be602601ca28ca19c697
+        version: git+https://git@github.com:1inch/aqua.git#a7eb2858d76aee98e697be602601ca28ca19c697(ts-node@10.9.2(@swc/core@1.15.1)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)
       '@1inch/eslint-config':
         specifier: ^3.0.8
         version: 3.0.8(e95d5498302c9a73275a5d8556ab0e8d)
       '@1inch/swap-vm':
-        specifier: github:1inch/swap-vm#893aecb201b292f703ff0c7226c755a21b4a5b1c
-        version: git+https://git@github.com:1inch/swap-vm.git#893aecb201b292f703ff0c7226c755a21b4a5b1c(ts-node@10.9.2(@swc/core@1.15.1)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)
+        specifier: github:1inch/swap-vm
+        version: git+https://git@github.com:1inch/swap-vm.git#42df75fd4fc45c09d8eeb65e523b4b20fa360e07(ts-node@10.9.2(@swc/core@1.15.1)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)
       '@1inch/tsconfig':
         specifier: ^1.0.12
         version: 1.0.12
@@ -273,9 +273,13 @@ importers:
 
 packages:
 
-  '@1inch/aqua@git+https://git@github.com:1inch/aqua.git#0637013a51cd56851f7b143a1f4500fdc93726cc':
-    resolution: {commit: 0637013a51cd56851f7b143a1f4500fdc93726cc, repo: git@github.com:1inch/aqua.git, type: git}
-    version: 1.0.0
+  '@1inch/aqua@git+https://git@github.com:1inch/aqua.git#33fac5dd33a418dbe3e08415c45645a25bc6fe9e':
+    resolution: {commit: 33fac5dd33a418dbe3e08415c45645a25bc6fe9e, repo: git@github.com:1inch/aqua.git, type: git}
+    version: 0.0.2
+
+  '@1inch/aqua@git+https://git@github.com:1inch/aqua.git#a7eb2858d76aee98e697be602601ca28ca19c697':
+    resolution: {commit: a7eb2858d76aee98e697be602601ca28ca19c697, repo: git@github.com:1inch/aqua.git, type: git}
+    version: 0.0.2
 
   '@1inch/byte-utils@3.0.0':
     resolution: {integrity: sha512-CuX4E0z/pzo9hKGzFsMi3vPVgHRRh14ZwNEZ5TY1svnKF8PjxWx3t0CjXCW4dyqKGe6TKAzgYqzzxrMrWPDy5Q==, tarball: https://npm.pkg.github.com/download/@1inch/byte-utils/3.0.0/1c573a3e72586540ea6f542099cd18da978118df}
@@ -320,8 +324,8 @@ packages:
   '@1inch/solidity-utils@6.8.0':
     resolution: {integrity: sha512-o1wgcSvgvKDSdTJvL7rc0vG4cLtdQ0WVAg3V+oJMKLx2sVX1rns8Qe2v3Fl3JKtaE05b9/DTJxFNNT6t4GQ+FA==, tarball: https://npm.pkg.github.com/download/@1inch/solidity-utils/6.8.0/fb1a0934e764daf92a68d35fd5ed85e560e122c5}
 
-  '@1inch/swap-vm@git+https://git@github.com:1inch/swap-vm.git#893aecb201b292f703ff0c7226c755a21b4a5b1c':
-    resolution: {commit: 893aecb201b292f703ff0c7226c755a21b4a5b1c, repo: git@github.com:1inch/swap-vm.git, type: git}
+  '@1inch/swap-vm@git+https://git@github.com:1inch/swap-vm.git#42df75fd4fc45c09d8eeb65e523b4b20fa360e07':
+    resolution: {commit: 42df75fd4fc45c09d8eeb65e523b4b20fa360e07, repo: git@github.com:1inch/swap-vm.git, type: git}
     version: 1.0.0
 
   '@1inch/tsconfig@1.0.12':
@@ -5886,7 +5890,20 @@ packages:
 
 snapshots:
 
-  '@1inch/aqua@git+https://git@github.com:1inch/aqua.git#0637013a51cd56851f7b143a1f4500fdc93726cc(ts-node@10.9.2(@swc/core@1.15.1)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)':
+  '@1inch/aqua@git+https://git@github.com:1inch/aqua.git#33fac5dd33a418dbe3e08415c45645a25bc6fe9e(ts-node@10.9.2(@swc/core@1.15.1)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)':
+    dependencies:
+      '@1inch/solidity-utils': 6.8.0(ts-node@10.9.2(@swc/core@1.15.1)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)
+      '@openzeppelin/contracts': 5.4.0
+      forge-std: https://codeload.github.com/foundry-rs/forge-std/tar.gz/8e40513d678f392f398620b3ef2b418648b33e89
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - supports-color
+      - ts-node
+      - typescript
+      - utf-8-validate
+
+  '@1inch/aqua@git+https://git@github.com:1inch/aqua.git#a7eb2858d76aee98e697be602601ca28ca19c697(ts-node@10.9.2(@swc/core@1.15.1)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)':
     dependencies:
       '@1inch/solidity-utils': 6.8.0(ts-node@10.9.2(@swc/core@1.15.1)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)
       '@openzeppelin/contracts': 5.4.0
@@ -5953,9 +5970,9 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@1inch/swap-vm@git+https://git@github.com:1inch/swap-vm.git#893aecb201b292f703ff0c7226c755a21b4a5b1c(ts-node@10.9.2(@swc/core@1.15.1)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)':
+  '@1inch/swap-vm@git+https://git@github.com:1inch/swap-vm.git#42df75fd4fc45c09d8eeb65e523b4b20fa360e07(ts-node@10.9.2(@swc/core@1.15.1)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)':
     dependencies:
-      '@1inch/aqua': git+https://git@github.com:1inch/aqua.git#0637013a51cd56851f7b143a1f4500fdc93726cc(ts-node@10.9.2(@swc/core@1.15.1)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)
+      '@1inch/aqua': git+https://git@github.com:1inch/aqua.git#33fac5dd33a418dbe3e08415c45645a25bc6fe9e(ts-node@10.9.2(@swc/core@1.15.1)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)
       '@1inch/solidity-utils': 6.8.0(ts-node@10.9.2(@swc/core@1.15.1)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)
       '@openzeppelin/contracts': 5.4.0
       forge-std: https://codeload.github.com/foundry-rs/forge-std/tar.gz/8e40513d678f392f398620b3ef2b418648b33e89

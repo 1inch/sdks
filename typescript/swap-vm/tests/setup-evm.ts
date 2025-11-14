@@ -179,20 +179,27 @@ async function startNode(
 }
 
 async function deployContracts(transport: Transport, chain: Chain): Promise<TestAddresses> {
+  const account = privateKeyToAccount(
+    '0x3667482b9520ea17999acd812ad3db1ff29c12c006e756cdcb5fd6cc5d5a9b01',
+  )
   const deployer = createWalletClient({
-    account: privateKeyToAccount(
-      '0x3667482b9520ea17999acd812ad3db1ff29c12c006e756cdcb5fd6cc5d5a9b01',
-    ),
+    account,
     transport,
     chain,
-  })
+  }).extend(publicActions)
 
   const aqua = await deploy(Aqua as ContractParams, [], deployer)
 
+  const nonce = await deployer.getTransactionCount({ address: account.address })
   const [swapVMAquaRouter, customSwapVM, testTrader] = await Promise.all([
-    deploy(TestAquaSwapVMRouter as ContractParams, [aqua], deployer),
-    deploy(TestCustomSwapVM as ContractParams, [aqua], deployer),
-    deploy(TestTrader as ContractParams, [aqua, [ADDRESSES.WETH, ADDRESSES.USDC]], deployer),
+    deploy(TestAquaSwapVMRouter as ContractParams, [aqua], deployer, nonce),
+    deploy(TestCustomSwapVM as ContractParams, [aqua], deployer, nonce + 1),
+    deploy(
+      TestTrader as ContractParams,
+      [aqua, [ADDRESSES.WETH, ADDRESSES.USDC]],
+      deployer,
+      nonce + 2,
+    ),
   ])
 
   return {
@@ -242,6 +249,7 @@ async function deploy(
   json: ContractParams,
   params: ContractConstructorArgs<Abi>,
   deployer: WalletClient,
+  nonce?: number,
 ): Promise<Hex> {
   const [account] = await deployer.getAddresses()
 
@@ -251,6 +259,7 @@ async function deploy(
     args: params,
     account,
     chain: deployer.chain,
+    nonce,
   })
 
   // Get the contract address from the transaction receipt

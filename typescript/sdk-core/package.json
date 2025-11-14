@@ -8,7 +8,6 @@
     "url": "ssh://git@github.com:1inch/sdks.git"
   },
   "homepage": "https://github.com/1inch/sdks#readme",
-  "license": "MIT",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",

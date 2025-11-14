@@ -46,7 +46,6 @@
     "swap",
     "virtual-machine"
   ],
-  "license": "MIT",
   "peerDependencies": {
     "viem": "^2.21.0"
   },

@@ -35,7 +35,6 @@
     "protocol"
   ],
   "author": "@1inch",
-  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "ssh://git@github.com:1inch/sdks.git"
@@ -44,7 +43,7 @@
     "node": ">=22.0.0",
     "pnpm": ">=10.0.0"
   },
-  "packageManager": "pnpm@10.19.0",
+  "packageManager": "pnpm@10.22.0",
   "volta": {
     "node": "22.13.1"
   },
@@ -52,9 +51,9 @@
     "@1inch/byte-utils": "3.0.0"
   },
   "devDependencies": {
-    "@1inch/aqua": "github:1inch/aqua",
+    "@1inch/aqua": "github:1inch/aqua#a7eb2858d76aee98e697be602601ca28ca19c697",
     "@1inch/eslint-config": "^3.0.8",
-    "@1inch/swap-vm": "github:1inch/swap-vm#893aecb201b292f703ff0c7226c755a21b4a5b1c",
+    "@1inch/swap-vm": "github:1inch/swap-vm",
     "@1inch/tsconfig": "^1.0.12",
     "@nx/devkit": "^22.0.3",
     "@nx/eslint": "^22.0.3",
