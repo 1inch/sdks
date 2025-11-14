@@ -1,15 +1,10 @@
-import type { Address } from '@1inch/sdk-core'
+import type { Address, HexString } from '@1inch/sdk-core'
 
 export type MakerTraitsBuildArgs = {
   shouldUnwrapWeth?: boolean
-  hasPreTransferOutHook?: boolean
-  hasPostTransferInHook?: boolean
   useAquaInsteadOfSignature?: boolean
-  ignoreAquaForTransferIn?: boolean
-  expiration?: bigint
+  allowZeroAmountIn?: boolean
   receiver?: Address
-  preTransferOutDataLength?: bigint
-  postTransferInDataLength?: bigint
 }
 
 export type TakerTraitsBuildArgs = {
@@ -21,4 +16,16 @@ export type TakerTraitsBuildArgs = {
   useTransferFromAndAquaPush?: boolean
   threshold?: bigint
   customReceiver?: Address
+}
+
+export type MakerDataArgs = {
+  preTransferInTarget?: Address
+  preTransferInData?: HexString
+  postTransferInTarget?: Address
+  postTransferInData?: HexString
+  preTransferOutTarget?: Address
+  preTransferOutData?: HexString
+  postTransferOutTarget?: Address
+  postTransferOutData?: HexString
+  program: HexString
 }

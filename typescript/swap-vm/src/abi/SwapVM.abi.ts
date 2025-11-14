@@ -30,7 +30,7 @@ export const SWAP_VM_ABI = [
   },
   {
     type: 'function',
-    name: 'hashOrder',
+    name: 'hash',
     inputs: [
       {
         name: 'order',
@@ -39,7 +39,7 @@ export const SWAP_VM_ABI = [
         components: [
           { name: 'maker', type: 'address', internalType: 'address' },
           { name: 'traits', type: 'uint256', internalType: 'MakerTraits' },
-          { name: 'program', type: 'bytes', internalType: 'bytes' },
+          { name: 'data', type: 'bytes', internalType: 'bytes' },
         ],
       },
     ],
@@ -57,7 +57,7 @@ export const SWAP_VM_ABI = [
         components: [
           { name: 'maker', type: 'address', internalType: 'address' },
           { name: 'traits', type: 'uint256', internalType: 'MakerTraits' },
-          { name: 'program', type: 'bytes', internalType: 'bytes' },
+          { name: 'data', type: 'bytes', internalType: 'bytes' },
         ],
       },
       { name: '', type: 'address', internalType: 'address' },
@@ -82,7 +82,7 @@ export const SWAP_VM_ABI = [
         components: [
           { name: 'maker', type: 'address', internalType: 'address' },
           { name: 'traits', type: 'uint256', internalType: 'MakerTraits' },
-          { name: 'program', type: 'bytes', internalType: 'bytes' },
+          { name: 'data', type: 'bytes', internalType: 'bytes' },
         ],
       },
       { name: 'tokenIn', type: 'address', internalType: 'address' },
@@ -107,7 +107,7 @@ export const SWAP_VM_ABI = [
         components: [
           { name: 'maker', type: 'address', internalType: 'address' },
           { name: 'traits', type: 'uint256', internalType: 'MakerTraits' },
-          { name: 'program', type: 'bytes', internalType: 'bytes' },
+          { name: 'data', type: 'bytes', internalType: 'bytes' },
         ],
       },
       { name: 'tokenIn', type: 'address', internalType: 'address' },

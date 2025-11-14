@@ -4,18 +4,13 @@ import { MakerTraits } from './maker-traits'
 
 describe('MakerTraits', () => {
   describe('default', () => {
-    it('should create default traits with all flags off', () => {
+    it('should create default traits with useAqua enabled by default', () => {
       const traits = MakerTraits.default()
 
       expect(traits.shouldUnwrapWeth()).toBe(false)
-      expect(traits.hasPreTransferOutHook()).toBe(false)
-      expect(traits.hasPostTransferInHook()).toBe(false)
-      expect(traits.isUseOfAquaInsteadOfSignatureEnabled()).toBe(false)
-      expect(traits.isIgnoreOfAquaForTransferInEnabled()).toBe(false)
-      expect(traits.expiration()).toBe(null)
+      expect(traits.isUseOfAquaInsteadOfSignatureEnabled()).toBe(true)
+      expect(traits.allowsZeroAmountIn()).toBe(false)
       expect(traits.customReceiver()).toBe(null)
-      expect(traits.preTransferOutDataLength()).toBe(0n)
-      expect(traits.postTransferInDataLength()).toBe(0n)
     })
   })
 
@@ -25,25 +20,15 @@ describe('MakerTraits', () => {
 
       const traits = MakerTraits.fromParams({
         shouldUnwrapWeth: true,
-        hasPreTransferOutHook: true,
-        hasPostTransferInHook: false,
         useAquaInsteadOfSignature: true,
-        ignoreAquaForTransferIn: false,
-        expiration: 1234567890n,
+        allowZeroAmountIn: true,
         receiver,
-        preTransferOutDataLength: 100n,
-        postTransferInDataLength: 200n,
       })
 
       expect(traits.shouldUnwrapWeth()).toBe(true)
-      expect(traits.hasPreTransferOutHook()).toBe(true)
-      expect(traits.hasPostTransferInHook()).toBe(false)
       expect(traits.isUseOfAquaInsteadOfSignatureEnabled()).toBe(true)
-      expect(traits.isIgnoreOfAquaForTransferInEnabled()).toBe(false)
-      expect(traits.expiration()).toBe(1234567890n)
+      expect(traits.allowsZeroAmountIn()).toBe(true)
       expect(traits.customReceiver()?.toString()).toBe(receiver.toString())
-      expect(traits.preTransferOutDataLength()).toBe(100n)
-      expect(traits.postTransferInDataLength()).toBe(200n)
     })
   })
 
@@ -58,25 +43,6 @@ describe('MakerTraits', () => {
       expect(traits.shouldUnwrapWeth()).toBe(false)
     })
 
-    it('should set and unset preTransferOut hook flag', () => {
-      const traits = MakerTraits.default()
-
-      traits.enablePreTransferOutHook()
-      expect(traits.hasPreTransferOutHook()).toBe(true)
-
-      traits.disablePreTransferOutHook()
-      expect(traits.hasPreTransferOutHook()).toBe(false)
-    })
-
-    it('should set and unset postTransferIn hook flag', () => {
-      const traits = MakerTraits.default()
-
-      traits.enablePostTransferInHook()
-      expect(traits.hasPostTransferInHook()).toBe(true)
-
-      traits.disablePostTransferInHook()
-      expect(traits.hasPostTransferInHook()).toBe(false)
-    })
 
     it('should set and unset useAquaInsteadOfSignature flag', () => {
       const traits = MakerTraits.default()
@@ -88,26 +54,14 @@ describe('MakerTraits', () => {
       expect(traits.isUseOfAquaInsteadOfSignatureEnabled()).toBe(false)
     })
 
-    it('should set and unset ignoreAquaForTransferIn flag', () => {
+    it('should set and unset allowZeroAmountIn flag', () => {
       const traits = MakerTraits.default()
 
-      traits.enableIgnoreOfAquaForTransferIn()
-      expect(traits.isIgnoreOfAquaForTransferInEnabled()).toBe(true)
-
-      traits.disableIgnoreAquaForTransferIn()
-      expect(traits.isIgnoreOfAquaForTransferInEnabled()).toBe(false)
+      traits.enableAllowZeroAmountIn()
+      expect(traits.allowsZeroAmountIn()).toBe(true)
     })
   })
 
-  describe('expiration', () => {
-    it('should set and get expiration', () => {
-      const traits = MakerTraits.default()
-      const expiration = 1234567890n
-
-      traits.withExpiration(expiration)
-      expect(traits.expiration()).toBe(expiration)
-    })
-  })
 
   describe('receiver', () => {
     it('should set and get receiver', () => {
@@ -119,32 +73,15 @@ describe('MakerTraits', () => {
     })
   })
 
-  describe('data lengths', () => {
-    it('should set and get preTransferOut data length', () => {
-      const traits = MakerTraits.default()
-
-      traits.withPreTransferOutDataLength(100n)
-      expect(traits.preTransferOutDataLength()).toBe(100n)
-    })
-
-    it('should set and get postTransferIn data length', () => {
-      const traits = MakerTraits.default()
-
-      traits.withPostTransferInDataLength(200n)
-      expect(traits.postTransferInDataLength()).toBe(200n)
-    })
-  })
-
   describe('conversion', () => {
     it('should convert to bigint', () => {
-      const traits = MakerTraits.default().withShouldUnwrap().withExpiration(1234567890n)
+      const traits = MakerTraits.default().withShouldUnwrap()
 
       const bigintValue = traits.asBigInt()
       expect(typeof bigintValue).toBe('bigint')
 
       const traitsFromBigint = new MakerTraits(bigintValue)
       expect(traitsFromBigint.shouldUnwrapWeth()).toBe(true)
-      expect(traitsFromBigint.expiration()).toBe(1234567890n)
     })
   })
 })

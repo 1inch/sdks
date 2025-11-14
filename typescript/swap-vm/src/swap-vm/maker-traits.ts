@@ -5,38 +5,50 @@ import type { MakerTraitsBuildArgs } from './types'
 /**
  * The MakerTraits type is a uint256, and different parts of the number are used to encode different traits.
  * High bits are used for flags:
- * 255 bit `SHOULD_UNWRAP_BIT_FLAG`              - if set, the order should unwrap WETH
- * 254 bit `HAS_PRE_TRANSFER_OUT_BIT_FLAG`       - if set, the order has pre-transfer-out hook
- * 253 bit `HAS_POST_TRANSFER_IN_BIT_FLAG`       - if set, the order has post-transfer-in hook
- * 252 bit `USE_AQUA_INSTEAD_OF_SIGNATURE_BIT_FLAG` - if set, use Aqua instead of signature
- * 251 bit `IGNORE_AQUA_FOR_TRANSFER_IN_BIT_FLAG`   - if set, ignore Aqua for transfer in
+ * 255 bit `SHOULD_UNWRAP_BIT_FLAG`                   - if set, the order should unwrap WETH
+ * 254 bit `USE_AQUA_INSTEAD_OF_SIGNATURE_BIT_FLAG`   - if set, use Aqua instead of signature
+ * 253 bit `ALLOW_ZERO_AMOUNT_IN`                     - if set, allow zero amount in
+ * 252 bit `HAS_PRE_TRANSFER_IN_HOOK_BIT_FLAG`        - if set, has pre-transfer-in hook
+ * 251 bit `HAS_POST_TRANSFER_IN_HOOK_BIT_FLAG`       - if set, has post-transfer-in hook
+ * 250 bit `HAS_PRE_TRANSFER_OUT_HOOK_BIT_FLAG`       - if set, has pre-transfer-out hook
+ * 249 bit `HAS_POST_TRANSFER_OUT_HOOK_BIT_FLAG`      - if set, has post-transfer-out hook
+ * 248 bit `PRE_TRANSFER_IN_HOOK_HAS_TARGET`          - if set, pre-transfer-in hook target is in data (not maker)
+ * 247 bit `POST_TRANSFER_IN_HOOK_HAS_TARGET`         - if set, post-transfer-in hook target is in data (not maker)
+ * 246 bit `PRE_TRANSFER_OUT_HOOK_HAS_TARGET`         - if set, pre-transfer-out hook target is in data (not maker)
+ * 245 bit `POST_TRANSFER_OUT_HOOK_HAS_TARGET`        - if set, post-transfer-out hook target is in data (not maker)
  *
- * Mid bits are used for data lengths:
- * bits 216-231 (16 bits) - post transfer in data length
- * bits 200-215 (16 bits) - pre transfer out data length
+ * Mid bits are used for order data offsets (cumulative byte positions):
+ * bits 160-223 (64 bits) - packed offsets (4 x uint16)
  *
- * Low bits are used for expiration and receiver:
- * bits 160-199 (40 bits) - expiration timestamp
+ * Low bits are used for receiver:
  * bits 0-159 (160 bits) - receiver address (0 if maker)
  */
 export class MakerTraits {
   private static SHOULD_UNWRAP_BIT_FLAG = 255n
 
-  private static HAS_PRE_TRANSFER_OUT_BIT_FLAG = 254n
+  private static USE_AQUA_INSTEAD_OF_SIGNATURE_BIT_FLAG = 254n
 
-  private static HAS_POST_TRANSFER_IN_BIT_FLAG = 253n
+  private static ALLOW_ZERO_AMOUNT_IN = 253n
 
-  private static USE_AQUA_INSTEAD_OF_SIGNATURE_BIT_FLAG = 252n
+  private static HAS_PRE_TRANSFER_IN_HOOK_BIT_FLAG = 252n
 
-  private static IGNORE_AQUA_FOR_TRANSFER_IN_BIT_FLAG = 251n
+  private static HAS_POST_TRANSFER_IN_HOOK_BIT_FLAG = 251n
+
+  private static HAS_PRE_TRANSFER_OUT_HOOK_BIT_FLAG = 250n
+
+  private static HAS_POST_TRANSFER_OUT_HOOK_BIT_FLAG = 249n
+
+  private static PRE_TRANSFER_IN_HOOK_HAS_TARGET = 248n
+
+  private static POST_TRANSFER_IN_HOOK_HAS_TARGET = 247n
+
+  private static PRE_TRANSFER_OUT_HOOK_HAS_TARGET = 246n
+
+  private static POST_TRANSFER_OUT_HOOK_HAS_TARGET = 245n
 
   private static RECEIVER_MASK = new BitMask(0n, 160n)
 
-  private static EXPIRATION_MASK = new BitMask(160n, 200n)
-
-  private static PRE_TRANSFER_OUT_DATA_LENGTH_MASK = new BitMask(200n, 216n)
-
-  private static POST_TRANSFER_IN_DATA_LENGTH_MASK = new BitMask(216n, 232n)
+  private static ORDER_DATA_SLICES_OFFSETS_MASK = new BitMask(160n, 224n)
 
   private value: BN
 
@@ -45,7 +57,7 @@ export class MakerTraits {
   }
 
   static default(): MakerTraits {
-    return new MakerTraits(0n)
+    return new MakerTraits(0n).enableUseOfAquaInsteadOfSignature()
   }
 
   /**
@@ -58,39 +70,35 @@ export class MakerTraits {
       traits.withShouldUnwrap()
     }
 
-    if (args.hasPreTransferOutHook) {
-      traits.enablePreTransferOutHook()
-    }
-
-    if (args.hasPostTransferInHook) {
-      traits.enablePostTransferInHook()
-    }
-
     if (args.useAquaInsteadOfSignature) {
       traits.enableUseOfAquaInsteadOfSignature()
     }
 
-    if (args.ignoreAquaForTransferIn) {
-      traits.enableIgnoreOfAquaForTransferIn()
-    }
-
-    if (args.expiration && args.expiration > 0n) {
-      traits.withExpiration(args.expiration)
+    if (args.allowZeroAmountIn) {
+      traits.enableAllowZeroAmountIn()
     }
 
     if (args.receiver) {
       traits.withCustomReceiver(args.receiver)
     }
 
-    if (args.preTransferOutDataLength !== undefined) {
-      traits.withPreTransferOutDataLength(args.preTransferOutDataLength)
-    }
-
-    if (args.postTransferInDataLength !== undefined) {
-      traits.withPostTransferInDataLength(args.postTransferInDataLength)
-    }
-
     return traits
+  }
+
+  /**
+   * Set order data offsets (packed uint64)
+   */
+  public withOrderDataOffsets(offsets: bigint): this {
+    this.value = this.value.setMask(MakerTraits.ORDER_DATA_SLICES_OFFSETS_MASK, offsets)
+
+    return this
+  }
+
+  /**
+   * Get order data offsets (packed uint64)
+   */
+  public getOrderDataOffsets(): bigint {
+    return this.value.getMask(MakerTraits.ORDER_DATA_SLICES_OFFSETS_MASK).value
   }
 
   /**
@@ -119,51 +127,65 @@ export class MakerTraits {
   }
 
   /**
-   * Check if has pre-transfer-out hook
+   * Check if has pre-transfer-in hook target in data (not maker)
    */
-  public hasPreTransferOutHook(): boolean {
-    return this.value.getBit(MakerTraits.HAS_PRE_TRANSFER_OUT_BIT_FLAG) === 1
+  public hasPreTransferInTargetEnabled(): boolean {
+    return this.value.getBit(MakerTraits.PRE_TRANSFER_IN_HOOK_HAS_TARGET) === 1
   }
 
   /**
-   * Enable pre-transfer-out hook
+   * Enable pre-transfer-in hook target in data
    */
-  public enablePreTransferOutHook(): this {
-    this.value = this.value.setBit(MakerTraits.HAS_PRE_TRANSFER_OUT_BIT_FLAG, 1)
+  public enablePreTransferInTarget(): this {
+    this.value = this.value.setBit(MakerTraits.PRE_TRANSFER_IN_HOOK_HAS_TARGET, 1)
 
     return this
   }
 
   /**
-   * Disable pre-transfer-out hook
+   * Check if has post-transfer-in hook target in data (not maker)
    */
-  public disablePreTransferOutHook(): this {
-    this.value = this.value.setBit(MakerTraits.HAS_PRE_TRANSFER_OUT_BIT_FLAG, 0)
+  public hasPostTransferInTargetEnabled(): boolean {
+    return this.value.getBit(MakerTraits.POST_TRANSFER_IN_HOOK_HAS_TARGET) === 1
+  }
+
+  /**
+   * Enable post-transfer-in hook target in data
+   */
+  public enablePostTransferInTarget(): this {
+    this.value = this.value.setBit(MakerTraits.POST_TRANSFER_IN_HOOK_HAS_TARGET, 1)
 
     return this
   }
 
   /**
-   * Check if has post-transfer-in hook
+   * Check if has pre-transfer-out hook target in data (not maker)
    */
-  public hasPostTransferInHook(): boolean {
-    return this.value.getBit(MakerTraits.HAS_POST_TRANSFER_IN_BIT_FLAG) === 1
+  public hasPreTransferOutTargetEnabled(): boolean {
+    return this.value.getBit(MakerTraits.PRE_TRANSFER_OUT_HOOK_HAS_TARGET) === 1
   }
 
   /**
-   * Enable post-transfer-in hook
+   * Enable pre-transfer-out hook target in data
    */
-  public enablePostTransferInHook(): this {
-    this.value = this.value.setBit(MakerTraits.HAS_POST_TRANSFER_IN_BIT_FLAG, 1)
+  public enablePreTransferOutTarget(): this {
+    this.value = this.value.setBit(MakerTraits.PRE_TRANSFER_OUT_HOOK_HAS_TARGET, 1)
 
     return this
   }
 
   /**
-   * Disable post-transfer-in hook
+   * Check if has post-transfer-out hook target in data (not maker)
    */
-  public disablePostTransferInHook(): this {
-    this.value = this.value.setBit(MakerTraits.HAS_POST_TRANSFER_IN_BIT_FLAG, 0)
+  public hasPostTransferOutTargetEnabled(): boolean {
+    return this.value.getBit(MakerTraits.POST_TRANSFER_OUT_HOOK_HAS_TARGET) === 1
+  }
+
+  /**
+   * Enable post-transfer-out hook target in data
+   */
+  public enablePostTransferOutTarget(): this {
+    this.value = this.value.setBit(MakerTraits.POST_TRANSFER_OUT_HOOK_HAS_TARGET, 1)
 
     return this
   }
@@ -194,52 +216,38 @@ export class MakerTraits {
   }
 
   /**
-   * Check if ignores Aqua for transfer in
+   * Check if allows zero amount in
    */
-  public isIgnoreOfAquaForTransferInEnabled(): boolean {
-    return this.value.getBit(MakerTraits.IGNORE_AQUA_FOR_TRANSFER_IN_BIT_FLAG) === 1
+  public allowsZeroAmountIn(): boolean {
+    return this.value.getBit(MakerTraits.ALLOW_ZERO_AMOUNT_IN) === 1
   }
 
   /**
-   * Enable ignoring Aqua for transfer in
+   * Enable allowing zero amount in
    */
-  public enableIgnoreOfAquaForTransferIn(): this {
-    this.value = this.value.setBit(MakerTraits.IGNORE_AQUA_FOR_TRANSFER_IN_BIT_FLAG, 1)
+  public enableAllowZeroAmountIn(): this {
+    this.value = this.value.setBit(MakerTraits.ALLOW_ZERO_AMOUNT_IN, 1)
 
     return this
   }
 
   /**
-   * Disable ignoring Aqua for transfer in
+   * Check if has hooks
    */
-  public disableIgnoreAquaForTransferIn(): this {
-    this.value = this.value.setBit(MakerTraits.IGNORE_AQUA_FOR_TRANSFER_IN_BIT_FLAG, 0)
-
-    return this
+  public hasPreTransferInHook(): boolean {
+    return this.value.getBit(MakerTraits.HAS_PRE_TRANSFER_IN_HOOK_BIT_FLAG) === 1
   }
 
-  /**
-   * Get expiration timestamp
-   */
-  public expiration(): bigint | null {
-    const timestampSec = this.value.getMask(MakerTraits.EXPIRATION_MASK)
-
-    if (timestampSec.isZero()) {
-      return null
-    }
-
-    return timestampSec.value
+  public hasPostTransferInHook(): boolean {
+    return this.value.getBit(MakerTraits.HAS_POST_TRANSFER_IN_HOOK_BIT_FLAG) === 1
   }
 
-  /**
-   * Set expiration timestamp
-   */
-  public withExpiration(expiration: bigint): this {
-    const expirationSec = expiration === null ? 0n : expiration
+  public hasPreTransferOutHook(): boolean {
+    return this.value.getBit(MakerTraits.HAS_PRE_TRANSFER_OUT_HOOK_BIT_FLAG) === 1
+  }
 
-    this.value = this.value.setMask(MakerTraits.EXPIRATION_MASK, expirationSec)
-
-    return this
+  public hasPostTransferOutHook(): boolean {
+    return this.value.getBit(MakerTraits.HAS_POST_TRANSFER_OUT_HOOK_BIT_FLAG) === 1
   }
 
   /**
@@ -261,38 +269,6 @@ export class MakerTraits {
   public withCustomReceiver(receiver: Address): this {
     const addressBigInt = BigInt(receiver.toString())
     this.value = this.value.setMask(MakerTraits.RECEIVER_MASK, addressBigInt)
-
-    return this
-  }
-
-  /**
-   * Get pre-transfer-out hook data length
-   */
-  public preTransferOutDataLength(): bigint {
-    return this.value.getMask(MakerTraits.PRE_TRANSFER_OUT_DATA_LENGTH_MASK).value
-  }
-
-  /**
-   * Set pre-transfer-out hook data length
-   */
-  public withPreTransferOutDataLength(length: bigint): this {
-    this.value = this.value.setMask(MakerTraits.PRE_TRANSFER_OUT_DATA_LENGTH_MASK, length)
-
-    return this
-  }
-
-  /**
-   * Get post-transfer-in hook data length
-   */
-  public postTransferInDataLength(): bigint {
-    return this.value.getMask(MakerTraits.POST_TRANSFER_IN_DATA_LENGTH_MASK).value
-  }
-
-  /**
-   * Set post-transfer-in hook data length
-   */
-  public withPostTransferInDataLength(length: bigint): this {
-    this.value = this.value.setMask(MakerTraits.POST_TRANSFER_IN_DATA_LENGTH_MASK, length)
 
     return this
   }

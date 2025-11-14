@@ -7,7 +7,7 @@ import { Opcode } from '../opcode'
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/XYCConcentrate.sol#L139
  **/
 export const concentrateGrowLiquidityXD = new Opcode(
-  Symbol('Concentrate.concentrateGrowLiquidityXD'),
+  Symbol('XYCConcentrate.concentrateGrowLiquidityXD'),
   ConcentrateGrowLiquidityXDArgs.CODER,
 )
 
@@ -16,6 +16,6 @@ export const concentrateGrowLiquidityXD = new Opcode(
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/XYCConcentrate.sol#L172
  **/
 export const concentrateGrowLiquidity2D = new Opcode(
-  Symbol('Concentrate.concentrateGrowLiquidity2D'),
+  Symbol('XYCConcentrate.concentrateGrowLiquidity2D'),
   ConcentrateGrowLiquidity2DArgs.CODER,
 )

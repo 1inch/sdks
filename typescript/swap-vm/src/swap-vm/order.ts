@@ -1,8 +1,10 @@
 import type { Address, DataFor, NetworkEnum } from '@1inch/sdk-core'
 import { HexString } from '@1inch/sdk-core'
 import { keccak256, encodeAbiParameters, hashTypedData } from 'viem'
+import assert from 'assert'
 import type { MakerTraits } from './maker-traits'
-import type { SwapVmProgram } from './programs/swap-vm-program'
+import { MakerData } from './maker-data'
+import type { MakerDataArgs } from './types'
 
 export class Order {
   static ABI = {
@@ -10,21 +12,46 @@ export class Order {
     components: [
       { name: 'maker', type: 'address' },
       { name: 'traits', type: 'uint256' },
-      { name: 'program', type: 'bytes' },
+      { name: 'data', type: 'bytes' },
     ],
   } as const
 
   constructor(
     public readonly maker: Address,
     public readonly traits: MakerTraits,
-    /**
-     * List of instructions to be executed (8 bit index, 8 bit args length, args)
-     */
-    public readonly program: SwapVmProgram,
+    public readonly data: HexString,
   ) {}
 
-  public static new(data: DataFor<Order>): Order {
-    return new Order(data.maker, data.traits, data.program)
+  public static new(params: DataFor<Order>): Order {
+    return new Order(params.maker, params.traits, params.data)
+  }
+
+  public static build(
+    maker: Address,
+    traits: MakerTraits,
+    data: MakerDataArgs = MakerData.EMPTY,
+  ): Order {
+    const encoded = MakerData.encode(data, maker)
+
+    traits.withOrderDataOffsets(encoded.offsets)
+
+    if (encoded.hasPreTransferInTarget) {
+      traits.enablePreTransferInTarget()
+    }
+
+    if (encoded.hasPostTransferInTarget) {
+      traits.enablePostTransferInTarget()
+    }
+
+    if (encoded.hasPreTransferOutTarget) {
+      traits.enablePreTransferOutTarget()
+    }
+
+    if (encoded.hasPostTransferOutTarget) {
+      traits.enablePostTransferOutTarget()
+    }
+
+    return new Order(maker, traits, encoded.data)
   }
 
   public hash(domain?: {
@@ -50,13 +77,13 @@ export class Order {
           Order: [
             { name: 'maker', type: 'address' },
             { name: 'traits', type: 'uint256' },
-            { name: 'program', type: 'bytes' },
+            { name: 'data', type: 'bytes' },
           ],
         },
         message: {
           maker: this.maker.toString(),
           traits: this.traits.asBigInt(),
-          program: this.program.toString(),
+          data: this.data.toString(),
         },
       }),
     )
@@ -69,7 +96,7 @@ export class Order {
         {
           maker: this.maker.toString(),
           traits: this.traits.asBigInt(),
-          program: this.program.toString(),
+          data: this.data.toString(),
         },
       ],
     )
