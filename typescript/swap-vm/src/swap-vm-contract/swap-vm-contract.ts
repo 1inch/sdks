@@ -3,9 +3,9 @@ import type { CallInfo, Address } from '@1inch/sdk-core'
 import { HexString } from '@1inch/sdk-core'
 import { BytesBuilder, trim0x } from '@1inch/byte-utils'
 import assert from 'node:assert'
-import type { QuoteArgs, QuoteNonViewArgs, SwapArgs } from './types'
+import type { QuoteArgs, SwapArgs } from './types'
 import type { TakerTraits } from '../swap-vm'
-import SWAP_VM_ABI from '../abi/SwapVM.abi.json'
+import { SWAP_VM_ABI } from '../abi/SwapVM.abi'
 import type { Order } from '../swap-vm/order'
 
 /**
@@ -25,37 +25,7 @@ export class SwapVMContract {
       abi: SWAP_VM_ABI,
       functionName: 'quote',
       args: [
-        {
-          maker: args.order.maker.toString(),
-          traits: args.order.traits.asBigInt(),
-          program: args.order.program.toString(),
-        },
-        args.tokenIn.toString(),
-        args.tokenOut.toString(),
-        args.amount,
-        takerTraitsAndData.toString(),
-      ],
-    })
-
-    return new HexString(result)
-  }
-
-  /**
-   * Encode quoteNonView function call data
-   * @see https://github.com/1inch/swap-vm/blob/main/src/SwapVM.sol#L109
-   */
-  static encodeQuoteNonViewCallData(args: QuoteNonViewArgs): HexString {
-    const takerTraitsAndData = this.buildTakerTraitsAndData(args.takerTraits, args.takerData)
-
-    const result = encodeFunctionData({
-      abi: SWAP_VM_ABI,
-      functionName: 'quoteNonView',
-      args: [
-        {
-          maker: args.order.maker.toString(),
-          traits: args.order.traits.asBigInt(),
-          program: args.order.program.toString(),
-        },
+        args.order.build(),
         args.tokenIn.toString(),
         args.tokenOut.toString(),
         args.amount,
@@ -73,14 +43,8 @@ export class SwapVMContract {
   static encodeHashOrderCallData(order: Order): HexString {
     const result = encodeFunctionData({
       abi: SWAP_VM_ABI,
-      functionName: 'hashOrder',
-      args: [
-        {
-          maker: order.maker.toString(),
-          traits: order.traits.asBigInt(),
-          program: order.program.toString(),
-        },
-      ],
+      functionName: 'hash',
+      args: [order.build()],
     })
 
     return new HexString(result)
@@ -102,11 +66,7 @@ export class SwapVMContract {
       abi: SWAP_VM_ABI,
       functionName: 'swap',
       args: [
-        {
-          maker: args.order.maker.toString(),
-          traits: args.order.traits.asBigInt(),
-          program: args.order.program.toString(),
-        },
+        args.order.build(),
         args.tokenIn.toString(),
         args.tokenOut.toString(),
         args.amount,
@@ -124,17 +84,6 @@ export class SwapVMContract {
     return {
       to: contractAddress.toString(),
       data: this.encodeQuoteCallData(args).toString(),
-      value: 0n,
-    }
-  }
-
-  /**
-   * Build quoteNonView transaction
-   */
-  static buildQuoteNonViewTx(contractAddress: Address, args: QuoteNonViewArgs): CallInfo {
-    return {
-      to: contractAddress.toString(),
-      data: this.encodeQuoteNonViewCallData(args).toString(),
       value: 0n,
     }
   }
@@ -168,7 +117,7 @@ export class SwapVMContract {
     signature?: HexString,
     additionalData?: HexString,
   ): HexString {
-    const useAquaInsteadOfSignature = order.traits.isUseOfAquaInsteadOfSignatureEnabled()
+    const useAquaInsteadOfSignature = order.traits.useAquaInsteadOfSignature
 
     const builder = new BytesBuilder()
 
@@ -206,10 +155,6 @@ export class SwapVMContract {
 
   public swap(args: SwapArgs): CallInfo {
     return SwapVMContract.buildSwapTx(this.address, args)
-  }
-
-  public quoteNonView(args: QuoteNonViewArgs): CallInfo {
-    return SwapVMContract.buildQuoteNonViewTx(this.address, args)
   }
 
   public quote(args: QuoteArgs): CallInfo {

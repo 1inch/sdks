@@ -1,3 +1,4 @@
+import assert from 'node:assert'
 import { assertHexString } from '../validators/should-be-hex-string'
 import type { Hex } from '../types'
 
@@ -8,6 +9,7 @@ export class HexString {
 
   constructor(hex: string, name = '') {
     assertHexString(hex, `hexString ${name}`)
+    assert(hex.length % 2 === 0, 'Hex string must have an even length')
 
     this.hexString = hex
   }
@@ -34,6 +36,22 @@ export class HexString {
 
   isEmpty(): boolean {
     return this.hexString === '0x'
+  }
+
+  concat(other: HexString): HexString {
+    return new HexString(this.hexString + other.hexString.slice(2))
+  }
+
+  bytesCount(): number {
+    return (this.hexString.length - 2) / 2
+  }
+
+  sliceBytes(start: number, end: number): HexString {
+    return new HexString('0x' + this.hexString.slice(start * 2 + 2, end * 2 + 2))
+  }
+
+  equal(other: HexString): boolean {
+    return this.hexString === other.hexString
   }
 
   toString(): Hex {
