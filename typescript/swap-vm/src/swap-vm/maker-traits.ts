@@ -227,6 +227,14 @@ export class MakerTraits {
     })
   }
 
+  static hooksDataEndsAtByte(traits: bigint): number {
+    const bn = new BN(traits)
+    const offsets = bn.getMask(MakerTraits.HOOKS_DATA_OFFSETS_MASK).value
+    const dataEndAt = Number((offsets >> (16n * BigInt(MakerTraits.HOOKS.length - 1))) & 0xffffn)
+
+    return dataEndAt
+  }
+
   /**
    * Mutate the traits instance in-place with a partial update and return it.
    *

@@ -107,7 +107,7 @@ describe('SwapVM', () => {
 
     const tx = aqua.ship({
       app: new Address(forkNode.addresses.swapVMAquaRouter),
-      strategy: order.abiEncode(),
+      strategy: order.encode(),
       amountsAndTokens: [
         {
           amount: parseUnits('10000', 6),
@@ -222,7 +222,7 @@ describe('SwapVM', () => {
 
     const tx = aqua.ship({
       app: new Address(forkNode.addresses.swapVMAquaRouter),
-      strategy: order.abiEncode(),
+      strategy: order.encode(),
       amountsAndTokens: [
         {
           amount: parseUnits('10000', 6),
@@ -365,7 +365,7 @@ describe('SwapVM', () => {
 
     const tx = aqua.ship({
       app: new Address(forkNode.addresses.swapVMAquaRouter),
-      strategy: order.abiEncode(),
+      strategy: order.encode(),
       amountsAndTokens: [
         {
           amount: parseUnits('10000', 6),

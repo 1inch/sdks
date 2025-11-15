@@ -46,8 +46,8 @@ export class HexString {
     return (this.hexString.length - 2) / 2
   }
 
-  sliceBytes(start: number, end: number): HexString {
-    return new HexString('0x' + this.hexString.slice(start * 2 + 2, end * 2 + 2))
+  sliceBytes(start: number, end?: number): HexString {
+    return new HexString('0x' + this.hexString.slice(start * 2 + 2, end ? end * 2 + 2 : undefined))
   }
 
   equal(other: HexString): boolean {
