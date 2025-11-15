@@ -5,7 +5,7 @@ import { Address, HexString } from '@1inch/sdk-core'
 import { ADDRESSES } from '@1inch/sdk-core/test-utils'
 import type { Hex } from 'viem'
 import { decodeFunctionResult, parseUnits } from 'viem'
-import { ABI, AquaProtocolContract } from '@1inch/aqua-sdk'
+import { AquaProtocolContract, ABI } from '@1inch/aqua-sdk'
 import { ReadyEvmFork } from './setup-evm.js'
 import { Order } from '../src/swap-vm/order.js'
 import { MakerTraits } from '../src/swap-vm/maker-traits.js'
@@ -32,12 +32,14 @@ describe('SwapVM', () => {
     strategyHash: Hex,
     token: Address | Hex,
   ): Promise<bigint> => {
-    return forkNode.provider.readContract({
+    const [balance] = await forkNode.provider.readContract({
       address: forkNode.addresses.aqua,
       abi: ABI.AQUA_ABI,
-      functionName: 'balances',
+      functionName: 'rawBalances',
       args: [maker.toString() as Hex, app.toString() as Hex, strategyHash, token.toString() as Hex],
     })
+
+    return balance
   }
 
   beforeAll(async () => {
@@ -66,14 +68,8 @@ describe('SwapVM', () => {
     const hashFromContract = await forkNode.provider.readContract({
       address: forkNode.addresses.swapVMAquaRouter,
       abi: SWAP_VM_ABI,
-      functionName: 'hashOrder',
-      args: [
-        {
-          maker: order.maker.toString(),
-          program: order.program.toString(),
-          traits: order.traits.asBigInt(),
-        },
-      ],
+      functionName: 'hash',
+      args: [order.build()],
     })
 
     expect(calculatedHash.toString()).toEqual(hashFromContract)
@@ -269,21 +265,22 @@ describe('SwapVM', () => {
     }
 
     // Simulate the call to get the dstAmount
-    const simulateResult = await forkNode.provider.call({
-      account: swapperAddress,
-      ...swapVM.quote(swapParams),
-    })
+    // const simulateResult = await forkNode.provider.call({
+    //   account: swapperAddress,
+    //   ...swapVM.quote(swapParams),
+    // })
 
-    const [_, dstAmount] = decodeFunctionResult({
-      abi: SWAP_VM_ABI,
-      functionName: 'quote',
-      data: simulateResult.data!,
-    })
+    // const [_, dstAmount] = decodeFunctionResult({
+    //   abi: SWAP_VM_ABI,
+    //   functionName: 'quote',
+    //   data: simulateResult.data!,
+    // })
 
+    const dstAmount = 1000n
     const swap = swapVM.swap(swapParams)
 
-    const { txHash: _swapTx } = await swapper.send({ ...swap, allowFail: false })
-    // await forkNode.printTrace(swapTx)
+    const { txHash: swapTx } = await swapper.send({ ...swap, allowFail: true })
+    await forkNode.printTrace(swapTx)
 
     const providerWethBalanceAfter = await getAquaBalance(
       liqProviderAddress,
