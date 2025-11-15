@@ -21,12 +21,14 @@ describe('Aqua', () => {
     strategyHash: Hex,
     token: Address | Hex,
   ): Promise<bigint> => {
-    return forkNode.provider.readContract({
+    const [balance] = await forkNode.provider.readContract({
       address: forkNode.addresses.aqua,
       abi: AQUA_ABI,
-      functionName: 'balances',
+      functionName: 'rawBalances',
       args: [maker.toString() as Hex, app.toString() as Hex, strategyHash, token.toString() as Hex],
     })
+
+    return balance
   }
 
   beforeAll(async () => {

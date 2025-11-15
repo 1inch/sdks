@@ -1,10 +1,15 @@
-import type { Address, DataFor, NetworkEnum } from '@1inch/sdk-core'
+import type { Address, DataFor, Hex, NetworkEnum } from '@1inch/sdk-core'
 import { HexString } from '@1inch/sdk-core'
 import { keccak256, encodeAbiParameters, hashTypedData } from 'viem'
 import assert from 'assert'
 import type { MakerTraits } from './maker-traits'
-import { MakerData } from './maker-data'
-import type { MakerDataArgs } from './types'
+import type { SwapVmProgram } from './programs'
+
+type BuiltOrder = {
+  maker: Hex
+  traits: bigint
+  data: Hex
+}
 
 export class Order {
   static ABI = {
@@ -19,39 +24,11 @@ export class Order {
   constructor(
     public readonly maker: Address,
     public readonly traits: MakerTraits,
-    public readonly data: HexString,
+    public readonly program: SwapVmProgram,
   ) {}
 
   public static new(params: DataFor<Order>): Order {
-    return new Order(params.maker, params.traits, params.data)
-  }
-
-  public static build(
-    maker: Address,
-    traits: MakerTraits,
-    data: MakerDataArgs = MakerData.EMPTY,
-  ): Order {
-    const encoded = MakerData.encode(data, maker)
-
-    traits.withOrderDataOffsets(encoded.offsets)
-
-    if (encoded.hasPreTransferInTarget) {
-      traits.enablePreTransferInTarget()
-    }
-
-    if (encoded.hasPostTransferInTarget) {
-      traits.enablePostTransferInTarget()
-    }
-
-    if (encoded.hasPreTransferOutTarget) {
-      traits.enablePreTransferOutTarget()
-    }
-
-    if (encoded.hasPostTransferOutTarget) {
-      traits.enablePostTransferOutTarget()
-    }
-
-    return new Order(maker, traits, encoded.data)
+    return new Order(params.maker, params.traits, params.program)
   }
 
   public hash(domain?: {
@@ -60,7 +37,7 @@ export class Order {
     verifyingContract: Address
     version: string
   }): HexString {
-    if (this.traits.isUseOfAquaInsteadOfSignatureEnabled()) {
+    if (this.traits.useAquaInsteadOfSignature) {
       return new HexString(keccak256(this.abiEncode().toString()))
     }
 
@@ -80,27 +57,24 @@ export class Order {
             { name: 'data', type: 'bytes' },
           ],
         },
-        message: {
-          maker: this.maker.toString(),
-          traits: this.traits.asBigInt(),
-          data: this.data.toString(),
-        },
+        message: this.build(),
       }),
     )
   }
 
   public abiEncode(): HexString {
-    const encoded = encodeAbiParameters(
-      [Order.ABI],
-      [
-        {
-          maker: this.maker.toString(),
-          traits: this.traits.asBigInt(),
-          data: this.data.toString(),
-        },
-      ],
-    )
+    const encoded = encodeAbiParameters([Order.ABI], [this.build()])
 
     return new HexString(encoded)
+  }
+
+  public build(): BuiltOrder {
+    const { traits, hooksData } = this.traits.encode(this.maker)
+
+    return {
+      maker: this.maker.toString(),
+      traits,
+      data: hooksData.concat(this.program).toString(),
+    }
   }
 }

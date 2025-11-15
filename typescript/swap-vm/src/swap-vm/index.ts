@@ -1,5 +1,4 @@
 export * from './maker-traits'
-export * from './maker-data'
 export * from './taker-traits'
 export * from './order'
 export * from './types'

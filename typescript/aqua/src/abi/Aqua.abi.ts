@@ -1,18 +1,6 @@
 export const AQUA_ABI = [
   {
     type: 'function',
-    name: 'balances',
-    inputs: [
-      { name: 'maker', type: 'address', internalType: 'address' },
-      { name: 'app', type: 'address', internalType: 'address' },
-      { name: 'strategyHash', type: 'bytes32', internalType: 'bytes32' },
-      { name: 'token', type: 'address', internalType: 'address' },
-    ],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'dock',
     inputs: [
       { name: 'app', type: 'address', internalType: 'address' },
@@ -47,6 +35,37 @@ export const AQUA_ABI = [
     ],
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'rawBalances',
+    inputs: [
+      { name: 'maker', type: 'address', internalType: 'address' },
+      { name: 'app', type: 'address', internalType: 'address' },
+      { name: 'strategyHash', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'token', type: 'address', internalType: 'address' },
+    ],
+    outputs: [
+      { name: 'balance', type: 'uint248', internalType: 'uint248' },
+      { name: 'tokensCount', type: 'uint8', internalType: 'uint8' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'safeBalances',
+    inputs: [
+      { name: 'maker', type: 'address', internalType: 'address' },
+      { name: 'app', type: 'address', internalType: 'address' },
+      { name: 'strategyHash', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'token0', type: 'address', internalType: 'address' },
+      { name: 'token1', type: 'address', internalType: 'address' },
+    ],
+    outputs: [
+      { name: 'balance0', type: 'uint256', internalType: 'uint256' },
+      { name: 'balance1', type: 'uint256', internalType: 'uint256' },
+    ],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -124,6 +143,16 @@ export const AQUA_ABI = [
   {
     type: 'error',
     name: 'PushToNonActiveStrategyPrevented',
+    inputs: [
+      { name: 'maker', type: 'address', internalType: 'address' },
+      { name: 'app', type: 'address', internalType: 'address' },
+      { name: 'strategyHash', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'token', type: 'address', internalType: 'address' },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'SafeBalancesForTokenNotInActiveStrategy',
     inputs: [
       { name: 'maker', type: 'address', internalType: 'address' },
       { name: 'app', type: 'address', internalType: 'address' },
