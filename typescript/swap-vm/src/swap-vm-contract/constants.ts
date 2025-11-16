@@ -1,9 +1,14 @@
 import { Address, NetworkEnum } from '@1inch/sdk-core'
 
 /**
- * AquaSwapVM contract addresses by chain ID
+ * AquaSwapVMRouter contract addresses by chain ID
  * These addresses supports only AQUA instructions set
  *
+ * Deployed with next params
+ * - name    = `AquaSwapVMRouter`
+ * - version = `1.0.0`
+ *
+ * @see https://github.com/1inch/swap-vm/blob/8cc4c467374959af9efdb6e2b67d32d3c1083e1e/src/routers/AquaSwapVMRouter.sol#L11
  * @see "../swap-vm/programs/aqua-program-builder"
  */
 export const AQUA_SWAP_VM_CONTRACT_ADDRESSES: Record<NetworkEnum, Address> = {

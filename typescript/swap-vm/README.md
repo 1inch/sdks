@@ -199,10 +199,20 @@ console.log(event.tokenOut)     // Address
 console.log(event.amountIn)     // bigint
 console.log(event.amountOut)    // bigint
 ```
-
 ## Instructions
 
-The Swap VM uses a comprehensive instruction system for building swap programs. Available instruction categories include:
+The Swap VM uses a comprehensive instruction system for building swap programs.
+
+🔎 **Instruction coverage vs. deployment**
+
+- The **SDK** exposes the **full instruction set** (see `_allInstructions` in [`src/swap-vm/instructions/index.ts`](./src/swap-vm/instructions/index.ts)) and can safely **encode/decode every core opcode** defined by the protocol.
+- The **currently deployed `AquaSwapVM` contracts** support **only the Aqua subset** of these instructions (see `aquaInstructions` in the same file).
+- Any program that uses instructions **outside `aquaInstructions`** will **not be executable on current Aqua deployments**, even though encoding/decoding will succeed.
+- After the **`Fusaka` Ethereum hardfork**, a full `SwapVM` deployment is planned; at that point, programs using the complete `_allInstructions` set will be executable on-chain on Ethereum.
+
+💡 **Gotcha**: When designing programs intended to run on today’s on-chain Aqua instances, treat `aquaInstructions` as the authoritative list of **runtime-available** opcodes, and the rest of the instruction set as **future / generic Swap VM** capabilities.
+
+Available instruction categories in the full Swap VM instruction set include:
 
 ### Balances
 - `SET_BALANCES_XD` - Initialize token balances
@@ -242,7 +252,42 @@ The Swap VM uses a comprehensive instruction system for building swap programs. 
 - `PROTOCOL_FEE_AMOUNT_OUT_XD` - Protocol fee on output
 - `AQUA_PROTOCOL_FEE_AMOUNT_OUT_XD` - Aqua protocol fee on output
 
-For detailed instruction documentation, see the [Swap VM Protocol Guide](https://github.com/1inch/swap-vm).
+### Custom instruction sets & `ProgramBuilder`
+
+Anyone can deploy a **SwapVM-compatible contract with a custom instruction set** (e.g. different opcode layout, subset, or extension of the core set) and still use this SDK to build programs for it.
+
+The generic [`ProgramBuilder`](./src/swap-vm/programs/program-builder.ts):
+
+- Is **instruction-set agnostic** – you inject the opcode table via the constructor as `ixsSet: IOpcode[]`.
+- Can **build and decode programs** for:
+  - The full `SwapVM` instruction set (`_allInstructions`)
+  - The Aqua subset (`aquaInstructions`)
+  - **Any custom opcode table** that matches your own contract deployment
+
+🎯 **Non-obvious behavior**:
+
+- `ProgramBuilder.add(ix)` validates that the instruction’s opcode is present in the provided `ixsSet`.  
+  - If you accidentally mix instructions from a different set, it throws with the list of supported opcode IDs.
+- `ProgramBuilder.decode(program)` uses the same `ixsSet` to map opcode indices back to instruction definitions, so your **off-chain opcode table must match the on-chain contract layout**.
+
+This makes it safe to:
+
+- Deploy your own `SwapVM`-style contract with a custom opcode mapping.
+- Use `ProgramBuilder` with your custom `ixsSet` to construct and parse programs for that deployment, without changing the rest of the SDK.
+
+### Recommended builder for Aqua strategies
+
+For strategies intended to run on **today’s deployed `AquaSwapVM` contracts**, it is **recommended** to use the specialized [`AquaProgramBuilder`](./src/swap-vm/programs/aqua-program-builder.ts) instead of the bare `ProgramBuilder`:
+
+- It is pre-wired with `aquaInstructions`, so you **cannot accidentally use opcodes that are not supported by Aqua**.
+- It exposes a rich set of **high-level, typed methods** for the Aqua instruction set
+💡 **Practical guidance**:
+
+- Use **`AquaProgramBuilder`** for real-world strategy building on current Aqua deployments – it gives you a safer, higher-level API over the Aqua opcode subset.
+- Use **`ProgramBuilder`** when:
+  - Targeting future full `SwapVM` deployments (post-`Fusaka` on Ethereum), or
+  - Working with your own custom instruction sets and contracts.
+
 
 ## Supported Networks
 
