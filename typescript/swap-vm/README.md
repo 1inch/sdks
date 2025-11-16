@@ -288,6 +288,229 @@ For strategies intended to run on **today’s deployed `AquaSwapVM` contracts**,
   - Targeting future full `SwapVM` deployments (post-`Fusaka` on Ethereum), or
   - Working with your own custom instruction sets and contracts.
 
+## Strategies
+
+A **strategy** is a reusable template that produces a `SwapVmProgram` – a sequence of instructions that defines **how** liquidity behaves and **how** swaps should be executed.
+
+At a high level:
+
+- You parameterize a strategy with **business-level inputs** (tokens, fees, decay periods, etc.).
+- The strategy’s `.build()` method compiles these into a low-level `SwapVmProgram` using a program builder.
+- That program is then embedded into an `Order` and shipped.
+
+### How strategies are built
+
+Strategies are thin wrappers around a program builder:
+
+1. **Collect inputs** (e.g. tokens, fee bps, decay parameters, protocol fee receiver).
+2. **Instantiate a builder**:
+   - `AquaProgramBuilder` for current `AquaSwapVM` deployments (recommended).
+   - `ProgramBuilder` with a custom opcode set for non-Aqua/custom deployments.
+3. **Append instructions** in the desired execution order.
+4. Call `.build()` to get a `SwapVmProgram`.
+
+Because the strategy owns the builder, you can keep the strategy API stable even if the underlying instruction sequence evolves.
+
+### Creating your own strategy
+
+To define a custom strategy:
+
+1. Create a small builder class that:
+   - Stores your **domain parameters** (tokens, price bands, risk limits, etc.).
+   - Offers fluent `withX(...)` methods to configure them.
+2. In `.build()`:
+   - Create `ProgramBuilder`.
+   - Append instructions in the order you want them executed.
+   - Return `builder.build()`.
+
+This pattern keeps your **business logic readable** at the strategy layer while leveraging the full flexibility of the underlying Swap VM instruction set.
+
+For example:
+
+```typescript
+import type { Address } from '@1inch/sdk-core'
+import type { SwapVmProgram } from '@1inch/swap-vm-sdk'
+import { AquaProgramBuilder } from '@1inch/swap-vm-sdk'
+import * as concentrate from '@1inch/swap-vm-sdk/src/swap-vm/instructions/concentrate'
+import * as fee from '@1inch/swap-vm-sdk/src/swap-vm/instructions/fee'
+import { FlatFeeArgs } from '@1inch/swap-vm-sdk/src/swap-vm/instructions/fee'
+
+/**
+ * Minimal strategy:
+ * - concentrates liquidity for a 2-token pool
+ * - optionally charges a taker fee on input
+ * - always finishes with a simple XYC swap
+ */
+export class SimpleAmmStrategy {
+  private liquidityA?: bigint
+  private liquidityB?: bigint
+  private feeBpsIn?: number
+
+  constructor(
+    public readonly tokenA: Address,
+    public readonly tokenB: Address,
+  ) {}
+
+  /**
+   * Sets initial virtual liquidity for the pair.
+   */
+  public withLiquidity(a: bigint, b: bigint): this {
+    this.liquidityA = a
+    this.liquidityB = b
+    return this
+  }
+
+  /**
+   * Sets taker fee (bps) applied to amountIn.
+   * If not called, no taker fee is applied.
+   */
+  public withFeeTokenIn(bps: number): this {
+    this.feeBpsIn = bps
+    return this
+  }
+
+  /**
+   * Builds a SwapVmProgram for AquaSwapVM using a small, fixed instruction pipeline:
+   *   [concentrate liquidity] -> [optional fee on input] -> [XYC swap]
+   */
+  public build(): SwapVmProgram {
+    const builder = new AquaProgramBuilder()
+
+    if (this.liquidityA !== undefined && this.liquidityB !== undefined) {
+      const data = concentrate.ConcentrateGrowLiquidity2DArgs.fromTokenDeltas(
+        this.tokenA,
+        this.tokenB,
+        this.liquidityA,
+        this.liquidityB,
+      )
+      builder.add(concentrate.concentrateGrowLiquidity2D.createIx(data))
+    }
+
+    if (this.feeBpsIn !== undefined) {
+      const feeArgs = FlatFeeArgs.fromBps(this.feeBpsIn)
+      builder.add(fee.flatFeeAmountInXD.createIx(feeArgs))
+    }
+
+    // Core swap step
+    builder.xycSwapXD()
+
+    return builder.build()
+  }
+}
+
+// Example usage:
+
+const strategy = new SimpleAmmStrategy(USDC, WETH)
+  .withLiquidity(
+    10_000n * 10n ** 6n,  // 10k USDC
+    5n * 10n ** 18n,      // 5 WETH
+  )
+  .withFeeTokenIn(5)       // 5 bps taker fee on input (optional)
+
+const program = strategy.build()
+
+const order = Order.new({
+  maker: new Address(maker),
+  program,
+  traits: MakerTraits.default(),
+})
+```
+
+## Creating your own instructions
+
+You can define your own high-level instructions as long as they:
+
+- Have an on-chain implementation at a specific opcode index.
+- Provide a **TypeScript args type**, a **coder**, and an **`Opcode` definition** wired into an instruction set.
+
+Here is an example of implementation `flatFeeXD` instruction. You can implement any custom instruction in the same way.
+
+### 1. Define args class (`FlatFeeArgs`)
+
+```typescript
+const FEE_100_PERCENT = 1e9 // 1e9 = 100%
+
+/**
+ * Arguments for flat fee instruction
+ */
+export class FlatFeeArgs implements IArgsData {
+  public static readonly CODER = new FlatFeeArgsCoder()
+
+  constructor(public readonly fee: bigint) {
+    assert(fee >= 0n && fee <= UINT_32_MAX, `Invalid fee: ${fee}. Must be a valid uint32`)
+    assert(
+      fee <= BigInt(FEE_100_PERCENT),
+      `Fee out of range: ${fee}. Must be <= ${FEE_100_PERCENT}`,
+    )
+  }
+
+  /**
+   * Creates a FlatFeeArgs instance from basis points
+   * @param bps - Fee in basis points (10000 bps = 100%)
+   */
+  public static fromBps(bps: number): FlatFeeArgs {
+    const fee = BigInt(bps * 100000)
+
+    return new FlatFeeArgs(fee)
+  }
+}
+```
+
+### 2. Implement an args coder (`FlatFeeArgsCoder`)
+
+Coders:
+- Implement `IArgsCoder<T>`.
+- Are responsible for **binary layout** of arguments.
+- Must be strictly symmetric: `decode(encode(args)) === args`.
+
+```typescript
+export class FlatFeeArgsCoder implements IArgsCoder<FlatFeeArgs> {
+  encode(args: FlatFeeArgs): HexString {
+    const builder = new BytesBuilder()
+    builder.addUint32(args.fee)
+
+    return new HexString(add0x(builder.asHex()))
+  }
+
+  decode(data: HexString): FlatFeeArgs {
+    const iter = BytesIter.BigInt(data.toString())
+    const fee = iter.nextUint32()
+
+    return new FlatFeeArgs(fee)
+  }
+}
+```
+
+### 3. Declare the opcode (`flatFeeXD`)
+
+An `Opcode` ties together:
+- A **unique identifier** (`Symbol`) for this instruction.
+- The **args coder** to use for encoding/decoding.
+
+```typescript
+/**
+ * Applies flat fee to computed swap amount (same rate for exactIn and exactOut)
+ */
+export const flatFeeXD = new Opcode(Symbol('Fee.flatFeeXD'), FlatFeeArgs.CODER)
+```
+Once you have an `Opcode`:
+
+- `flatFeeXD.createIx(args)` produces a typed instruction.
+- `ProgramBuilder` can add it to a program:
+  - `builder.add(flatFeeXD.createIx(FlatFeeArgs.fromBps(5)))`.
+
+### 4. Wire the opcode into an instruction set
+To make your instruction **usable at runtime**, you must place it at the correct index in an instruction set that matches your on-chain VM:
+
+```typescript
+export const myInstructionSet: Opcode<IArgsData>[] = [
+  /* ... previous opcodes ... */
+  fee.flatFeeXD,
+  /* ... */
+]
+```
+
+⚠️ **Runtime gotcha**: The **array index** in the instruction set (`ixsSet[index]`) must match the **opcode index used by your on-chain contract**. A mismatch will not fail at encoding time but will execute the **wrong instruction** at runtime.
 
 ## Supported Networks
 
