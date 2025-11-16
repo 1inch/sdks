@@ -135,7 +135,6 @@ describe('ProtocolFeeArgs', () => {
       expect(args.fee).toBe(expectedFee)
       expect(args.to).toBe(feeRecipient)
 
-      // Verify encoding/decoding works
       const encoded = ProtocolFeeArgs.CODER.encode(args)
       const decoded = ProtocolFeeArgs.decode(encoded)
       expect(decoded.fee).toBe(expectedFee)

@@ -39,7 +39,7 @@ export * as extruction from './extruction'
  * Regular opcodes array - matching SwapVM contract exactly (44 opcodes)
  * @see https://github.com/1inch/swap-vm/blob/main/src/opcodes/Opcodes.sol#L46
  */
-export const allInstructions: Opcode<IArgsData>[] = [
+export const _allInstructions: Opcode<IArgsData>[] = [
   /**
    * Debug slots (1-10) - reserved for debugging
    */
@@ -129,23 +129,24 @@ export const aquaInstructions: Opcode<IArgsData>[] = [
   controls.jump, // 11 - JUMP
   controls.jumpIfExactIn, // 12 - JUMP_IF_EXACT_IN
   controls.jumpIfExactOut, // 13 - JUMP_IF_EXACT_OUT
-  controls.onlyTakerTokenBalanceNonZero, // 14 - ONLY_TAKER_TOKEN_BALANCE_NON_ZERO
-  controls.onlyTakerTokenBalanceGte, // 15 - ONLY_TAKER_TOKEN_BALANCE_GTE
-  controls.onlyTakerTokenSupplyShareGte, // 16 - ONLY_TAKER_TOKEN_SUPPLY_SHARE_GTE
+  controls.deadline, // 14 - DEADLINE
+  controls.onlyTakerTokenBalanceNonZero, // 15 - ONLY_TAKER_TOKEN_BALANCE_NON_ZERO
+  controls.onlyTakerTokenBalanceGte, // 16 - ONLY_TAKER_TOKEN_BALANCE_GTE
+  controls.onlyTakerTokenSupplyShareGte, // 17 - ONLY_TAKER_TOKEN_SUPPLY_SHARE_GTE
 
   /**
-   * Trading instructions (17+)
+   * Trading instructions (18+)
    */
-  xycSwap.xycSwapXD, // 17 - XYC_SWAP_XD (was 22 in regular)
-  concentrate.concentrateGrowLiquidityXD, // 18 - CONCENTRATE_GROW_LIQUIDITY_XD
-  concentrate.concentrateGrowLiquidity2D, // 19 - CONCENTRATE_GROW_LIQUIDITY_2D
-  decay.decayXD, // 20 - DECAY_XD
-  // stableSwap.stableSwap2D, // 21 - STABLE_SWAP_2D
-  controls.salt, // 22 - SALT
-  fee.flatFeeXD, // 23 - FLAT_FEE_XD
-  fee.flatFeeAmountInXD, // 24 - FLAT_FEE_AMOUNT_IN_XD
-  fee.flatFeeAmountOutXD, // 25 - FLAT_FEE_AMOUNT_OUT_XD
-  fee.progressiveFeeXD, // 26 - PROGRESSIVE_FEE_XD
-  fee.protocolFeeAmountOutXD, // 27 - PROTOCOL_FEE_AMOUNT_OUT_XD
-  fee.aquaProtocolFeeAmountOutXD, // 28 - AQUA_PROTOCOL_FEE_AMOUNT_OUT_XD
+  xycSwap.xycSwapXD, // 18 - XYC_SWAP_XD (was 22 in regular)
+  concentrate.concentrateGrowLiquidityXD, // 19 - CONCENTRATE_GROW_LIQUIDITY_XD
+  concentrate.concentrateGrowLiquidity2D, // 20 - CONCENTRATE_GROW_LIQUIDITY_2D
+  decay.decayXD, // 21 - DECAY_XD
+  // stableSwap.stableSwap2D, // 22 - STABLE_SWAP_2D
+  controls.salt, // 23 - SALT
+  fee.flatFeeXD, // 24 - FLAT_FEE_XD
+  fee.flatFeeAmountInXD, // 25 - FLAT_FEE_AMOUNT_IN_XD
+  fee.flatFeeAmountOutXD, // 26 - FLAT_FEE_AMOUNT_OUT_XD
+  fee.progressiveFeeXD, // 27 - PROGRESSIVE_FEE_XD
+  fee.protocolFeeAmountOutXD, // 28 - PROTOCOL_FEE_AMOUNT_OUT_XD
+  fee.aquaProtocolFeeAmountOutXD, // 29 - AQUA_PROTOCOL_FEE_AMOUNT_OUT_XD
 ] as const

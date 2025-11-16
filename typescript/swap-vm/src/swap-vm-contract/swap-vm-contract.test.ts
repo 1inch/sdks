@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { Address, HexString } from '@1inch/sdk-core'
 import { SwapVMContract } from './swap-vm-contract'
-import { MakerTraits, TakerTraits } from '../swap-vm'
+import { MakerTraits, Order, TakerTraits } from '../swap-vm'
 import { SwapVmProgram } from '../swap-vm/programs/swap-vm-program'
 
 describe('SwapVMContract', () => {
@@ -12,19 +12,19 @@ describe('SwapVMContract', () => {
 
   describe('encodeSwapCallData', () => {
     it('should encode swap call with signature', () => {
-      const order = {
+      const order = Order.new({
         maker: mockMaker,
         traits: MakerTraits.default(),
         program: mockProgram,
-      }
+      })
 
-      const takerTraits = TakerTraits.fromParams({
-        isExactIn: true,
+      const takerTraits = TakerTraits.new({
+        exactIn: true,
         threshold: 1000000n,
       })
 
       const signature = new HexString('0x1234567890abcdef')
-      const additionalData = new HexString('0xdeadbeef')
+      const takerData = new HexString('0xdeadbeef')
 
       const callData = SwapVMContract.encodeSwapCallData({
         order,
@@ -33,23 +33,23 @@ describe('SwapVMContract', () => {
         amount: 100000n,
         signature,
         takerTraits,
-        additionalData,
+        takerData,
       })
 
       expect(callData).toBeInstanceOf(HexString)
     })
 
     it('should encode swap call without signature (using Aqua)', () => {
-      const order = {
+      const order = Order.new({
         maker: mockMaker,
-        traits: MakerTraits.fromParams({
+        traits: MakerTraits.default().with({
           useAquaInsteadOfSignature: true,
         }),
         program: mockProgram,
-      }
+      })
 
-      const takerTraits = TakerTraits.fromParams({
-        isExactIn: true,
+      const takerTraits = TakerTraits.new({
+        exactIn: true,
         threshold: 1000000n,
       })
 
@@ -67,15 +67,15 @@ describe('SwapVMContract', () => {
 
   describe('encodeQuoteCallData', () => {
     it('should encode quote call with takerTraits and data', () => {
-      const order = {
+      const order = Order.new({
         maker: mockMaker,
         traits: MakerTraits.default(),
         program: mockProgram,
-      }
+      })
 
-      const takerTraits = TakerTraits.fromParams({
-        isExactIn: true,
-        shouldUnwrapWeth: true,
+      const takerTraits = TakerTraits.new({
+        exactIn: true,
+        shouldUnwrap: true,
       })
 
       const takerData = new HexString('0xcafebabe')

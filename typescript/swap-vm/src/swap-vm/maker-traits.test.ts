@@ -1,21 +1,27 @@
 import { describe, it, expect } from 'vitest'
-import { Address } from '@1inch/sdk-core'
+import { Address, HexString, Interaction } from '@1inch/sdk-core'
 import { MakerTraits } from './maker-traits'
+
+function encodeDecodeTest(traits: MakerTraits, maker?: Address): MakerTraits {
+  const { traits: encodedTraits, hooksData } = traits.encode(maker)
+  expect(typeof encodedTraits).toBe('bigint')
+
+  const decoded = MakerTraits.decode(encodedTraits, hooksData)
+
+  expect(decoded).toEqual(traits)
+
+  return decoded
+}
 
 describe('MakerTraits', () => {
   describe('default', () => {
-    it('should create default traits with all flags off', () => {
+    it('should create default traits with useAqua enabled by default', () => {
       const traits = MakerTraits.default()
 
-      expect(traits.shouldUnwrapWeth()).toBe(false)
-      expect(traits.hasPreTransferOutHook()).toBe(false)
-      expect(traits.hasPostTransferInHook()).toBe(false)
-      expect(traits.isUseOfAquaInsteadOfSignatureEnabled()).toBe(false)
-      expect(traits.isIgnoreOfAquaForTransferInEnabled()).toBe(false)
-      expect(traits.expiration()).toBe(null)
-      expect(traits.customReceiver()).toBe(null)
-      expect(traits.preTransferOutDataLength()).toBe(0n)
-      expect(traits.postTransferInDataLength()).toBe(0n)
+      expect(traits.shouldUnwrap).toBe(false)
+      expect(traits.useAquaInsteadOfSignature).toBe(true)
+      expect(traits.allowZeroAmountIn).toBe(false)
+      expect(traits.customReceiver).toBeUndefined()
     })
   })
 
@@ -23,89 +29,47 @@ describe('MakerTraits', () => {
     it('should build traits with specified flags', () => {
       const receiver = Address.fromBigInt(1n)
 
-      const traits = MakerTraits.fromParams({
-        shouldUnwrapWeth: true,
-        hasPreTransferOutHook: true,
-        hasPostTransferInHook: false,
+      const traits = MakerTraits.new({
+        shouldUnwrap: true,
         useAquaInsteadOfSignature: true,
-        ignoreAquaForTransferIn: false,
-        expiration: 1234567890n,
-        receiver,
-        preTransferOutDataLength: 100n,
-        postTransferInDataLength: 200n,
+        allowZeroAmountIn: true,
+        customReceiver: receiver,
       })
 
-      expect(traits.shouldUnwrapWeth()).toBe(true)
-      expect(traits.hasPreTransferOutHook()).toBe(true)
-      expect(traits.hasPostTransferInHook()).toBe(false)
-      expect(traits.isUseOfAquaInsteadOfSignatureEnabled()).toBe(true)
-      expect(traits.isIgnoreOfAquaForTransferInEnabled()).toBe(false)
-      expect(traits.expiration()).toBe(1234567890n)
-      expect(traits.customReceiver()?.toString()).toBe(receiver.toString())
-      expect(traits.preTransferOutDataLength()).toBe(100n)
-      expect(traits.postTransferInDataLength()).toBe(200n)
+      expect(traits.shouldUnwrap).toBe(true)
+      expect(traits.useAquaInsteadOfSignature).toBe(true)
+      expect(traits.allowZeroAmountIn).toBe(true)
+      expect(traits.customReceiver?.toString()).toBe(receiver.toString())
     })
   })
 
   describe('flags', () => {
     it('should set and unset shouldUnwrap flag', () => {
       const traits = MakerTraits.default()
+      traits.with({ shouldUnwrap: true })
+      expect(traits.shouldUnwrap).toBe(true)
 
-      traits.withShouldUnwrap()
-      expect(traits.shouldUnwrapWeth()).toBe(true)
-
-      traits.disableUnwrap()
-      expect(traits.shouldUnwrapWeth()).toBe(false)
-    })
-
-    it('should set and unset preTransferOut hook flag', () => {
-      const traits = MakerTraits.default()
-
-      traits.enablePreTransferOutHook()
-      expect(traits.hasPreTransferOutHook()).toBe(true)
-
-      traits.disablePreTransferOutHook()
-      expect(traits.hasPreTransferOutHook()).toBe(false)
-    })
-
-    it('should set and unset postTransferIn hook flag', () => {
-      const traits = MakerTraits.default()
-
-      traits.enablePostTransferInHook()
-      expect(traits.hasPostTransferInHook()).toBe(true)
-
-      traits.disablePostTransferInHook()
-      expect(traits.hasPostTransferInHook()).toBe(false)
+      traits.with({ shouldUnwrap: false })
+      expect(traits.shouldUnwrap).toBe(false)
     })
 
     it('should set and unset useAquaInsteadOfSignature flag', () => {
       const traits = MakerTraits.default()
+      traits.with({ useAquaInsteadOfSignature: true })
+      expect(traits.useAquaInsteadOfSignature).toBe(true)
 
-      traits.enableUseOfAquaInsteadOfSignature()
-      expect(traits.isUseOfAquaInsteadOfSignatureEnabled()).toBe(true)
-
-      traits.disableUseAquaInsteadOfSignature()
-      expect(traits.isUseOfAquaInsteadOfSignatureEnabled()).toBe(false)
+      traits.with({ useAquaInsteadOfSignature: false })
+      expect(traits.useAquaInsteadOfSignature).toBe(false)
     })
 
-    it('should set and unset ignoreAquaForTransferIn flag', () => {
+    it('should set and unset allowZeroAmountIn flag', () => {
       const traits = MakerTraits.default()
 
-      traits.enableIgnoreOfAquaForTransferIn()
-      expect(traits.isIgnoreOfAquaForTransferInEnabled()).toBe(true)
+      traits.with({ allowZeroAmountIn: true })
+      expect(traits.allowZeroAmountIn).toBe(true)
 
-      traits.disableIgnoreAquaForTransferIn()
-      expect(traits.isIgnoreOfAquaForTransferInEnabled()).toBe(false)
-    })
-  })
-
-  describe('expiration', () => {
-    it('should set and get expiration', () => {
-      const traits = MakerTraits.default()
-      const expiration = 1234567890n
-
-      traits.withExpiration(expiration)
-      expect(traits.expiration()).toBe(expiration)
+      traits.with({ allowZeroAmountIn: false })
+      expect(traits.allowZeroAmountIn).toBe(false)
     })
   })
 
@@ -114,37 +78,100 @@ describe('MakerTraits', () => {
       const traits = MakerTraits.default()
       const receiver = Address.fromBigInt(1n)
 
-      traits.withCustomReceiver(receiver)
-      expect(traits.customReceiver()?.toString()).toBe(receiver.toString())
-    })
-  })
-
-  describe('data lengths', () => {
-    it('should set and get preTransferOut data length', () => {
-      const traits = MakerTraits.default()
-
-      traits.withPreTransferOutDataLength(100n)
-      expect(traits.preTransferOutDataLength()).toBe(100n)
-    })
-
-    it('should set and get postTransferIn data length', () => {
-      const traits = MakerTraits.default()
-
-      traits.withPostTransferInDataLength(200n)
-      expect(traits.postTransferInDataLength()).toBe(200n)
+      traits.with({ customReceiver: receiver })
+      expect(traits.customReceiver?.toString()).toBe(receiver.toString())
     })
   })
 
   describe('conversion', () => {
-    it('should convert to bigint', () => {
-      const traits = MakerTraits.default().withShouldUnwrap().withExpiration(1234567890n)
+    it('should convert to bigint and back without hooks', () => {
+      const traits = MakerTraits.default().with({ shouldUnwrap: true, allowZeroAmountIn: true })
 
-      const bigintValue = traits.asBigInt()
-      expect(typeof bigintValue).toBe('bigint')
+      encodeDecodeTest(traits)
+    })
 
-      const traitsFromBigint = new MakerTraits(bigintValue)
-      expect(traitsFromBigint.shouldUnwrapWeth()).toBe(true)
-      expect(traitsFromBigint.expiration()).toBe(1234567890n)
+    it('should encode and decode traits with custom receiver', () => {
+      const receiver = Address.fromBigInt(1n)
+
+      const traits = MakerTraits.new({
+        shouldUnwrap: true,
+        useAquaInsteadOfSignature: false,
+        allowZeroAmountIn: true,
+        customReceiver: receiver,
+      })
+
+      encodeDecodeTest(traits)
+    })
+
+    it('should encode and decode traits with single hook without target', () => {
+      const data = new HexString('0x1234')
+      const hook = new Interaction(Address.ZERO_ADDRESS, data)
+
+      const traits = MakerTraits.new({
+        shouldUnwrap: false,
+        useAquaInsteadOfSignature: true,
+        allowZeroAmountIn: false,
+        preTransferInHook: hook,
+      })
+
+      encodeDecodeTest(traits)
+    })
+
+    it('should encode and decode traits with all hooks without targets', () => {
+      const hook1 = new Interaction(Address.ZERO_ADDRESS, new HexString('0xaaaa'))
+      const hook2 = new Interaction(Address.ZERO_ADDRESS, new HexString('0xbbbb'))
+      const hook3 = new Interaction(Address.ZERO_ADDRESS, new HexString('0xcccc'))
+      const hook4 = new Interaction(Address.ZERO_ADDRESS, new HexString('0xdddd'))
+
+      const traits = MakerTraits.new({
+        shouldUnwrap: true,
+        useAquaInsteadOfSignature: true,
+        allowZeroAmountIn: false,
+        preTransferInHook: hook1,
+        postTransferInHook: hook2,
+        preTransferOutHook: hook3,
+        postTransferOutHook: hook4,
+      })
+
+      encodeDecodeTest(traits)
+    })
+
+    it('should encode and decode traits with hooks that have explicit targets', () => {
+      const maker = Address.fromBigInt(5n)
+
+      const hook1 = new Interaction(Address.fromBigInt(10n), new HexString('0xaaaa'))
+      const hook2 = new Interaction(Address.fromBigInt(11n), new HexString('0xbbbb'))
+
+      const traits = MakerTraits.new({
+        shouldUnwrap: false,
+        useAquaInsteadOfSignature: true,
+        allowZeroAmountIn: true,
+        preTransferInHook: hook1,
+        preTransferOutHook: hook2,
+      })
+
+      encodeDecodeTest(traits, maker)
+    })
+
+    it('should encode and decode traits with mixed hooks with and without targets', () => {
+      const maker = Address.fromBigInt(7n)
+
+      const preIn = new Interaction(Address.ZERO_ADDRESS, new HexString('0xaaaa'))
+      const postIn = new Interaction(Address.fromBigInt(20n), new HexString('0xbbbb'))
+      const preOut = new Interaction(Address.ZERO_ADDRESS, new HexString('0xcccc'))
+      const postOut = new Interaction(Address.fromBigInt(21n), new HexString('0xdddd'))
+
+      const traits = MakerTraits.new({
+        shouldUnwrap: true,
+        useAquaInsteadOfSignature: false,
+        allowZeroAmountIn: true,
+        preTransferInHook: preIn,
+        postTransferInHook: postIn,
+        preTransferOutHook: preOut,
+        postTransferOutHook: postOut,
+      })
+
+      encodeDecodeTest(traits, maker)
     })
   })
 })

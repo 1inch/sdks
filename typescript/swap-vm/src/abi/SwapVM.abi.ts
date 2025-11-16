@@ -15,6 +15,13 @@ export const SWAP_VM_ABI = [
   },
   {
     type: 'function',
+    name: 'asView',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'contract ISwapVM' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'eip712Domain',
     inputs: [],
     outputs: [
@@ -30,16 +37,16 @@ export const SWAP_VM_ABI = [
   },
   {
     type: 'function',
-    name: 'hashOrder',
+    name: 'hash',
     inputs: [
       {
         name: 'order',
         type: 'tuple',
-        internalType: 'struct SwapVM.Order',
+        internalType: 'struct ISwapVM.Order',
         components: [
           { name: 'maker', type: 'address', internalType: 'address' },
           { name: 'traits', type: 'uint256', internalType: 'MakerTraits' },
-          { name: 'program', type: 'bytes', internalType: 'bytes' },
+          { name: 'data', type: 'bytes', internalType: 'bytes' },
         ],
       },
     ],
@@ -51,38 +58,13 @@ export const SWAP_VM_ABI = [
     name: 'quote',
     inputs: [
       {
-        name: '',
-        type: 'tuple',
-        internalType: 'struct SwapVM.Order',
-        components: [
-          { name: 'maker', type: 'address', internalType: 'address' },
-          { name: 'traits', type: 'uint256', internalType: 'MakerTraits' },
-          { name: 'program', type: 'bytes', internalType: 'bytes' },
-        ],
-      },
-      { name: '', type: 'address', internalType: 'address' },
-      { name: '', type: 'address', internalType: 'address' },
-      { name: '', type: 'uint256', internalType: 'uint256' },
-      { name: '', type: 'bytes', internalType: 'bytes' },
-    ],
-    outputs: [
-      { name: 'amountIn', type: 'uint256', internalType: 'uint256' },
-      { name: 'amountOut', type: 'uint256', internalType: 'uint256' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'quoteNonView',
-    inputs: [
-      {
         name: 'order',
         type: 'tuple',
-        internalType: 'struct SwapVM.Order',
+        internalType: 'struct ISwapVM.Order',
         components: [
           { name: 'maker', type: 'address', internalType: 'address' },
           { name: 'traits', type: 'uint256', internalType: 'MakerTraits' },
-          { name: 'program', type: 'bytes', internalType: 'bytes' },
+          { name: 'data', type: 'bytes', internalType: 'bytes' },
         ],
       },
       { name: 'tokenIn', type: 'address', internalType: 'address' },
@@ -93,6 +75,7 @@ export const SWAP_VM_ABI = [
     outputs: [
       { name: 'amountIn', type: 'uint256', internalType: 'uint256' },
       { name: 'amountOut', type: 'uint256', internalType: 'uint256' },
+      { name: 'orderHash', type: 'bytes32', internalType: 'bytes32' },
     ],
     stateMutability: 'nonpayable',
   },
@@ -103,17 +86,17 @@ export const SWAP_VM_ABI = [
       {
         name: 'order',
         type: 'tuple',
-        internalType: 'struct SwapVM.Order',
+        internalType: 'struct ISwapVM.Order',
         components: [
           { name: 'maker', type: 'address', internalType: 'address' },
           { name: 'traits', type: 'uint256', internalType: 'MakerTraits' },
-          { name: 'program', type: 'bytes', internalType: 'bytes' },
+          { name: 'data', type: 'bytes', internalType: 'bytes' },
         ],
       },
       { name: 'tokenIn', type: 'address', internalType: 'address' },
       { name: 'tokenOut', type: 'address', internalType: 'address' },
       { name: 'amount', type: 'uint256', internalType: 'uint256' },
-      { name: 'sigPlusTakerTraitsAndData', type: 'bytes', internalType: 'bytes' },
+      { name: 'takerTraitsAndData', type: 'bytes', internalType: 'bytes' },
     ],
     outputs: [
       { name: 'amountIn', type: 'uint256', internalType: 'uint256' },
@@ -137,7 +120,6 @@ export const SWAP_VM_ABI = [
     ],
     anonymous: false,
   },
-  { type: 'error', name: 'AmountsForSwapUsedBeforeAmountsComputed', inputs: [] },
   {
     type: 'error',
     name: 'AquaBalanceInsufficientAfterTakerPush',
@@ -158,20 +140,10 @@ export const SWAP_VM_ABI = [
   },
   { type: 'error', name: 'ForceApproveFailed', inputs: [] },
   { type: 'error', name: 'InvalidShortString', inputs: [] },
-  {
-    type: 'error',
-    name: 'MakerTraitsCustomReceiverIncompatibleWithAquaPushForTransferIn',
-    inputs: [],
-  },
-  {
-    type: 'error',
-    name: 'MakerTraitsOrderExpired',
-    inputs: [
-      { name: 'currentTimestamp', type: 'uint256', internalType: 'uint256' },
-      { name: 'expiration', type: 'uint256', internalType: 'uint256' },
-    ],
-  },
-  { type: 'error', name: 'MakerTraitsUnwrapIsIncompatibleWithAquaPushForTransferIn', inputs: [] },
+  { type: 'error', name: 'MakerTraitsCustomReceiverIsIncompatibleWithAqua', inputs: [] },
+  { type: 'error', name: 'MakerTraitsTokenInAndTokenOutMustBeDifferent', inputs: [] },
+  { type: 'error', name: 'MakerTraitsUnwrapIsIncompatibleWithAqua', inputs: [] },
+  { type: 'error', name: 'MakerTraitsZeroAmountInNotAllowed', inputs: [] },
   {
     type: 'error',
     name: 'RunLoopExcessiveCall',
@@ -186,8 +158,11 @@ export const SWAP_VM_ABI = [
     name: 'StringTooLong',
     inputs: [{ name: 'str', type: 'string', internalType: 'string' }],
   },
-  { type: 'error', name: 'TakerDataMissingSignature', inputs: [] },
-  { type: 'error', name: 'TakerDataMissingSignatureLength', inputs: [] },
+  {
+    type: 'error',
+    name: 'TakerTraitsAmountOutMustBeGreaterThanZero',
+    inputs: [{ name: 'amountOut', type: 'uint256', internalType: 'uint256' }],
+  },
   {
     type: 'error',
     name: 'TakerTraitsExceedingMaxInputAmount',
@@ -206,10 +181,34 @@ export const SWAP_VM_ABI = [
   },
   {
     type: 'error',
-    name: 'TakerTraitsNonExactThresholdAmount',
+    name: 'TakerTraitsNonExactThresholdAmountIn',
     inputs: [
-      { name: 'amount', type: 'uint256', internalType: 'uint256' },
+      { name: 'amountIn', type: 'uint256', internalType: 'uint256' },
       { name: 'amountThreshold', type: 'uint256', internalType: 'uint256' },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'TakerTraitsNonExactThresholdAmountOut',
+    inputs: [
+      { name: 'amountOut', type: 'uint256', internalType: 'uint256' },
+      { name: 'amountThreshold', type: 'uint256', internalType: 'uint256' },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'TakerTraitsTakerAmountInMismatch',
+    inputs: [
+      { name: 'takerAmount', type: 'uint256', internalType: 'uint256' },
+      { name: 'computedAmount', type: 'uint256', internalType: 'uint256' },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'TakerTraitsTakerAmountOutMismatch',
+    inputs: [
+      { name: 'takerAmount', type: 'uint256', internalType: 'uint256' },
+      { name: 'computedAmount', type: 'uint256', internalType: 'uint256' },
     ],
   },
   { type: 'error', name: 'UnexpectedLock', inputs: [] },
