@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import type { HexString } from '@1inch/sdk-core'
 import { DeadlineArgsCoder } from './deadline-args-coder'
 import type { IArgsData } from '../types'

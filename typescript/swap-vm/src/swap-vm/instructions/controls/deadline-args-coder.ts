@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { BytesBuilder, BytesIter, add0x } from '@1inch/byte-utils'
 import { HexString } from '@1inch/sdk-core'
 import { DeadlineArgs } from './deadline-args'
