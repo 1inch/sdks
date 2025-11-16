@@ -1,4 +1,4 @@
-# @1inch/swap-vm-sdk - TypeScript SDK for 1inch Swap VM Protocol
+# @1inch/swap-vm-sdk - TypeScript SDK for 1inch Swap VM protocol
 
 A TypeScript SDK for encoding, decoding, and interacting with the 1inch Swap VM Protocol smart contract. This SDK provides utilities for building transactions, parsing events, and managing virtual machine instructions for the Swap VM Protocol's core operations.
 
@@ -6,9 +6,9 @@ A TypeScript SDK for encoding, decoding, and interacting with the 1inch Swap VM 
 
 The Swap VM Protocol is a lightweight virtual machine designed for efficient and flexible token swapping on-chain. This SDK simplifies integration by providing:
 
-- **Transaction Building**: Build typed call data for `quote`, `quoteNonView`, `swap`, and `hashOrder` operations
+- **Transaction Building**: Build typed call data for `quote`, `swap`, and `hash` operations
 - **Instruction System**: Comprehensive instruction set including swaps, liquidity concentration, fees, and controls
-- **Trait Management**: Handle maker and taker traits for advanced order configuration
+- **Trait management**: Taker and maker traits builders with sensible defaults for standard swaps, plus fine-grained control whenever you need advanced order customization.
 
 For detailed protocol documentation, see the [Swap VM Protocol Documentation](https://github.com/1inch/swap-vm#-table-of-contents).
 
@@ -20,127 +20,154 @@ pnpm add @1inch/swap-vm-sdk
 
 ## Quick Start
 
+### Provide liquidity
 ```typescript
 import {
-  SwapVMContract,
   SWAP_VM_CONTRACT_ADDRESSES,
   Address,
-  HexString,
   NetworkEnum,
   Order,
   MakerTraits,
-  TakerTraits,
+  AquaAMMStrategy
 } from '@1inch/swap-vm-sdk'
+import { AquaProtocolContract, AQUA_CONTRACT_ADDRESSES } from '@1inch/aqua-sdk'
 
-// Initialize the contract
-const contractAddress = SWAP_VM_CONTRACT_ADDRESSES[NetworkEnum.ETHEREUM]
-const swapVm = new SwapVMContract(contractAddress)
+const chainId = NetworkEnum.ETHEREUM
+const aqua = new AquaProtocolContract(AQUA_CONTRACT_ADDRESSES[chainId])
+const swapVMAddress = SWAP_VM_CONTRACT_ADDRESSES[chainId]
 
-// Create an order
-const order = new Order({
-  maker: new Address('0x...'),
-  traits: new MakerTraits(0n),
-  program: new HexString('0x...'),
+const maker = '0xmaker_address'
+const USDC = new Address('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')
+const WETH = new Address('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')
+
+const program = AquaAMMStrategy.new({
+  tokenA: USDC,
+  tokenB: WETH
+}).build()
+
+const order = Order.new({
+  maker: new Address(maker),
+  program,
+  traits: MakerTraits.default()
 })
 
-// Build a quote transaction
-const quoteTx = swapVm.quote({
-  order,
-  tokenIn: new Address('0x...'),
-  tokenOut: new Address('0x...'),
-  amount: 1000000000000000000n, // 1 token with 18 decimals
-  takerTraits: TakerTraits.default(),
+const tx = aqua.ship({
+  app: new Address(swapVMAddress),
+  strategy: order.encode(),
+  amountsAndTokens: [
+    {
+      amount: 10000n * 10n ** 6n,
+      token: USDC
+    },
+    {
+      amount: 5n * 10n ** 18n,
+      token: WETH
+    }
+  ]
 })
 
-// Use the transaction data
-console.log(quoteTx) // { to: '0x...', data: '0x...', value: 0n }
+await makerWallet.send(tx)
 ```
 
-## Core Operations
+### Swap
+```typescript
+import {
+  Order,
+  HexString,
+  TakerTraits,
+  Address,
+  SWAP_VM_CONTRACT_ADDRESSES,
+  NetworkEnum,
+  SwapVMContract,
+  ABI
+} from '@1inch/swap-vm-sdk'
+import { decodeFunctionResult } from 'viem'
+
+const chainId = NetworkEnum.ETHEREUM
+const swapVM = new SwapVMContract(SWAP_VM_CONTRACT_ADDRESSES[chainId])
+
+const USDC = new Address('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')
+const WETH = new Address('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')
+
+const encodedOrder = '0x...' // fetched from ship event or from api
+const order = Order.parse(new HexString(encodedOrder))
+
+const srcAmount = 100n * 10n ** 6n
+const swapParams = {
+  order,
+  amount: srcAmount,
+  takerTraits: TakerTraits.default(),
+  tokenIn: USDC,
+  tokenOut: WETH
+}
+
+// Simulate the call to get the dstAmount
+const simulateResult = await taker.call(swapVM.quote(swapParams))
+const [_, dstAmount] = decodeFunctionResult({
+  abi: ABI.SWAP_VM_ABI,
+  functionName: 'quote',
+  data: simulateResult.data!
+})
+
+console.log('dstAmount', dstAmount)
+
+// Swap
+const swapTx = swapVM.swap(swapParams)
+await taker.send(swapTx)
+```
+
+## Contract operations
 
 ### Quote
 
-Get a quote for a swap without executing state changes (read-only).
+Get a quote for a swap.
 
 ```typescript
 const quoteTx = swapVm.quote({
-  order: new Order({
-    maker: new Address('0x...'),
-    traits: new MakerTraits(0n),
-    program: new HexString('0x...'),
-  }),
+  order: Order.parse('0x...'),
   tokenIn: new Address('0x...'),
   tokenOut: new Address('0x...'),
   amount: 1000000000000000000n,
-  takerTraits: new TakerTraits(0n),
+  takerTraits: TakerTraits.default(),
 })
 ```
 
 **Parameters:**
-- `order` - The maker's order configuration including maker address, traits, and program
+- `order` - The maker's order (fetched from ship event or from api)
 - `tokenIn` - The input token address
 - `tokenOut` - The output token address
 - `amount` - The input amount to quote
 - `takerTraits` - Taker-specific traits configuration
-- `takerData` - Optional additional data for hooks or extensions
-
-**Returns:** `CallInfo` object with encoded transaction data
-
-### Quote Non-View
-
-Get a quote for a swap allowing state changes (non-read-only).
-
-```typescript
-const quoteNonViewTx = swapVm.quoteNonView({
-  order: new Order({
-    maker: new Address('0x...'),
-    traits: new MakerTraits(0n),
-    program: new HexString('0x...'),
-  }),
-  tokenIn: new Address('0x...'),
-  tokenOut: new Address('0x...'),
-  amount: 1000000000000000000n,
-  takerTraits: new TakerTraits(0n),
-})
-```
-
-**Parameters:** Same as `quote`
 
 **Returns:** `CallInfo` object with encoded transaction data
 
 ### Swap
 
-Execute a swap transaction with a signature.
+Execute a swap transaction.
 
 ```typescript
 const swapTx = swapVm.swap({
-  order: new Order({
-    maker: new Address('0x...'),
-    traits: new MakerTraits(0n),
-    program: new HexString('0x...'),
-  }),
+  order: Order.parse('0x...'),
   tokenIn: new Address('0x...'),
   tokenOut: new Address('0x...'),
   amount: 1000000000000000000n,
-  takerTraits: new TakerTraits(0n),
-  signature: new HexString('0x...'), // Optional if using Aqua
+  takerTraits: TakerTraits.default(),
 })
 ```
 
 **Parameters:**
 - All parameters from `quote`
-- `signature` - Order signature (optional if using Aqua instead of signatures)
 
 **Returns:** `CallInfo` object with encoded transaction data
 
 ### Hash Order
 
-Calculate the hash of an order.
+Calculate the hash of an order (view).
 
 ```typescript
 const order = new Order({
   maker: new Address('0x...'),
-  traits: new MakerTraits(0n),
+  traits: MakerTraits.default(),
   program: new HexString('0x...'),
 })
 
@@ -150,7 +177,7 @@ const hashOrderTx = swapVm.hashOrder(order)
 **Parameters:**
 - `order` - The order to hash
 
-**Returns:** `CallInfo` object with encoded transaction data for the hashOrder function
+**Returns:** `CallInfo` object with encoded transaction data for the `hash` order function
 
 ## Event Parsing
 
@@ -160,9 +187,8 @@ Emitted when a swap is executed.
 
 ```typescript
 import { SwappedEvent } from '@1inch/swap-vm-sdk'
-import { Log } from 'viem'
 
-const log: Log = { /* ... */ }
+const log = { data: '0x...', topics: [...] }
 const event = SwappedEvent.fromLog(log)
 
 console.log(event.orderHash)    // HexString
@@ -218,48 +244,6 @@ The Swap VM uses a comprehensive instruction system for building swap programs. 
 
 For detailed instruction documentation, see the [Swap VM Protocol Guide](https://github.com/1inch/swap-vm).
 
-## Utility Functions
-
-### Encode Call Data
-
-Manually encode function call data if needed.
-
-```typescript
-import { SwapVMContract } from '@1inch/swap-vm-sdk'
-
-const encoded = SwapVMContract.encodeQuoteCallData({
-  order,
-  tokenIn,
-  tokenOut,
-  amount,
-  takerTraits,
-})
-
-const encodedSwap = SwapVMContract.encodeSwapCallData({
-  order,
-  tokenIn,
-  tokenOut,
-  amount,
-  takerTraits,
-  signature,
-})
-
-const encodedHash = SwapVMContract.encodeHashOrderCallData(order)
-```
-
-### Build Transaction Objects
-
-Create complete transaction objects ready for signing and sending.
-
-```typescript
-import { SwapVMContract } from '@1inch/swap-vm-sdk'
-
-const quoteTx = SwapVMContract.buildQuoteTx(contractAddress, quoteArgs)
-const quoteNonViewTx = SwapVMContract.buildQuoteNonViewTx(contractAddress, quoteArgs)
-const swapTx = SwapVMContract.buildSwapTx(contractAddress, swapArgs)
-const hashTx = SwapVMContract.buildHashOrderTx(contractAddress, order)
-```
-
 ## Supported Networks
 
 The SDK includes pre-configured contract addresses for the following networks:
@@ -305,7 +289,6 @@ The SDK exports:
 - **[`ABI`](./src/abi/)** - Contract ABI exports
 - **[Types](./src/swap-vm-contract/types.ts)**:
   - `QuoteArgs`
-  - `QuoteNonViewArgs`
   - `SwapArgs`
   - `QuoteResult`
   - `SwapResult`

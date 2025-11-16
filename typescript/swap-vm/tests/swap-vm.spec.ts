@@ -265,22 +265,21 @@ describe('SwapVM', () => {
     }
 
     // Simulate the call to get the dstAmount
-    // const simulateResult = await forkNode.provider.call({
-    //   account: swapperAddress,
-    //   ...swapVM.quote(swapParams),
-    // })
+    const simulateResult = await forkNode.provider.call({
+      account: swapperAddress,
+      ...swapVM.quote(swapParams),
+    })
 
-    // const [_, dstAmount] = decodeFunctionResult({
-    //   abi: SWAP_VM_ABI,
-    //   functionName: 'quote',
-    //   data: simulateResult.data!,
-    // })
+    const [_, dstAmount] = decodeFunctionResult({
+      abi: SWAP_VM_ABI,
+      functionName: 'quote',
+      data: simulateResult.data!,
+    })
 
-    const dstAmount = 1000n
     const swap = swapVM.swap(swapParams)
 
-    const { txHash: swapTx } = await swapper.send({ ...swap, allowFail: true })
-    await forkNode.printTrace(swapTx)
+    const { txHash: _swapTx } = await swapper.send({ ...swap, allowFail: false })
+    // await forkNode.printTrace(swapTx)
 
     const providerWethBalanceAfter = await getAquaBalance(
       liqProviderAddress,

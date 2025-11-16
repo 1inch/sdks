@@ -19,8 +19,6 @@ export class SwapVMContract {
    * @see https://github.com/1inch/swap-vm/blob/main/src/SwapVM.sol#L84
    */
   static encodeQuoteCallData(args: QuoteArgs): HexString {
-    const takerTraitsAndData = this.buildTakerTraitsAndData(args.takerTraits, args.takerData)
-
     const result = encodeFunctionData({
       abi: SWAP_VM_ABI,
       functionName: 'quote',
@@ -29,7 +27,7 @@ export class SwapVMContract {
         args.tokenIn.toString(),
         args.tokenOut.toString(),
         args.amount,
-        takerTraitsAndData.toString(),
+        args.takerTraits.encode().toString(),
       ],
     })
 
@@ -59,7 +57,6 @@ export class SwapVMContract {
       args.order,
       args.takerTraits,
       args.signature,
-      args.takerData,
     )
 
     const result = encodeFunctionData({
@@ -135,22 +132,6 @@ export class SwapVMContract {
     }
 
     return new HexString(builder.asHex())
-  }
-
-  /**
-   * Build takerTraitsAndData parameter from components
-   * Simple concatenation of traits and additional data
-   */
-  private static buildTakerTraitsAndData(
-    takerTraits: TakerTraits,
-    additionalData?: HexString,
-  ): HexString {
-    const traitsBytes = takerTraits.encode()
-
-    return new HexString(
-      traitsBytes.toString() +
-        (additionalData !== undefined ? trim0x(additionalData.toString()) : ''),
-    )
   }
 
   public swap(args: SwapArgs): CallInfo {
