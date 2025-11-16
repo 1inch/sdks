@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-Aqua-Source-1.1
+
 import { encodeFunctionData, keccak256 } from 'viem'
 import type { CallInfo, Address } from '@1inch/sdk-core'
 import { HexString } from '@1inch/sdk-core'

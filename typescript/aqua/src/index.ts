@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-Aqua-Source-1.1
+
 export * from './aqua-protocol-contract'
 export * as ABI from './abi'
 

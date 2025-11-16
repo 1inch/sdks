@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-Aqua-Source-1.1
+
 export const AQUA_ABI = [
   {
     type: 'function',

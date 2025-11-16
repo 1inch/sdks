@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-Aqua-Source-1.1
+
 import type { Address, HexString } from '@1inch/sdk-core'
 
 /**

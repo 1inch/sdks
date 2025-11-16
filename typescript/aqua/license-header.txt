@@ -1,0 +1,1 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-Aqua-Source-1.1
