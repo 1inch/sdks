@@ -18,8 +18,8 @@ describe('SwapVMContract', () => {
         program: mockProgram,
       })
 
-      const takerTraits = TakerTraits.fromParams({
-        isExactIn: true,
+      const takerTraits = TakerTraits.new({
+        exactIn: true,
         threshold: 1000000n,
       })
 
@@ -48,8 +48,8 @@ describe('SwapVMContract', () => {
         program: mockProgram,
       })
 
-      const takerTraits = TakerTraits.fromParams({
-        isExactIn: true,
+      const takerTraits = TakerTraits.new({
+        exactIn: true,
         threshold: 1000000n,
       })
 
@@ -73,9 +73,9 @@ describe('SwapVMContract', () => {
         program: mockProgram,
       })
 
-      const takerTraits = TakerTraits.fromParams({
-        isExactIn: true,
-        shouldUnwrapWeth: true,
+      const takerTraits = TakerTraits.new({
+        exactIn: true,
+        shouldUnwrap: true,
       })
 
       const takerData = new HexString('0xcafebabe')

@@ -1,438 +1,348 @@
+import { add0x, BN, BytesBuilder, BytesIter, trim0x } from '@1inch/byte-utils'
+import type { DataFor } from '@1inch/sdk-core'
 import { Address, HexString } from '@1inch/sdk-core'
-import { BN, BytesBuilder, BytesIter } from '@1inch/byte-utils'
-import assert from 'assert'
-import type { TakerTraitsBuildArgs } from './types'
 
 /**
- * The TakerTraits is packed bytes structure encoding taker swap preferences.
- *
- * First byte contains flags:
- * bit 0 `IS_EXACT_IN_BIT_FLAG`                   - if set, swap is exact input (vs exact output)
- * bit 1 `SHOULD_UNWRAP_BIT_FLAG`                 - if set, unwrap WETH to ETH for taker
- * bit 2 `HAS_PRE_TRANSFER_IN_BIT_FLAG`           - if set, call pre-transfer-in hook
- * bit 3 `IS_STRICT_THRESHOLD_BIT_FLAG`           - if set, require exact threshold amount match
- * bit 4 `HAS_THRESHOLD_BIT_FLAG`                 - if set, threshold amount follows flags byte
- * bit 5 `HAS_CUSTOM_RECEIVER_BIT_FLAG`           - if set, custom receiver address follows threshold
- * bit 6 `IS_FIRST_TRANSFER_FROM_TAKER_BIT_FLAG`  - if set, transfer from taker happens first
- * bit 7 `USE_TRANSFER_FROM_AND_AQUA_PUSH`        - if set, use transferFrom + Aqua push pattern
- *
- * Optional fields (variable length):
- * - uint256 threshold (32 bytes) - present if HAS_THRESHOLD_BIT_FLAG is set
- * - address to (20 bytes) - present if HAS_CUSTOM_RECEIVER_BIT_FLAG is set, otherwise defaults to taker
+ * TakerTraits encodes taker-specific parameters and flags for swap execution.
+ * It defines how the taker wants the swap to be executed, including thresholds,
+ * callbacks, hooks, and other execution parameters.
  */
 export class TakerTraits {
-  private static IS_EXACT_IN_BIT_FLAG = 0n
+  private static readonly IS_EXACT_IN_BIT_FLAG = 0n
 
-  private static SHOULD_UNWRAP_BIT_FLAG = 1n
+  private static readonly SHOULD_UNWRAP_BIT_FLAG = 1n
 
-  private static HAS_PRE_TRANSFER_IN_BIT_FLAG = 2n
+  private static readonly HAS_PRE_TRANSFER_IN_CALLBACK_BIT_FLAG = 2n
 
-  private static IS_STRICT_THRESHOLD_BIT_FLAG = 3n
+  private static readonly HAS_PRE_TRANSFER_OUT_CALLBACK_BIT_FLAG = 3n
 
-  private static HAS_THRESHOLD_BIT_FLAG = 4n
+  private static readonly IS_STRICT_THRESHOLD_BIT_FLAG = 4n
 
-  private static HAS_CUSTOM_RECEIVER_BIT_FLAG = 5n
+  private static readonly IS_FIRST_TRANSFER_FROM_TAKER_BIT_FLAG = 5n
 
-  private static IS_FIRST_TRANSFER_FROM_TAKER_BIT_FLAG = 6n
+  private static readonly USE_TRANSFER_FROM_AND_AQUA_PUSH_FLAG = 6n
 
-  private static USE_TRANSFER_FROM_AND_AQUA_PUSH_BIT_FLAG = 7n
+  private static readonly DATA_FIELDS = [
+    'threshold',
+    'to',
+    'preTransferInHookData',
+    'postTransferInHookData',
+    'preTransferOutHookData',
+    'postTransferOutHookData',
+    'preTransferInCallbackData',
+    'preTransferOutCallbackData',
+    'instructionsArgs',
+  ] as const
 
-  private flags: BN
-
-  private threshold?: bigint
-
-  private customReceiver?: Address
-
+  // eslint-disable-next-line max-params
   constructor(
-    val: bigint = 0n,
-    data: {
-      threshold?: bigint
-      to?: Address
-    },
-  ) {
-    this.flags = new BN(val)
+    /**
+     * If true, the taker specifies the exact input amount.
+     * If false, the taker specifies the exact output amount.
+     */
+    public readonly exactIn: boolean,
+    /**
+     * If true, WETH proceeds are unwrapped into native currency when
+     * the order is settled.
+     */
+    public readonly shouldUnwrap: boolean,
+    /**
+     * If true, enables pre-transfer-in callback to the taker contract.
+     * The callback flag is automatically set based on preTransferInCallbackData presence.
+     */
+    public readonly preTransferInCallbackEnabled: boolean,
+    /**
+     * If true, enables pre-transfer-out callback to the taker contract.
+     * The callback flag is automatically set based on preTransferOutCallbackData presence.
+     */
+    public readonly preTransferOutCallbackEnabled: boolean,
+    /**
+     * If true, requires the exact threshold amount (no slippage tolerance).
+     * If false, allows better rates than threshold.
+     */
+    public readonly strictThreshold: boolean,
+    /**
+     * If true, the first transfer is from the taker.
+     * If false, it may be from another source (e.g., via Aqua).
+     */
+    public readonly firstTransferFromTaker: boolean,
+    /**
+     * If true, uses transferFrom and Aqua push mechanism.
+     * If false, uses standard transfer mechanism.
+     */
+    public readonly useTransferFromAndAquaPush: boolean,
+    /**
+     * Minimum output amount (for exactIn) or maximum input amount (for exactOut).
+     * Set to 0n for no threshold.
+     */
+    public readonly threshold: bigint = 0n,
+    /**
+     * Custom receiver address for the swap output.
+     * Defaults to zero address (meaning taker receives).
+     */
+    public readonly to: Address = Address.ZERO_ADDRESS,
+    /**
+     * Optional data passed to the maker's pre-transfer-in hook.
+     */
+    public readonly preTransferInHookData: HexString = HexString.EMPTY,
+    /**
+     * Optional data passed to the maker's post-transfer-in hook.
+     */
+    public readonly postTransferInHookData: HexString = HexString.EMPTY,
+    /**
+     * Optional data passed to the maker's pre-transfer-out hook.
+     */
+    public readonly preTransferOutHookData: HexString = HexString.EMPTY,
+    /**
+     * Optional data passed to the maker's post-transfer-out hook.
+     */
+    public readonly postTransferOutHookData: HexString = HexString.EMPTY,
+    /**
+     * Optional callback data for taker's pre-transfer-in callback.
+     */
+    public readonly preTransferInCallbackData: HexString = HexString.EMPTY,
+    /**
+     * Optional callback data for taker's pre-transfer-out callback.
+     */
+    public readonly preTransferOutCallbackData: HexString = HexString.EMPTY,
+    /**
+     * Optional arguments for VM instructions execution.
+     */
+    public readonly instructionsArgs: HexString = HexString.EMPTY,
+    /**
+     * ECDSA signature for order validation (65 bytes typically).
+     * Can be empty when using Aqua authentication.
+     */
+    public readonly signature: HexString = HexString.EMPTY,
+  ) {}
 
-    this.threshold = data.threshold
-    this.customReceiver = data.to
-
-    this.setThresholdBit(Boolean(this.threshold))
-
-    const hasCustomReceiver = Boolean(this.customReceiver && !this.customReceiver.isZero())
-
-    this.setCustomReceiverBit(hasCustomReceiver)
+  /**
+   * Creates a new TakerTraits instance with the specified data.
+   * Provides default values for unspecified fields.
+   */
+  static new(data: Partial<DataFor<TakerTraits>> = {}): TakerTraits {
+    return new TakerTraits(
+      data.exactIn ?? true,
+      data.shouldUnwrap ?? false,
+      data.preTransferInCallbackEnabled ?? false,
+      data.preTransferOutCallbackEnabled ?? false,
+      data.strictThreshold ?? false,
+      data.firstTransferFromTaker ?? false,
+      data.useTransferFromAndAquaPush ?? true,
+      data.threshold,
+      data.to,
+      data.preTransferInHookData,
+      data.postTransferInHookData,
+      data.preTransferOutHookData,
+      data.postTransferOutHookData,
+      data.preTransferInCallbackData,
+      data.preTransferOutCallbackData,
+      data.instructionsArgs,
+      data.signature,
+    )
   }
 
+  /**
+   * Creates a default TakerTraits instance with standard settings.
+   * - exactIn mode
+   * - No unwrapping
+   * - No callbacks
+   * - No custom receiver
+   * - transferFromAndAquaPush enabled
+   */
   static default(): TakerTraits {
-    return new TakerTraits(0n, {}).withExactIn().withUseTransferFromAndAquaPush()
+    return TakerTraits.new({
+      exactIn: true,
+      shouldUnwrap: false,
+      preTransferInCallbackEnabled: false,
+      preTransferOutCallbackEnabled: false,
+      strictThreshold: false,
+      firstTransferFromTaker: false,
+      useTransferFromAndAquaPush: true,
+      threshold: 0n,
+      to: Address.ZERO_ADDRESS,
+      preTransferInHookData: HexString.EMPTY,
+      postTransferInHookData: HexString.EMPTY,
+      preTransferOutHookData: HexString.EMPTY,
+      postTransferOutHookData: HexString.EMPTY,
+      preTransferInCallbackData: HexString.EMPTY,
+      preTransferOutCallbackData: HexString.EMPTY,
+      instructionsArgs: HexString.EMPTY,
+      signature: HexString.EMPTY,
+    })
   }
 
   /**
-   * Build TakerTraits from individual components
+   * Decodes a packed TakerTraits from a hex string.
+   * The packed format consists of:
+   * - 18 bytes: 9 uint16 offsets for data sections
+   * - 2 bytes: uint16 flags
+   * - Variable: data sections (threshold, to, hook data, callback data, etc.)
+   * - Variable: signature
    */
-  static fromParams(args: TakerTraitsBuildArgs): TakerTraits {
-    const traits = TakerTraits.default()
+  static decode(packed: HexString): TakerTraits {
+    const iter = BytesIter.BigInt(packed.toString())
 
-    if (args.isExactIn) {
-      traits.withExactIn()
-    } else if (args.isExactIn === false) {
-      traits.withExactOut()
-    }
+    const offsets = Array.from({ length: 9 }, () => Number(iter.nextUint16()))
+    const flags = new BN(iter.nextUint16())
 
-    if (args.shouldUnwrapWeth) {
-      traits.withShouldUnwrap()
-    }
+    const dataStr = trim0x(packed.toString()).slice(40)
+    const sections: string[] = []
 
-    if (args.hasPreTransferInHook) {
-      traits.withPreTransferInHook()
-    }
+    offsets.forEach((offset, i) => {
+      const start = i === 0 ? 0 : offsets[i - 1]
+      sections.push(offset > start ? dataStr.slice(start * 2, offset * 2) : '')
+    })
 
-    if (args.isStrictThresholdAmount) {
-      traits.withStrictThreshold()
-    }
+    const lastOffset = offsets[offsets.length - 1]
+    const signature = dataStr.length > lastOffset * 2 ? dataStr.slice(lastOffset * 2) : ''
 
-    if (args.isFirstTransferFromTaker) {
-      traits.withFirstTransferFromTaker()
-    }
+    const [
+      threshold,
+      to,
+      preTransferInHookData,
+      postTransferInHookData,
+      preTransferOutHookData,
+      postTransferOutHookData,
+      preTransferInCallbackData,
+      preTransferOutCallbackData,
+      instructionsArgs,
+    ] = sections
 
-    if (args.useTransferFromAndAquaPush) {
-      traits.withUseTransferFromAndAquaPush()
-    } else if (args.useTransferFromAndAquaPush === false) {
-      traits.withoutUseTransferFromAndAquaPush()
-    }
-
-    if (args.threshold) {
-      traits.withThreshold(args.threshold)
-    }
-
-    if (args.customReceiver && !args.customReceiver.isZero()) {
-      traits.withCustomReceiver(args.customReceiver)
-    }
-
-    return traits
+    return new TakerTraits(
+      Boolean(flags.getBit(TakerTraits.IS_EXACT_IN_BIT_FLAG)),
+      Boolean(flags.getBit(TakerTraits.SHOULD_UNWRAP_BIT_FLAG)),
+      Boolean(flags.getBit(TakerTraits.HAS_PRE_TRANSFER_IN_CALLBACK_BIT_FLAG)),
+      Boolean(flags.getBit(TakerTraits.HAS_PRE_TRANSFER_OUT_CALLBACK_BIT_FLAG)),
+      Boolean(flags.getBit(TakerTraits.IS_STRICT_THRESHOLD_BIT_FLAG)),
+      Boolean(flags.getBit(TakerTraits.IS_FIRST_TRANSFER_FROM_TAKER_BIT_FLAG)),
+      Boolean(flags.getBit(TakerTraits.USE_TRANSFER_FROM_AND_AQUA_PUSH_FLAG)),
+      threshold ? BigInt(add0x(threshold)) : 0n,
+      to ? new Address(add0x(to)) : Address.ZERO_ADDRESS,
+      preTransferInHookData ? new HexString(add0x(preTransferInHookData)) : HexString.EMPTY,
+      postTransferInHookData ? new HexString(add0x(postTransferInHookData)) : HexString.EMPTY,
+      preTransferOutHookData ? new HexString(add0x(preTransferOutHookData)) : HexString.EMPTY,
+      postTransferOutHookData ? new HexString(add0x(postTransferOutHookData)) : HexString.EMPTY,
+      preTransferInCallbackData ? new HexString(add0x(preTransferInCallbackData)) : HexString.EMPTY,
+      preTransferOutCallbackData
+        ? new HexString(add0x(preTransferOutCallbackData))
+        : HexString.EMPTY,
+      instructionsArgs ? new HexString(add0x(instructionsArgs)) : HexString.EMPTY,
+      signature ? new HexString(add0x(signature)) : HexString.EMPTY,
+    )
   }
 
   /**
-   * Decode TakerTraits from packed bytes
-   * @param data - Packed bytes from the contract (variable length: 1-53 bytes)
-   * @returns Decoded TakerTraits instance
+   * Creates a new instance with updated fields.
+   * Useful for creating modified versions of existing TakerTraits.
    */
-  static fromBytes(data: HexString): TakerTraits {
-    const iter = BytesIter.BigInt(data.toString())
-    const flagsByte = iter.nextByte()
-    const flags = new BN(flagsByte)
+  public with(data: Partial<DataFor<TakerTraits>>): this {
+    Object.assign(this, data)
 
-    const hasThreshold = flags.getBit(TakerTraits.HAS_THRESHOLD_BIT_FLAG) === 1
-    const hasCustomReceiver = flags.getBit(TakerTraits.HAS_CUSTOM_RECEIVER_BIT_FLAG) === 1
-
-    const optionalFields = {
-      threshold: hasThreshold ? iter.nextUint256() : undefined,
-      to: hasCustomReceiver ? Address.fromBigInt(iter.nextUint160()) : undefined,
-    }
-
-    return new TakerTraits(flagsByte, optionalFields)
+    return this
   }
 
   /**
-   * Encode TakerTraits to packed bytes
-   * @returns Packed bytes (1-53 bytes depending on optional fields)
+   * Encodes the TakerTraits into a packed hex string format.
+   * The encoding includes offsets, flags, data sections, and signature.
+   * Callback flags are automatically set based on callback data presence.
    */
-  public encode(): HexString {
+  encode(): HexString {
     const builder = new BytesBuilder()
 
-    builder.addByte(this.flags)
+    const dataFields = [
+      this.threshold > 0n
+        ? new HexString('0x' + this.threshold.toString(16).padStart(64, '0'))
+        : HexString.EMPTY,
+      !this.to.isZero() ? new HexString(this.to.toString()) : HexString.EMPTY,
+      this.preTransferInHookData,
+      this.postTransferInHookData,
+      this.preTransferOutHookData,
+      this.postTransferOutHookData,
+      this.preTransferInCallbackData,
+      this.preTransferOutCallbackData,
+      this.instructionsArgs,
+    ]
 
-    if (this.hasThreshold()) {
-      assert(this.threshold, 'threshold required if threshold flag is set')
-      builder.addUint256(this.threshold)
-    }
+    const { offsets, data } = dataFields.reduce(
+      (acc, field) => {
+        const length = field.bytesCount()
+        acc.sum += length
+        acc.offsets.push(acc.sum)
+        acc.data.push(field.toString().slice(2))
 
-    if (this.hasCustomReceiver()) {
-      assert(
-        this.customReceiver && !this.customReceiver.isZero(),
-        'customReceiver required if customReceiver flag is set',
-      )
-      builder.addUint160(BigInt(this.customReceiver.toString()))
+        return acc
+      },
+      { sum: 0, offsets: [] as number[], data: [] as string[] },
+    )
+
+    offsets.forEach((offset) => builder.addUint16(BigInt(offset)))
+
+    let flags = new BN(0n)
+    flags = flags.setBit(TakerTraits.IS_EXACT_IN_BIT_FLAG, this.exactIn)
+    flags = flags.setBit(TakerTraits.SHOULD_UNWRAP_BIT_FLAG, this.shouldUnwrap)
+    flags = flags.setBit(
+      TakerTraits.HAS_PRE_TRANSFER_IN_CALLBACK_BIT_FLAG,
+      !this.preTransferInCallbackData.isEmpty(),
+    )
+    flags = flags.setBit(
+      TakerTraits.HAS_PRE_TRANSFER_OUT_CALLBACK_BIT_FLAG,
+      !this.preTransferOutCallbackData.isEmpty(),
+    )
+    flags = flags.setBit(TakerTraits.IS_STRICT_THRESHOLD_BIT_FLAG, this.strictThreshold)
+    flags = flags.setBit(
+      TakerTraits.IS_FIRST_TRANSFER_FROM_TAKER_BIT_FLAG,
+      this.firstTransferFromTaker,
+    )
+    flags = flags.setBit(
+      TakerTraits.USE_TRANSFER_FROM_AND_AQUA_PUSH_FLAG,
+      this.useTransferFromAndAquaPush,
+    )
+
+    builder.addUint16(flags.value)
+
+    const allData = data.join('') + this.signature.toString().slice(2)
+
+    if (allData) {
+      builder.addBytes('0x' + allData)
     }
 
     return new HexString(builder.asHex())
   }
 
   /**
-   * Check if exact input swap
+   * Validates the swap amounts against the threshold settings.
+   * @param amountIn - The input amount of the swap
+   * @param amountOut - The output amount of the swap
+   * @throws Error if the amounts don't meet the threshold requirements
    */
-  public isExactIn(): boolean {
-    return this.flags.getBit(TakerTraits.IS_EXACT_IN_BIT_FLAG) === 1
-  }
-
-  /**
-   * Enable exact input mode (sets exact input flag to 1)
-   * "I have exactly X tokens to swap"
-   */
-  public withExactIn(): this {
-    this.flags = this.flags.setBit(TakerTraits.IS_EXACT_IN_BIT_FLAG, 1)
-
-    return this
-  }
-
-  /**
-   * Enable exact output mode
-   * Sets IS_EXACT_IN flag to 0 (exact input = false means exact output)
-   * "I want exactly X output tokens, calculate input needed"
-   */
-  public withExactOut(): this {
-    this.flags = this.flags.setBit(TakerTraits.IS_EXACT_IN_BIT_FLAG, 0)
-
-    return this
-  }
-
-  /**
-   * Check if should unwrap WETH
-   */
-  public shouldUnwrapWeth(): boolean {
-    return this.flags.getBit(TakerTraits.SHOULD_UNWRAP_BIT_FLAG) === 1
-  }
-
-  /**
-   * Enable WETH unwrapping
-   */
-  public withShouldUnwrap(): this {
-    this.flags = this.flags.setBit(TakerTraits.SHOULD_UNWRAP_BIT_FLAG, 1)
-
-    return this
-  }
-
-  /**
-   * Disable WETH unwrapping
-   */
-  public withoutShouldUnwrap(): this {
-    this.flags = this.flags.setBit(TakerTraits.SHOULD_UNWRAP_BIT_FLAG, 0)
-
-    return this
-  }
-
-  /**
-   * Check if has pre-transfer-in hook
-   */
-  public hasPreTransferInHook(): boolean {
-    return this.flags.getBit(TakerTraits.HAS_PRE_TRANSFER_IN_BIT_FLAG) === 1
-  }
-
-  /**
-   * Enable pre-transfer-in hook
-   */
-  public withPreTransferInHook(): this {
-    this.flags = this.flags.setBit(TakerTraits.HAS_PRE_TRANSFER_IN_BIT_FLAG, 1)
-
-    return this
-  }
-
-  /**
-   * Disable pre-transfer-in hook
-   */
-  public withoutPreTransferInHook(): this {
-    this.flags = this.flags.setBit(TakerTraits.HAS_PRE_TRANSFER_IN_BIT_FLAG, 0)
-
-    return this
-  }
-
-  /**
-   * Check if strict threshold
-   */
-  public isStrictThresholdAmount(): boolean {
-    return this.flags.getBit(TakerTraits.IS_STRICT_THRESHOLD_BIT_FLAG) === 1
-  }
-
-  /**
-   * Enable strict threshold
-   */
-  public withStrictThreshold(): this {
-    this.flags = this.flags.setBit(TakerTraits.IS_STRICT_THRESHOLD_BIT_FLAG, 1)
-
-    return this
-  }
-
-  /**
-   * Disable strict threshold
-   */
-  public withoutStrictThreshold(): this {
-    this.flags = this.flags.setBit(TakerTraits.IS_STRICT_THRESHOLD_BIT_FLAG, 0)
-
-    return this
-  }
-
-  /**
-   * Check if has threshold
-   */
-  public hasThreshold(): boolean {
-    return this.flags.getBit(TakerTraits.HAS_THRESHOLD_BIT_FLAG) === 1
-  }
-
-  /**
-   * Get threshold amount
-   */
-  public getThreshold(): bigint | undefined {
-    return this.threshold
-  }
-
-  /**
-   * Set threshold amount
-   */
-  public withThreshold(amount: bigint): this {
-    assert(amount > 0n, 'Threshold must be positive')
-
-    this.threshold = amount
-    this.setThresholdBit(true)
-
-    return this
-  }
-
-  /**
-   * Remove threshold
-   */
-  public withoutThreshold(): this {
-    this.threshold = undefined
-    this.setThresholdBit(false)
-
-    return this
-  }
-
-  /**
-   * Check if has custom receiver
-   */
-  public hasCustomReceiver(): boolean {
-    return this.flags.getBit(TakerTraits.HAS_CUSTOM_RECEIVER_BIT_FLAG) === 1
-  }
-
-  /**
-   * Get receiver address
-   */
-  public getTo(): Address | undefined {
-    return this.customReceiver
-  }
-
-  /**
-   * Set receiver address
-   */
-  public withCustomReceiver(receiver: Address): this {
-    assert(!receiver.isZero(), 'Use withoutCustomReceiver() to use default taker')
-
-    this.setCustomReceiverBit(true)
-    this.customReceiver = receiver
-
-    return this
-  }
-
-  /**
-   * Remove custom receiver
-   */
-  public withoutCustomReceiver(): this {
-    this.customReceiver = undefined
-    this.setCustomReceiverBit(false)
-
-    return this
-  }
-
-  /**
-   * Check if first transfer from taker
-   */
-  public isFirstTransferFromTaker(): boolean {
-    return this.flags.getBit(TakerTraits.IS_FIRST_TRANSFER_FROM_TAKER_BIT_FLAG) === 1
-  }
-
-  /**
-   * Enable first transfer from taker
-   */
-  public withFirstTransferFromTaker(): this {
-    this.flags = this.flags.setBit(TakerTraits.IS_FIRST_TRANSFER_FROM_TAKER_BIT_FLAG, 1)
-
-    return this
-  }
-
-  /**
-   * Disable first transfer from taker
-   */
-  public withoutFirstTransferFromTaker(): this {
-    this.flags = this.flags.setBit(TakerTraits.IS_FIRST_TRANSFER_FROM_TAKER_BIT_FLAG, 0)
-
-    return this
-  }
-
-  /**
-   * Check if using transferFrom and Aqua push
-   */
-  public isUseTransferFromAndAquaPush(): boolean {
-    return this.flags.getBit(TakerTraits.USE_TRANSFER_FROM_AND_AQUA_PUSH_BIT_FLAG) === 1
-  }
-
-  /**
-   * Enable transferFrom and Aqua push
-   */
-  public withUseTransferFromAndAquaPush(): this {
-    this.flags = this.flags.setBit(TakerTraits.USE_TRANSFER_FROM_AND_AQUA_PUSH_BIT_FLAG, 1)
-
-    return this
-  }
-
-  /**
-   * Disable transferFrom and Aqua push
-   */
-  public withoutUseTransferFromAndAquaPush(): this {
-    this.flags = this.flags.setBit(TakerTraits.USE_TRANSFER_FROM_AND_AQUA_PUSH_BIT_FLAG, 0)
-
-    return this
-  }
-
-  /**
-   * Get flags as BN
-   */
-  public getFlags(): BN {
-    return this.flags
-  }
-
-  /**
-   * Validate taker traits against swap amounts
-   * Matches Solidity validate() function logic
-   * @param amountIn - Amount of tokens going in
-   * @param amountOut - Amount of tokens going out
-   * @throws Error if validation fails
-   * @see https://github.com/1inch/swap-vm/blob/main/src/libs/TakerTraits.sol#L114
-   */
-  public validate(amountIn: bigint, amountOut: bigint): void {
-    if (!this.hasThreshold() || this.threshold === undefined) {
-      return
-    }
+  validate(amountIn: bigint, amountOut: bigint): void {
+    if (this.threshold === 0n) return
 
     const threshold = this.threshold
 
-    if (this.isStrictThresholdAmount()) {
-      assert(
-        amountOut === threshold,
-        `TakerTraitsNonExactThresholdAmount: amountOut ${amountOut} != threshold ${threshold}`,
-      )
-    } else {
-      if (this.isExactIn()) {
-        assert(
-          amountOut >= threshold,
-          `TakerTraitsInsufficientMinOutputAmount: amountOut ${amountOut} < threshold ${threshold}`,
-        )
-      } else {
-        assert(
-          amountIn <= threshold,
-          `TakerTraitsExceedingMaxInputAmount: amountIn ${amountIn} > threshold ${threshold}`,
+    if (this.strictThreshold) {
+      const actual = this.exactIn ? amountOut : amountIn
+
+      if (actual !== threshold) {
+        throw new Error(
+          `TakerTraitsNonExactThresholdAmount: ${this.exactIn ? 'amountOut' : 'amountIn'} ${actual} != threshold ${threshold}`,
         )
       }
+    } else {
+      if (this.exactIn) {
+        if (amountOut < threshold) {
+          throw new Error(
+            `TakerTraitsInsufficientMinOutputAmount: amountOut ${amountOut} < threshold ${threshold}`,
+          )
+        }
+      } else {
+        if (amountIn > threshold) {
+          throw new Error(
+            `TakerTraitsExceedingMaxInputAmount: amountIn ${amountIn} > threshold ${threshold}`,
+          )
+        }
+      }
     }
-  }
-
-  private setThresholdBit(val: boolean): this {
-    this.flags = this.flags.setBit(TakerTraits.HAS_THRESHOLD_BIT_FLAG, val)
-
-    return this
-  }
-
-  private setCustomReceiverBit(val: boolean): this {
-    this.flags = this.flags.setBit(TakerTraits.HAS_CUSTOM_RECEIVER_BIT_FLAG, val)
-
-    return this
   }
 }
