@@ -14,11 +14,11 @@ describe('TakerTraits', () => {
       expect(traits.preTransferInCallbackEnabled).toBe(false)
       expect(traits.strictThreshold).toBe(false)
       expect(!traits.threshold || traits.threshold === 0n).toBe(true)
-      expect(!traits.to || traits.to.isZero()).toBe(true)
+      expect(!traits.customReceiver || traits.customReceiver.isZero()).toBe(true)
       expect(traits.firstTransferFromTaker).toBe(false)
       expect(traits.useTransferFromAndAquaPush).toBe(true)
       expect(traits.threshold).toBe(0n)
-      expect(traits.to?.toString()).toBe(Address.ZERO_ADDRESS.toString())
+      expect(traits.customReceiver?.toString()).toBe(Address.ZERO_ADDRESS.toString())
     })
   })
 
@@ -33,7 +33,7 @@ describe('TakerTraits', () => {
         firstTransferFromTaker: true,
         useTransferFromAndAquaPush: false,
         threshold,
-        to: mockReceiver,
+        customReceiver: mockReceiver,
       })
 
       expect(traits.exactIn).toBe(true)
@@ -44,8 +44,8 @@ describe('TakerTraits', () => {
       expect(traits.useTransferFromAndAquaPush).toBe(false)
       expect(traits.threshold !== undefined && traits.threshold > 0n).toBe(true)
       expect(traits.threshold).toBe(threshold)
-      expect(traits.to !== undefined && !traits.to.isZero()).toBe(true)
-      expect(traits.to?.toString()).toBe(mockReceiver.toString())
+      expect(traits.customReceiver !== undefined && !traits.customReceiver.isZero()).toBe(true)
+      expect(traits.customReceiver?.toString()).toBe(mockReceiver.toString())
     })
   })
 
@@ -130,13 +130,13 @@ describe('TakerTraits', () => {
     it('should set and get receiver', () => {
       const traits = TakerTraits.default()
 
-      const withReceiver = traits.with({ to: mockReceiver })
-      expect(withReceiver.to !== undefined && !withReceiver.to.isZero()).toBe(true)
-      expect(withReceiver.to?.toString()).toBe(mockReceiver.toString())
+      const withReceiver = traits.with({ customReceiver: mockReceiver })
+      expect(withReceiver.customReceiver !== undefined && !withReceiver.customReceiver.isZero()).toBe(true)
+      expect(withReceiver.customReceiver?.toString()).toBe(mockReceiver.toString())
 
-      const withoutReceiver = withReceiver.with({ to: undefined })
-      expect(!withoutReceiver.to || withoutReceiver.to.isZero()).toBe(true)
-      expect(withoutReceiver.to).toBe(undefined)
+      const withoutReceiver = withReceiver.with({ customReceiver: undefined })
+      expect(!withoutReceiver.customReceiver || withoutReceiver.customReceiver.isZero()).toBe(true)
+      expect(withoutReceiver.customReceiver).toBe(undefined)
     })
   })
 
@@ -147,7 +147,7 @@ describe('TakerTraits', () => {
         exactIn: true,
         shouldUnwrap: true,
         threshold,
-        to: mockReceiver,
+        customReceiver: mockReceiver,
       })
 
       const encoded = originalTraits.encode()
@@ -158,7 +158,7 @@ describe('TakerTraits', () => {
       expect(decoded.exactIn).toBe(true)
       expect(decoded.shouldUnwrap).toBe(true)
       expect(decoded.threshold).toBe(threshold)
-      expect(decoded.to?.toString()).toBe(mockReceiver.toString())
+      expect(decoded.customReceiver?.toString()).toBe(mockReceiver.toString())
     })
 
     it('should encode and decode traits without optional fields', () => {
@@ -175,8 +175,8 @@ describe('TakerTraits', () => {
       expect(decoded.preTransferInCallbackEnabled).toBe(true)
       expect(decoded.preTransferInCallbackData.toString()).toBe('0xdeadbeef')
       expect(!decoded.threshold || decoded.threshold === 0n).toBe(true)
-      expect(!decoded.to || decoded.to.isZero()).toBe(true)
-      expect(decoded.to?.isZero()).toBe(true)
+      expect(!decoded.customReceiver || decoded.customReceiver.isZero()).toBe(true)
+      expect(decoded.customReceiver?.isZero()).toBe(true)
     })
   })
 
@@ -250,7 +250,7 @@ describe('TakerTraits', () => {
         firstTransferFromTaker: true,
         useTransferFromAndAquaPush: false,
         threshold: threshold,
-        to: Address.ZERO_ADDRESS,
+        customReceiver: Address.ZERO_ADDRESS,
         preTransferInCallbackEnabled: false,
         preTransferOutCallbackEnabled: false,
         signature: new HexString(
@@ -268,7 +268,7 @@ describe('TakerTraits', () => {
       expect(decoded.firstTransferFromTaker).toBe(true)
       expect(decoded.useTransferFromAndAquaPush).toBe(false)
       expect(decoded.threshold).toBe(threshold)
-      expect(decoded.to.isZero()).toBe(true)
+      expect(decoded.customReceiver.isZero()).toBe(true)
       expect(decoded.preTransferInCallbackEnabled).toBe(false)
       expect(decoded.preTransferOutCallbackEnabled).toBe(false)
       expect(decoded.signature.toString()).toBe(
@@ -286,7 +286,7 @@ describe('TakerTraits', () => {
         firstTransferFromTaker: false,
         useTransferFromAndAquaPush: false,
         threshold: threshold,
-        to: Address.ZERO_ADDRESS,
+        customReceiver: Address.ZERO_ADDRESS,
         preTransferInCallbackEnabled: true,
         preTransferOutCallbackEnabled: false,
         preTransferInCallbackData: new HexString('0xabcdef'),
@@ -313,7 +313,7 @@ describe('TakerTraits', () => {
         firstTransferFromTaker: true,
         useTransferFromAndAquaPush: true,
         threshold: BigInt('1000000000000000000'),
-        to: customReceiver,
+        customReceiver: customReceiver,
         preTransferInHookData: new HexString('0x1234'),
         postTransferOutHookData: new HexString('0x5678'),
         instructionsArgs: new HexString('0xaabbccdd'),
@@ -327,7 +327,7 @@ describe('TakerTraits', () => {
       expect(decoded.strictThreshold).toBe(true)
       expect(decoded.useTransferFromAndAquaPush).toBe(true)
       expect(decoded.threshold).toBe(BigInt('1000000000000000000'))
-      expect(decoded.to.toString()).toBe(customReceiver.toString())
+      expect(decoded.customReceiver.toString()).toBe(customReceiver.toString())
       expect(decoded.preTransferInHookData.toString()).toBe('0x1234')
       expect(decoded.postTransferOutHookData.toString()).toBe('0x5678')
       expect(decoded.instructionsArgs.toString()).toBe('0xaabbccdd')

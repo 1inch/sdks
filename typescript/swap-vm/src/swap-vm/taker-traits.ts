@@ -78,9 +78,9 @@ export class TakerTraits {
     public readonly threshold: bigint = 0n,
     /**
      * Custom receiver address for the swap output.
-     * Defaults to zero address (meaning taker receives).
+     * Defaults to zero address (meaning taker receives funds).
      */
-    public readonly to: Address = Address.ZERO_ADDRESS,
+    public readonly customReceiver: Address = Address.ZERO_ADDRESS,
     /**
      * Optional data passed to the maker's pre-transfer-in hook.
      */
@@ -130,7 +130,7 @@ export class TakerTraits {
       data.firstTransferFromTaker ?? false,
       data.useTransferFromAndAquaPush ?? true,
       data.threshold,
-      data.to,
+      data.customReceiver,
       data.preTransferInHookData,
       data.postTransferInHookData,
       data.preTransferOutHookData,
@@ -160,7 +160,7 @@ export class TakerTraits {
       firstTransferFromTaker: false,
       useTransferFromAndAquaPush: true,
       threshold: 0n,
-      to: Address.ZERO_ADDRESS,
+      customReceiver: Address.ZERO_ADDRESS,
       preTransferInHookData: HexString.EMPTY,
       postTransferInHookData: HexString.EMPTY,
       preTransferOutHookData: HexString.EMPTY,
@@ -226,7 +226,7 @@ export class TakerTraits {
         flags.getBit(TakerTraits.USE_TRANSFER_FROM_AND_AQUA_PUSH_FLAG),
       ),
       threshold: threshold ? BigInt(add0x(threshold)) : 0n,
-      to: to ? new Address(add0x(to)) : Address.ZERO_ADDRESS,
+      customReceiver: to ? new Address(add0x(to)) : Address.ZERO_ADDRESS,
       preTransferInHookData: preTransferInHookData
         ? new HexString(add0x(preTransferInHookData))
         : HexString.EMPTY,
@@ -272,7 +272,9 @@ export class TakerTraits {
       this.threshold > 0n
         ? new HexString('0x' + this.threshold.toString(16).padStart(64, '0'))
         : HexString.EMPTY,
-      !this.to.isZero() ? new HexString(this.to.toString()) : HexString.EMPTY,
+      !this.customReceiver.isZero()
+        ? new HexString(this.customReceiver.toString())
+        : HexString.EMPTY,
       this.preTransferInHookData,
       this.postTransferInHookData,
       this.preTransferOutHookData,
