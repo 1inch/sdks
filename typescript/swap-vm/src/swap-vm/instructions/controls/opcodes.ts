@@ -30,6 +30,11 @@ export const jumpIfExactOut: Opcode<JumpArgs> = new Opcode(
 )
 
 /**
+ * Reverts if the deadline has been reached
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L96
+ **/
+export const deadline: Opcode<JumpArgs> = new Opcode(Symbol('Controls.deadline'), JumpArgs.CODER)
+/**
  * Requires taker to hold any amount of specified token (supports NFTs)
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L77
  **/
