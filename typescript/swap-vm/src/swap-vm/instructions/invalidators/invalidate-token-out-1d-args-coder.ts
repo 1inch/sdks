@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { BytesBuilder, BytesIter } from '@1inch/byte-utils'
 import { AddressHalf, HexString } from '@1inch/sdk-core'
 import { InvalidateTokenOut1DArgs } from './invalidate-token-out-1d-args'

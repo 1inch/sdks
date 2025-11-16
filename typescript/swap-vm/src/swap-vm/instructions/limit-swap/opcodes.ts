@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { LimitSwapDirectionArgs } from './limit-swap-direction-args'
 import { Opcode } from '../opcode'
 

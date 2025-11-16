@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import type { IArgsData, IInstruction, IOpcode } from './types'
 
 export class Instruction<T extends IArgsData> implements IInstruction<T> {

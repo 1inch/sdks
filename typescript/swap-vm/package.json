@@ -58,6 +58,7 @@
   "devDependencies": {
     "@types/node": "^22.13.0",
     "dotenv": "17.2.3",
+    "eslint-plugin-license-header": "0.8.0",
     "tsdown": "^0.2.17",
     "typescript": "^5.7.3",
     "vitest": "^3.2.4"

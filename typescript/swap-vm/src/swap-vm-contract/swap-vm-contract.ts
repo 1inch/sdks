@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { encodeFunctionData } from 'viem'
 import type { CallInfo, Address } from '@1inch/sdk-core'
 import { HexString } from '@1inch/sdk-core'

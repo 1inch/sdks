@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { describe, it, expect } from 'vitest'
 import { Address, HexString } from '@1inch/sdk-core'
 import { TakerTraits } from './taker-traits'
@@ -131,7 +133,9 @@ describe('TakerTraits', () => {
       const traits = TakerTraits.default()
 
       const withReceiver = traits.with({ customReceiver: mockReceiver })
-      expect(withReceiver.customReceiver !== undefined && !withReceiver.customReceiver.isZero()).toBe(true)
+      expect(
+        withReceiver.customReceiver !== undefined && !withReceiver.customReceiver.isZero(),
+      ).toBe(true)
       expect(withReceiver.customReceiver?.toString()).toBe(mockReceiver.toString())
 
       const withoutReceiver = withReceiver.with({ customReceiver: undefined })

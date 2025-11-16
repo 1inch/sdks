@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { describe, it, expect } from 'vitest'
 import { UINT_24_MAX, UINT_64_MAX, UINT_96_MAX } from '@1inch/byte-utils'
 import { BaseFeeAdjusterArgs } from './base-fee-adjuster-args'

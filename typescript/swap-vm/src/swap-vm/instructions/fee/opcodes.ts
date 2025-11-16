@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { FlatFeeArgs } from './flat-fee-args'
 import { ProtocolFeeArgs } from './protocol-fee-args'
 import { Opcode } from '../opcode'

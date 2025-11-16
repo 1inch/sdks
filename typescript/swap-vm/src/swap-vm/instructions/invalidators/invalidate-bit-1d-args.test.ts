@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { describe, it, expect } from 'vitest'
 import { InvalidateBit1DArgs } from './invalidate-bit-1d-args'
 import { InvalidateBit1DArgsCoder } from './invalidate-bit-1d-args-coder'

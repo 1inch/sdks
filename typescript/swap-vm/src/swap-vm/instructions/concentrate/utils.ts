@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 const TEN_POW_18 = 10n ** 18n
 
 export function computeDeltas(

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import type { Address, HexString } from '@1inch/sdk-core'
 import { LimitSwapDirectionArgsCoder } from './limit-swap-direction-args-coder'
 import type { IArgsData } from '../types'

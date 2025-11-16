@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 /* eslint-disable no-console */
 import type { StartedTestContainer } from 'testcontainers'
 import { GenericContainer } from 'testcontainers'

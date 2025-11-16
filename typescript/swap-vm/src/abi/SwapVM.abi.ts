@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 export const SWAP_VM_ABI = [
   {
     type: 'function',

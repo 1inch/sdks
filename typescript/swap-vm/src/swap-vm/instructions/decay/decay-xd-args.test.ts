@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { describe, it, expect } from 'vitest'
 import { DecayXDArgs } from './decay-xd-args'
 import { DecayXDArgsCoder } from './decay-xd-args-coder'

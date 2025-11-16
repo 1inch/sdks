@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { MinRateArgs } from './min-rate-args'
 import { Opcode } from '../opcode'
 

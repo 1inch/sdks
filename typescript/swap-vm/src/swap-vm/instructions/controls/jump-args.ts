@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import type { HexString } from '@1inch/sdk-core'
 import assert from 'node:assert'
 import { JumpArgsCoder } from './jump-args-coder'

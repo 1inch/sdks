@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { add0x, BN, BytesBuilder, BytesIter, trim0x } from '@1inch/byte-utils'
 import type { DataFor } from '@1inch/sdk-core'
 import { Address, HexString } from '@1inch/sdk-core'

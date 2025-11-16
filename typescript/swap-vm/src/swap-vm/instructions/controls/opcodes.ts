@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { JumpArgs } from './jump-args'
 import { OnlyTakerTokenBalanceNonZeroArgs } from './only-taker-token-balance-non-zero-args'
 import { OnlyTakerTokenBalanceGteArgs } from './only-taker-token-balance-gte-args'

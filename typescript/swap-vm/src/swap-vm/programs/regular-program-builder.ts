@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import type { DataFor } from '@1inch/sdk-core'
 import { ProgramBuilder } from './program-builder'
 import type { SwapVmProgram } from './swap-vm-program'

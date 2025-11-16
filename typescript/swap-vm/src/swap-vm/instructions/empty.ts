@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { HexString } from '@1inch/sdk-core'
 import type { IArgsCoder, IArgsData } from './types'
 import { Opcode } from './opcode'

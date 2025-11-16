@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { StableSwap2DArgs } from './stable-swap-2d-args'
 import { Opcode } from '../opcode'
 

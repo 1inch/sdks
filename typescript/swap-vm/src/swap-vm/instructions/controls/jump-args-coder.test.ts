@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { describe, it, expect } from 'vitest'
 import { UINT_16_MAX } from '@1inch/byte-utils'
 import { JumpArgs } from './jump-args'

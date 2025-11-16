@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { EMPTY_OPCODE } from './empty'
 import * as balances from './balances'
 import * as controls from './controls'

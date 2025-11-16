@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { describe, it, expect } from 'vitest'
 import { HexString } from '@1inch/sdk-core'
 import { DebugEmptyArgs } from './debug-empty-args'

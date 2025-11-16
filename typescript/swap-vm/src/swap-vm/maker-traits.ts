@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { BN, BitMask } from '@1inch/byte-utils'
 import type { DataFor } from '@1inch/sdk-core'
 import { Interaction, HexString, Address } from '@1inch/sdk-core'
@@ -344,7 +346,7 @@ export class MakerTraits {
       (acc, hookName, i) => {
         const hook = this[hookName]
         const hasTarget = this.hasTargetForHook(hookName)
-        const encoded = hook && hasTarget ? hook.encode() : (hook?.data || HexString.EMPTY)
+        const encoded = hook && hasTarget ? hook.encode() : hook?.data || HexString.EMPTY
 
         acc.sum += BigInt(encoded.bytesCount())
         acc.offsets += acc.sum << (16n * BigInt(i))

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { Instruction } from './instruction'
 import type { IArgsCoder, IArgsData, IInstruction, IOpcode } from './types'
 

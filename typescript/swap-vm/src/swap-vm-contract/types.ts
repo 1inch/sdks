@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import type { Address, HexString } from '@1inch/sdk-core'
 import type { TakerTraits } from '../swap-vm'
 import type { Order } from '../swap-vm/order'

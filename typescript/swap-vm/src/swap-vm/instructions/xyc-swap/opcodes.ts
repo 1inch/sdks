@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { XycSwapXDArgs } from './xyc-swap-xd-args'
 import { Opcode } from '../opcode'
 

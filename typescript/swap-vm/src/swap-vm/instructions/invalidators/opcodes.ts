@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { InvalidateBit1DArgs } from './invalidate-bit-1d-args'
 import { InvalidateTokenIn1DArgs } from './invalidate-token-in-1d-args'
 import { InvalidateTokenOut1DArgs } from './invalidate-token-out-1d-args'

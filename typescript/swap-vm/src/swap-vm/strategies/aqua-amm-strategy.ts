@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import type { Address } from '@1inch/sdk-core'
 import { AquaProgramBuilder } from '../programs/aqua-program-builder'
 import type { SwapVmProgram } from '../programs'

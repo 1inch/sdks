@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 export * from './debug-args'
 export * from './print-swap-registers'
 export * from './print-swap-query'

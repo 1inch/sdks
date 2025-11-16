@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { OraclePriceAdjusterArgs } from './oracle-price-adjuster-args'
 import { Opcode } from '../opcode'
 

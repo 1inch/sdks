@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { ConcentrateGrowLiquidityXDArgs } from './concentrate-grow-liquidity-xd-args'
 import { ConcentrateGrowLiquidity2DArgs } from './concentrate-grow-liquidity-2d-args'
 import { Opcode } from '../opcode'

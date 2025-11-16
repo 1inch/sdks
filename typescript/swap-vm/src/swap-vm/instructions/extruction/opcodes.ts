@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { ExtructionArgs } from './extruction-args'
 import { Opcode } from '../opcode'
 

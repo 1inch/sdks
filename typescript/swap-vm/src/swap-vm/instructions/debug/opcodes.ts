@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
 import { DebugEmptyArgs } from './debug-empty-args'
 import { PrintSwapRegistersArgs } from './print-swap-registers'
 import { PrintSwapQueryArgs } from './print-swap-query'
