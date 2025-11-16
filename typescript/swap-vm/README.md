@@ -575,3 +575,12 @@ The SDK exports:
   - `stableSwap` - Stable swap instructions
   - `fee` - Fee calculation instructions
   - `extruction` - Value extraction instructions
+
+
+## License
+
+This SDK is provided under the terms described in [LICENSE](./LICENSE) and [THIRD_PARTY_NOTICES](./THIRD_PARTY_NOTICES).
+
+For any licensing questions or requests, contact:
+- license@degensoft.com
+- legal@degensoft.com
