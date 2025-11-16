@@ -209,27 +209,45 @@ export class TakerTraits {
       instructionsArgs,
     ] = sections
 
-    return new TakerTraits(
-      Boolean(flags.getBit(TakerTraits.IS_EXACT_IN_BIT_FLAG)),
-      Boolean(flags.getBit(TakerTraits.SHOULD_UNWRAP_BIT_FLAG)),
-      Boolean(flags.getBit(TakerTraits.HAS_PRE_TRANSFER_IN_CALLBACK_BIT_FLAG)),
-      Boolean(flags.getBit(TakerTraits.HAS_PRE_TRANSFER_OUT_CALLBACK_BIT_FLAG)),
-      Boolean(flags.getBit(TakerTraits.IS_STRICT_THRESHOLD_BIT_FLAG)),
-      Boolean(flags.getBit(TakerTraits.IS_FIRST_TRANSFER_FROM_TAKER_BIT_FLAG)),
-      Boolean(flags.getBit(TakerTraits.USE_TRANSFER_FROM_AND_AQUA_PUSH_FLAG)),
-      threshold ? BigInt(add0x(threshold)) : 0n,
-      to ? new Address(add0x(to)) : Address.ZERO_ADDRESS,
-      preTransferInHookData ? new HexString(add0x(preTransferInHookData)) : HexString.EMPTY,
-      postTransferInHookData ? new HexString(add0x(postTransferInHookData)) : HexString.EMPTY,
-      preTransferOutHookData ? new HexString(add0x(preTransferOutHookData)) : HexString.EMPTY,
-      postTransferOutHookData ? new HexString(add0x(postTransferOutHookData)) : HexString.EMPTY,
-      preTransferInCallbackData ? new HexString(add0x(preTransferInCallbackData)) : HexString.EMPTY,
-      preTransferOutCallbackData
+    return TakerTraits.new({
+      exactIn: Boolean(flags.getBit(TakerTraits.IS_EXACT_IN_BIT_FLAG)),
+      shouldUnwrap: Boolean(flags.getBit(TakerTraits.SHOULD_UNWRAP_BIT_FLAG)),
+      preTransferInCallbackEnabled: Boolean(
+        flags.getBit(TakerTraits.HAS_PRE_TRANSFER_IN_CALLBACK_BIT_FLAG),
+      ),
+      preTransferOutCallbackEnabled: Boolean(
+        flags.getBit(TakerTraits.HAS_PRE_TRANSFER_OUT_CALLBACK_BIT_FLAG),
+      ),
+      strictThreshold: Boolean(flags.getBit(TakerTraits.IS_STRICT_THRESHOLD_BIT_FLAG)),
+      firstTransferFromTaker: Boolean(
+        flags.getBit(TakerTraits.IS_FIRST_TRANSFER_FROM_TAKER_BIT_FLAG),
+      ),
+      useTransferFromAndAquaPush: Boolean(
+        flags.getBit(TakerTraits.USE_TRANSFER_FROM_AND_AQUA_PUSH_FLAG),
+      ),
+      threshold: threshold ? BigInt(add0x(threshold)) : 0n,
+      to: to ? new Address(add0x(to)) : Address.ZERO_ADDRESS,
+      preTransferInHookData: preTransferInHookData
+        ? new HexString(add0x(preTransferInHookData))
+        : HexString.EMPTY,
+      postTransferInHookData: postTransferInHookData
+        ? new HexString(add0x(postTransferInHookData))
+        : HexString.EMPTY,
+      preTransferOutHookData: preTransferOutHookData
+        ? new HexString(add0x(preTransferOutHookData))
+        : HexString.EMPTY,
+      postTransferOutHookData: postTransferOutHookData
+        ? new HexString(add0x(postTransferOutHookData))
+        : HexString.EMPTY,
+      preTransferInCallbackData: preTransferInCallbackData
+        ? new HexString(add0x(preTransferInCallbackData))
+        : HexString.EMPTY,
+      preTransferOutCallbackData: preTransferOutCallbackData
         ? new HexString(add0x(preTransferOutCallbackData))
         : HexString.EMPTY,
-      instructionsArgs ? new HexString(add0x(instructionsArgs)) : HexString.EMPTY,
-      signature ? new HexString(add0x(signature)) : HexString.EMPTY,
-    )
+      instructionsArgs: instructionsArgs ? new HexString(add0x(instructionsArgs)) : HexString.EMPTY,
+      signature: signature ? new HexString(add0x(signature)) : HexString.EMPTY,
+    })
   }
 
   /**
