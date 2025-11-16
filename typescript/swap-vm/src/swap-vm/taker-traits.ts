@@ -22,18 +22,6 @@ export class TakerTraits {
 
   private static readonly USE_TRANSFER_FROM_AND_AQUA_PUSH_FLAG = 6n
 
-  private static readonly DATA_FIELDS = [
-    'threshold',
-    'to',
-    'preTransferInHookData',
-    'postTransferInHookData',
-    'preTransferOutHookData',
-    'postTransferOutHookData',
-    'preTransferInCallbackData',
-    'preTransferOutCallbackData',
-    'instructionsArgs',
-  ] as const
-
   // eslint-disable-next-line max-params
   constructor(
     /**

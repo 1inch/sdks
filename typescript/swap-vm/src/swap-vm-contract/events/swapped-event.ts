@@ -1,6 +1,5 @@
-import type { Log } from 'viem'
 import { decodeEventLog } from 'viem'
-import type { DataFor } from '@1inch/sdk-core'
+import type { DataFor, LogLike } from '@1inch/sdk-core'
 import { Address, HexString } from '@1inch/sdk-core'
 import { SWAP_VM_ABI } from '../../abi/SwapVM.abi'
 
@@ -35,7 +34,7 @@ export class SwappedEvent {
    * Creates a SwappedEvent
    * @throws Error if the log data is invalid or doesn't match the expected event structure
    */
-  static fromLog(log: Log): SwappedEvent {
+  static fromLog(log: LogLike): SwappedEvent {
     const decoded = decodeEventLog({
       abi: SWAP_VM_ABI,
       data: log.data,

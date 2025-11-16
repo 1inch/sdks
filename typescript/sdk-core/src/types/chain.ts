@@ -6,7 +6,6 @@ export enum NetworkEnum {
   ARBITRUM = 42161,
   AVALANCHE = 43114,
   OPTIMISM = 10,
-  FANTOM = 250,
   GNOSIS = 100,
   COINBASE = 8453,
   LINEA = 59144,
