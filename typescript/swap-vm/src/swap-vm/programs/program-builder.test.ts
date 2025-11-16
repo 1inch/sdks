@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { Address, AddressHalf, HexString } from '@1inch/sdk-core'
+import { RegularProgramBuilder } from './regular-program-builder'
 import type * as balances from '../instructions/balances'
 import type * as controls from '../instructions/controls'
 import type * as invalidators from '../instructions/invalidators'
@@ -14,7 +15,6 @@ import type * as baseFeeAdjuster from '../instructions/base-fee-adjuster'
 import type * as twapSwap from '../instructions/twap-swap'
 import type * as fee from '../instructions/fee'
 import type * as extruction from '../instructions/extruction'
-import { RegularProgramBuilder } from './'
 
 describe('ProgramBuilder', () => {
   const USDC = new Address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')

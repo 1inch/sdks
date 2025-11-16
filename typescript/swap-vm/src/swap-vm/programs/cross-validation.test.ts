@@ -152,7 +152,7 @@ describe('Cross-validation with Concentrate', () => {
     expect(rebuilt.toString().toLowerCase()).toBe(SOLIDITY_HEX.toLowerCase())
   })
 
-  it.skip('should build Concentrate program from scratch', () => {
+  it('should build Concentrate program from scratch', () => {
     const tokenA = new Address('0x96098f7c7019b51a820aec51e99254cd3fb576a9')
     const tokenB = new Address('0x0000000000000000000000000000000000000000')
     const balanceA = 20000n * 10n ** 18n
@@ -214,7 +214,7 @@ describe('Cross-validation with Aqua Solidity', () => {
     expect(program.toString()).toBe('0x1600')
   })
 
-  it.skip('should handle AquaProgramBuilder encoding/decoding', () => {
+  it('should handle AquaProgramBuilder encoding/decoding', () => {
     const program = new AquaProgramBuilder()
       .decayXD({ decayPeriod: 3600n })
       .xycSwapXD()
