@@ -481,3 +481,11 @@ await wallet.sendTransaction(shipTx)
 ```
 
 **Full test example:** [tests/aqua.spec.ts - should dock](https://github.com/1inch/sdks/blob/master/typescript/aqua/tests/aqua.spec.ts#L320)
+
+## License
+
+This SDK is provided under the terms described in [LICENSE](./LICENSE) and [THIRD_PARTY_NOTICES](./THIRD_PARTY_NOTICES).
+
+For any licensing questions or requests, contact:
+- license@degensoft.com
+- legal@degensoft.com
