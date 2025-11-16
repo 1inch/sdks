@@ -24,7 +24,6 @@ describe('SwapVMContract', () => {
       })
 
       const signature = new HexString('0x1234567890abcdef')
-      const takerData = new HexString('0xdeadbeef')
 
       const callData = SwapVMContract.encodeSwapCallData({
         order,
@@ -33,7 +32,6 @@ describe('SwapVMContract', () => {
         amount: 100000n,
         signature,
         takerTraits,
-        takerData,
       })
 
       expect(callData).toBeInstanceOf(HexString)
@@ -78,15 +76,12 @@ describe('SwapVMContract', () => {
         shouldUnwrap: true,
       })
 
-      const takerData = new HexString('0xcafebabe')
-
       const callData = SwapVMContract.encodeQuoteCallData({
         order,
         tokenIn: mockTokenIn,
         tokenOut: mockTokenOut,
         amount: 50000n,
         takerTraits,
-        takerData,
       })
 
       expect(callData).toBeInstanceOf(HexString)

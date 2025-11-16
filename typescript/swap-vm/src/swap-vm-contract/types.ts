@@ -8,11 +8,6 @@ type SwapVmSwapInfo = {
   tokenOut: Address
   amount: bigint
   takerTraits: TakerTraits
-
-  /**
-   * Optional additional data (hook data, etc.)
-   */
-  takerData?: HexString
 }
 export type QuoteArgs = SwapVmSwapInfo
 

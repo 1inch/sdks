@@ -189,19 +189,18 @@ The SDK includes pre-configured contract addresses for the following networks:
 
 | Network | Chain ID | Address |
 |---------|----------|---------|
-| Ethereum | 1 | 0x11d305af1691D3aca504f6216532675f7Dd07D11 |
-| BNB Chain | 56 | 0x11d305af1691D3aca504f6216532675f7Dd07D11 |
-| Polygon | 137 | 0x11d305af1691D3aca504f6216532675f7Dd07D11 |
-| Arbitrum | 42161 | 0x11d305af1691D3aca504f6216532675f7Dd07D11 |
-| Avalanche | 43114 | 0x11d305af1691D3aca504f6216532675f7Dd07D11 |
-| Gnosis | 100 | 0x11d305af1691D3aca504f6216532675f7Dd07D11 |
-| Coinbase Base | 8453 | 0x11d305af1691D3aca504f6216532675f7Dd07D11 |
-| Optimism | 10 | 0x11d305af1691D3aca504f6216532675f7Dd07D11 |
-| Fantom | 250 | 0x11d305af1691D3aca504f6216532675f7Dd07D11 |
-| zkSync Era | 324 | 0x11d305af1691D3aca504f6216532675f7Dd07D11 |
-| Linea | 59144 | 0x11d305af1691D3aca504f6216532675f7Dd07D11 |
-| Unichain | 1301 | 0x11d305af1691D3aca504f6216532675f7Dd07D11 |
-| Sonic | 146 | 0x11d305af1691D3aca504f6216532675f7Dd07D11 |
+| Ethereum | 1 | [0x407bb6447c1328f41ebb2d3cc018c54158775159](https://etherscan.io/address/0x407bb6447c1328f41ebb2d3cc018c54158775159) |
+| BNB Chain | 56 | [0x68d16542c60c1affae3a18896c1ad01c969c652f](https://bscscan.com/address/0x68d16542c60c1affae3a18896c1ad01c969c652f) |
+| Polygon | 137 | [0x0d5c0881cba1a88a6ebf90e89a25ecd2506bb967](https://polygonscan.com/address/0x0d5c0881cba1a88a6ebf90e89a25ecd2506bb967) |
+| Arbitrum | 42161 | [0x68d16542c60c1affae3a18896c1ad01c969c652f](https://arbiscan.io/address/0x68d16542c60c1affae3a18896c1ad01c969c652f) |
+| Avalanche | 43114 | [0x68d16542c60c1affae3a18896c1ad01c969c652f](https://subnets.avax.network/c-chain/address/0x68d16542c60c1affae3a18896c1ad01c969c652f) |
+| Gnosis | 100 | [0x68d16542c60c1affae3a18896c1ad01c969c652f](https://gnosisscan.io/address/0x68d16542c60c1affae3a18896c1ad01c969c652f) |
+| Coinbase Base | 8453 | [0xa7868b134f447914dd60c0984889ac57ddaa1a21](https://basescan.org/address/0xa7868b134f447914dd60c0984889ac57ddaa1a21) |
+| Optimism | 10 | [0x0d5c0881cba1a88a6ebf90e89a25ecd2506bb967](https://optimistic.etherscan.io/address/0x0d5c0881cba1a88a6ebf90e89a25ecd2506bb967) |
+| zkSync Era | 324 | [0x68d16542c60c1affae3a18896c1ad01c969c652f](https://era.zksync.network/address/0x68d16542c60c1affae3a18896c1ad01c969c652f) |
+| Linea | 59144 | [0x68d16542c60c1affae3a18896c1ad01c969c652f](https://lineascan.build/address/0x68d16542c60c1affae3a18896c1ad01c969c652f) |
+| Unichain | 1301 | [0x68d16542c60c1affae3a18896c1ad01c969c652f](https://unichain.blockscout.com/address/0x68d16542c60c1affae3a18896c1ad01c969c652f) |
+| Sonic | 146 | [0x68d16542c60c1affae3a18896c1ad01c969c652f](https://sonicscan.org/address/0x68d16542c60c1affae3a18896c1ad01c969c652f) |
 
 Access addresses using:
 
