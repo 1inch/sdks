@@ -14,7 +14,6 @@ import * as dutchAuction from '../instructions/dutch-auction'
 import * as oraclePriceAdjuster from '../instructions/oracle-price-adjuster'
 import * as baseFeeAdjuster from '../instructions/base-fee-adjuster'
 import * as twapSwap from '../instructions/twap-swap'
-import * as stableSwap from '../instructions/stable-swap'
 import * as fee from '../instructions/fee'
 import * as extruction from '../instructions/extruction'
 import * as debug from '../instructions/debug/opcodes'
@@ -47,10 +46,8 @@ export class RegularProgramBuilder extends ProgramBuilder {
   /**
    * Sets initial token balances for the swap program
    **/
-  public setBalancesXD(data: DataFor<balances.BalancesArgs>): this {
-    super.add(
-      balances.SET_BALANCES_XD_OPCODE.createIx(new balances.BalancesArgs(data.tokenBalances)),
-    )
+  public staticBalancesXD(data: DataFor<balances.BalancesArgs>): this {
+    super.add(balances.staticBalancesXD.createIx(new balances.BalancesArgs(data.tokenBalances)))
 
     return this
   }
@@ -58,8 +55,8 @@ export class RegularProgramBuilder extends ProgramBuilder {
   /**
    * Reads token balances from program data or contract storage
    **/
-  public balancesXD(data: DataFor<balances.BalancesArgs>): this {
-    super.add(balances.BALANCES_XD_OPCODE.createIx(new balances.BalancesArgs(data.tokenBalances)))
+  public dynamicBalancesXD(data: DataFor<balances.BalancesArgs>): this {
+    super.add(balances.dynamicBalancesXD.createIx(new balances.BalancesArgs(data.tokenBalances)))
 
     return this
   }
@@ -74,19 +71,32 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Jump to specified program counter if swap mode is exact input
+   * Jumps if tokenIn is the specified token
    **/
-  public jumpIfExactIn(data: DataFor<controls.JumpArgs>): this {
-    super.add(controls.jumpIfExactIn.createIx(new controls.JumpArgs(data.nextPC)))
+  public jumpIfTokenIn(data: DataFor<controls.JumpIfTokenArgs>): this {
+    super.add(
+      controls.jumpIfTokenIn.createIx(new controls.JumpIfTokenArgs(data.tokenTail, data.nextPC)),
+    )
 
     return this
   }
 
   /**
-   * Jump to specified program counter if swap mode is exact output
+   * Jumps if tokenOut is the specified token
    **/
-  public jumpIfExactOut(data: DataFor<controls.JumpArgs>): this {
-    super.add(controls.jumpIfExactOut.createIx(new controls.JumpArgs(data.nextPC)))
+  public jumpIfTokenOut(data: DataFor<controls.JumpIfTokenArgs>): this {
+    super.add(
+      controls.jumpIfTokenOut.createIx(new controls.JumpIfTokenArgs(data.tokenTail, data.nextPC)),
+    )
+
+    return this
+  }
+
+  /**
+   * Reverts if the deadline has been reached
+   **/
+  public deadline(data: DataFor<controls.DeadlineArgs>): this {
+    super.add(controls.deadline.createIx(new controls.DeadlineArgs(data.deadline)))
 
     return this
   }
@@ -157,12 +167,8 @@ export class RegularProgramBuilder extends ProgramBuilder {
   /**
    * Invalidates order by token input to prevent re-use
    **/
-  public invalidateTokenIn1D(data: DataFor<invalidators.InvalidateTokenIn1DArgs>): this {
-    super.add(
-      invalidators.invalidateTokenIn1D.createIx(
-        new invalidators.InvalidateTokenIn1DArgs(data.tokenInHalf),
-      ),
-    )
+  public invalidateTokenIn1D(): this {
+    super.add(invalidators.invalidateTokenIn1D.createIx(new invalidators.InvalidateTokenIn1DArgs()))
 
     return this
   }
@@ -170,11 +176,9 @@ export class RegularProgramBuilder extends ProgramBuilder {
   /**
    * Invalidates order by token output to prevent re-use
    **/
-  public invalidateTokenOut1D(data: DataFor<invalidators.InvalidateTokenOut1DArgs>): this {
+  public invalidateTokenOut1D(): this {
     super.add(
-      invalidators.invalidateTokenOut1D.createIx(
-        new invalidators.InvalidateTokenOut1DArgs(data.tokenOutHalf),
-      ),
+      invalidators.invalidateTokenOut1D.createIx(new invalidators.InvalidateTokenOut1DArgs()),
     )
 
     return this
@@ -273,9 +277,9 @@ export class RegularProgramBuilder extends ProgramBuilder {
   /**
    * Dutch auction with time-based decay on amountIn
    **/
-  public dutchAuctionAmountIn1D(data: DataFor<dutchAuction.DutchAuctionArgs>): this {
+  public dutchAuctionBalanceIn1D(data: DataFor<dutchAuction.DutchAuctionArgs>): this {
     super.add(
-      dutchAuction.dutchAuctionAmountIn1D.createIx(
+      dutchAuction.dutchAuctionBalanceIn1D.createIx(
         new dutchAuction.DutchAuctionArgs(data.startTime, data.duration, data.decayFactor),
       ),
     )
@@ -286,9 +290,9 @@ export class RegularProgramBuilder extends ProgramBuilder {
   /**
    * Dutch auction with time-based decay on amountOut
    **/
-  public dutchAuctionAmountOut1D(data: DataFor<dutchAuction.DutchAuctionArgs>): this {
+  public dutchAuctionBalanceOut1D(data: DataFor<dutchAuction.DutchAuctionArgs>): this {
     super.add(
-      dutchAuction.dutchAuctionAmountOut1D.createIx(
+      dutchAuction.dutchAuctionBalanceOut1D.createIx(
         new dutchAuction.DutchAuctionArgs(data.startTime, data.duration, data.decayFactor),
       ),
     )
@@ -353,19 +357,6 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Stablecoin optimized swap using StableSwap algorithm (Curve-style)
-   **/
-  public stableSwap2D(data: DataFor<stableSwap.StableSwap2DArgs>): this {
-    super.add(
-      stableSwap.stableSwap2D.createIx(
-        new stableSwap.StableSwap2DArgs(data.fee, data.A, data.rateLt, data.rateGt),
-      ),
-    )
-
-    return this
-  }
-
-  /**
    * Calls external contract to perform custom logic
    **/
   public extruction(data: DataFor<extruction.ExtructionArgs>): this {
@@ -374,15 +365,6 @@ export class RegularProgramBuilder extends ProgramBuilder {
         new extruction.ExtructionArgs(data.target, data.extructionArgs),
       ),
     )
-
-    return this
-  }
-
-  /**
-   * Applies flat fee to computed swap amount
-   **/
-  public flatFeeXD(data: DataFor<fee.FlatFeeArgs>): this {
-    super.add(fee.flatFeeXD.createIx(new fee.FlatFeeArgs(data.fee)))
 
     return this
   }
@@ -406,10 +388,19 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Applies progressive fee based on price impact
+   * Applies progressive fee to amountIn
    **/
-  public progressiveFeeXD(data: DataFor<fee.FlatFeeArgs>): this {
-    super.add(fee.progressiveFeeXD.createIx(new fee.FlatFeeArgs(data.fee)))
+  public progressiveFeeInXD(data: DataFor<fee.FlatFeeArgs>): this {
+    super.add(fee.progressiveFeeInXD.createIx(new fee.FlatFeeArgs(data.fee)))
+
+    return this
+  }
+
+  /**
+   * Applies progressive fee to amountOut
+   **/
+  public progressiveFeeOutXD(data: DataFor<fee.FlatFeeArgs>): this {
+    super.add(fee.progressiveFeeOutXD.createIx(new fee.FlatFeeArgs(data.fee)))
 
     return this
   }

@@ -13,7 +13,7 @@ describe('AquaAMMStrategy Examples', () => {
       tokenB: WETH,
     }).build()
 
-    expect(program.toString()).toBe('0x1000')
+    expect(program.toString()).toBe('0x1100')
   })
 
   it('Example: AMM with fee', () => {

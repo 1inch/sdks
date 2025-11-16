@@ -1,4 +1,6 @@
 import { JumpArgs } from './jump-args'
+import { JumpIfTokenArgs } from './jump-if-token-args'
+import { DeadlineArgs } from './deadline-args'
 import { OnlyTakerTokenBalanceNonZeroArgs } from './only-taker-token-balance-non-zero-args'
 import { OnlyTakerTokenBalanceGteArgs } from './only-taker-token-balance-gte-args'
 import { OnlyTakerTokenSupplyShareGteArgs } from './only-taker-token-supply-share-gte-args'
@@ -11,29 +13,20 @@ import { Opcode } from '../opcode'
  **/
 export const jump: Opcode<JumpArgs> = new Opcode(Symbol('Controls.jump'), JumpArgs.CODER)
 
-/**
- * Jump to specified program counter if swap mode is exact input
- * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L59
- **/
-export const jumpIfExactIn: Opcode<JumpArgs> = new Opcode(
-  Symbol('Controls.jumpIfExactIn'),
-  JumpArgs.CODER,
+export const jumpIfTokenIn: Opcode<JumpIfTokenArgs> = new Opcode(
+  Symbol('Controls.jumpIfTokenIn'),
+  JumpIfTokenArgs.CODER,
 )
 
-/**
- * Jump to specified program counter if swap mode is exact output
- * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L68
- **/
-export const jumpIfExactOut: Opcode<JumpArgs> = new Opcode(
-  Symbol('Controls.jumpIfExactOut'),
-  JumpArgs.CODER,
+export const jumpIfTokenOut: Opcode<JumpIfTokenArgs> = new Opcode(
+  Symbol('Controls.jumpIfTokenOut'),
+  JumpIfTokenArgs.CODER,
 )
 
-/**
- * Reverts if the deadline has been reached
- * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L96
- **/
-export const deadline: Opcode<JumpArgs> = new Opcode(Symbol('Controls.deadline'), JumpArgs.CODER)
+export const deadline: Opcode<DeadlineArgs> = new Opcode(
+  Symbol('Controls.deadline'),
+  DeadlineArgs.CODER,
+)
 /**
  * Requires taker to hold any amount of specified token (supports NFTs)
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L77

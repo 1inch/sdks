@@ -6,7 +6,6 @@ import * as controls from '../instructions/controls'
 import * as xycSwap from '../instructions/xyc-swap'
 import * as concentrate from '../instructions/concentrate'
 import * as decay from '../instructions/decay'
-import * as stableSwap from '../instructions/stable-swap'
 import * as fee from '../instructions/fee'
 import * as debug from '../instructions/debug/opcodes'
 
@@ -44,19 +43,32 @@ export class AquaProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Jump to specified program counter if swap mode is exact input
+   * Jumps if tokenIn is the specified token
    **/
-  public jumpIfExactIn(data: DataFor<controls.JumpArgs>): this {
-    super.add(controls.jumpIfExactIn.createIx(new controls.JumpArgs(data.nextPC)))
+  public jumpIfTokenIn(data: DataFor<controls.JumpIfTokenArgs>): this {
+    super.add(
+      controls.jumpIfTokenIn.createIx(new controls.JumpIfTokenArgs(data.tokenTail, data.nextPC)),
+    )
 
     return this
   }
 
   /**
-   * Jump to specified program counter if swap mode is exact output
+   * Jumps if tokenOut is the specified token
    **/
-  public jumpIfExactOut(data: DataFor<controls.JumpArgs>): this {
-    super.add(controls.jumpIfExactOut.createIx(new controls.JumpArgs(data.nextPC)))
+  public jumpIfTokenOut(data: DataFor<controls.JumpIfTokenArgs>): this {
+    super.add(
+      controls.jumpIfTokenOut.createIx(new controls.JumpIfTokenArgs(data.tokenTail, data.nextPC)),
+    )
+
+    return this
+  }
+
+  /**
+   * Reverts if the deadline has been reached
+   **/
+  public deadline(data: DataFor<controls.DeadlineArgs>): this {
+    super.add(controls.deadline.createIx(new controls.DeadlineArgs(data.deadline)))
 
     return this
   }
@@ -162,28 +174,6 @@ export class AquaProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Stablecoin optimized swap using StableSwap algorithm (Curve-style)
-   **/
-  public stableSwap2D(data: DataFor<stableSwap.StableSwap2DArgs>): this {
-    super.add(
-      stableSwap.stableSwap2D.createIx(
-        new stableSwap.StableSwap2DArgs(data.fee, data.A, data.rateLt, data.rateGt),
-      ),
-    )
-
-    return this
-  }
-
-  /**
-   * Applies flat fee to computed swap amount
-   **/
-  public flatFeeXD(data: DataFor<fee.FlatFeeArgs>): this {
-    super.add(fee.flatFeeXD.createIx(new fee.FlatFeeArgs(data.fee)))
-
-    return this
-  }
-
-  /**
    * Applies fee to amountIn
    **/
   public flatFeeAmountInXD(data: DataFor<fee.FlatFeeArgs>): this {
@@ -202,10 +192,19 @@ export class AquaProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Applies progressive fee based on price impact
+   * Applies progressive fee to amountIn
    **/
-  public progressiveFeeXD(data: DataFor<fee.FlatFeeArgs>): this {
-    super.add(fee.progressiveFeeXD.createIx(new fee.FlatFeeArgs(data.fee)))
+  public progressiveFeeInXD(data: DataFor<fee.FlatFeeArgs>): this {
+    super.add(fee.progressiveFeeInXD.createIx(new fee.FlatFeeArgs(data.fee)))
+
+    return this
+  }
+
+  /**
+   * Applies progressive fee to amountOut
+   **/
+  public progressiveFeeOutXD(data: DataFor<fee.FlatFeeArgs>): this {
+    super.add(fee.progressiveFeeOutXD.createIx(new fee.FlatFeeArgs(data.fee)))
 
     return this
   }

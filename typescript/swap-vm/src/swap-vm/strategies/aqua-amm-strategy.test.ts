@@ -17,7 +17,7 @@ describe('AquaAMMStrategy', () => {
       const decoded = AquaProgramBuilder.decode(program)
       const rebuilt = decoded.build()
       expect(rebuilt.toString()).toBe(program.toString())
-      expect(program.toString()).toBe('0x1000')
+      expect(program.toString()).toBe('0x1100')
     })
 
     it('should build with all parameters', () => {

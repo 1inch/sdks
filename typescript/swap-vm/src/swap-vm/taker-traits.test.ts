@@ -131,7 +131,9 @@ describe('TakerTraits', () => {
       const traits = TakerTraits.default()
 
       const withReceiver = traits.with({ customReceiver: mockReceiver })
-      expect(withReceiver.customReceiver !== undefined && !withReceiver.customReceiver.isZero()).toBe(true)
+      expect(
+        withReceiver.customReceiver !== undefined && !withReceiver.customReceiver.isZero(),
+      ).toBe(true)
       expect(withReceiver.customReceiver?.toString()).toBe(mockReceiver.toString())
 
       const withoutReceiver = withReceiver.with({ customReceiver: undefined })

@@ -344,7 +344,7 @@ export class MakerTraits {
       (acc, hookName, i) => {
         const hook = this[hookName]
         const hasTarget = this.hasTargetForHook(hookName)
-        const encoded = hook && hasTarget ? hook.encode() : (hook?.data || HexString.EMPTY)
+        const encoded = hook && hasTarget ? hook.encode() : hook?.data || HexString.EMPTY
 
         acc.sum += BigInt(encoded.bytesCount())
         acc.offsets += acc.sum << (16n * BigInt(i))
