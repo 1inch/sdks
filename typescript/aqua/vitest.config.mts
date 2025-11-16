@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config'
-import tsconfigPaths from 'vite-tsconfig-paths';
+import tsconfigPaths from 'vite-tsconfig-paths'
 
 export default defineConfig({
   root: __dirname,
@@ -10,7 +10,7 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     coverage: {
       reportsDirectory: '../../coverage/typescript/aqua',
-      include: ['src']
-    }
-  }
+      include: ['src'],
+    },
+  },
 })

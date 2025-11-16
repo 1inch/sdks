@@ -211,12 +211,18 @@ packages:
     engines: {node: '>=18.16.0'}
     peerDependencies:
       assert: ^2.0.0
+    peerDependenciesMeta:
+      assert:
+        optional: true
 
   '@1inch/byte-utils@3.1.7':
     resolution: {integrity: sha512-AXS9XWOPXnTYFYozc10fYE3PnplD9RmCzO57U4vzxzGQ0zgdeoTfYe8hXej/NctYJFcTL3PzyC0HZn2sZ7IWbA==, tarball: https://npm.pkg.github.com/download/@1inch/byte-utils/3.1.7/6d70a0ba1ca3c04a6c786f3ca2aa242d322d6c72}
     engines: {node: '>=22'}
     peerDependencies:
       assert: ^2.0.0
+    peerDependenciesMeta:
+      assert:
+        optional: true
 
   '@1inch/eslint-config@3.0.8':
     resolution: {integrity: sha512-QJFaI2caKUjdeHMVhWyqWYhjNRZkkqkZcMHMmJHqfOnkICrqMRWvTZgy+VIVRBf0epoNu1LXcMdUVwWjtDrfVA==, tarball: https://npm.pkg.github.com/download/@1inch/eslint-config/3.0.8/9257c78ce276a32ba5a5d486afe2efde0f20094b}
@@ -5743,11 +5749,11 @@ snapshots:
       - utf-8-validate
 
   '@1inch/byte-utils@3.0.0(assert@2.1.0)':
-    dependencies:
+    optionalDependencies:
       assert: 2.1.0
 
   '@1inch/byte-utils@3.1.7(assert@2.1.0)':
-    dependencies:
+    optionalDependencies:
       assert: 2.1.0
 
   '@1inch/eslint-config@3.0.8(e95d5498302c9a73275a5d8556ab0e8d)':
@@ -8492,6 +8498,7 @@ snapshots:
       object-is: 1.1.6
       object.assign: 4.1.7
       util: 0.12.5
+    optional: true
 
   assertion-error@1.1.0: {}
 
@@ -10053,6 +10060,7 @@ snapshots:
     dependencies:
       call-bound: 1.0.4
       has-tostringtag: 1.0.2
+    optional: true
 
   is-array-buffer@3.0.5:
     dependencies:
@@ -10138,6 +10146,7 @@ snapshots:
     dependencies:
       call-bind: 1.0.8
       define-properties: 1.2.1
+    optional: true
 
   is-negative-zero@2.0.3: {}
 
@@ -10698,6 +10707,7 @@ snapshots:
     dependencies:
       call-bind: 1.0.8
       define-properties: 1.2.1
+    optional: true
 
   object-keys@1.1.1: {}
 
@@ -11898,6 +11908,7 @@ snapshots:
       is-generator-function: 1.1.2
       is-typed-array: 1.1.15
       which-typed-array: 1.1.19
+    optional: true
 
   uuid@10.0.0: {}
 
