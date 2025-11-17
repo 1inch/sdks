@@ -35,6 +35,7 @@ import Aqua from '@contracts/Aqua.sol/Aqua.json'
 import TestTrader from '@contracts/TestTrader.sol/TestTrader.json'
 import TestAquaSwapVMRouter from '@contracts/TestAquaSwapVMRouter.sol/TestAquaSwapVMRouter.json'
 import TestCustomSwapVM from '@contracts/TestCustomSwapVM.sol/TestCustomSwapVM.json'
+import TestMakerHooks from '@contracts/TestMakerHooks.sol/TestMakerHooks.json'
 
 import { TestWallet, ADDRESSES } from '@1inch/sdk-core/test-utils'
 import { privateKeyToAccount } from 'viem/accounts'
@@ -90,6 +91,7 @@ export class ReadyEvmFork {
     const mappings = [
       [this.addresses.aqua, 'aqua'],
       [this.addresses.swapVMAquaRouter, 'swapVMAquaRouter'],
+      [this.addresses.customSwapVM, 'customSwapVM'],
       [ADDRESSES.USDC, 'USDC'],
       [ADDRESSES.WETH, 'WETH'],
       [await this.liqProvider.getAddress(), 'liqProvider'],
@@ -193,14 +195,15 @@ async function deployContracts(transport: Transport, chain: Chain): Promise<Test
   const aqua = await deploy(Aqua as ContractParams, [], deployer)
 
   const nonce = await deployer.getTransactionCount({ address: account.address })
-  const [swapVMAquaRouter, customSwapVM, testTrader] = await Promise.all([
+  const [swapVMAquaRouter, customSwapVM, makerHooks, testTrader] = await Promise.all([
     deploy(TestAquaSwapVMRouter as ContractParams, [aqua], deployer, nonce),
     deploy(TestCustomSwapVM as ContractParams, [aqua], deployer, nonce + 1),
+    deploy(TestMakerHooks as ContractParams, [], deployer, nonce + 2),
     deploy(
       TestTrader as ContractParams,
       [aqua, [ADDRESSES.WETH, ADDRESSES.USDC]],
       deployer,
-      nonce + 2,
+      nonce + 3,
     ),
   ])
 
@@ -209,6 +212,7 @@ async function deployContracts(transport: Transport, chain: Chain): Promise<Test
     testTrader,
     swapVMAquaRouter,
     customSwapVM,
+    makerHooks,
   }
 }
 
@@ -278,6 +282,7 @@ export type TestAddresses = {
   testTrader: Hex
   swapVMAquaRouter: Hex
   customSwapVM: Hex
+  makerHooks: Hex
 }
 
 export type TestClient<

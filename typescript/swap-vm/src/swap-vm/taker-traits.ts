@@ -286,7 +286,7 @@ export class TakerTraits {
       { sum: 0, offsets: [] as number[], data: [] as string[] },
     )
 
-    offsets.forEach((offset) => builder.addUint16(BigInt(offset)))
+    offsets.reverse().forEach((offset) => builder.addUint16(BigInt(offset)))
 
     let flags = new BN(0n)
     flags = flags.setBit(TakerTraits.IS_EXACT_IN_BIT_FLAG, this.exactIn)

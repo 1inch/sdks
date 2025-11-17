@@ -1,10 +1,10 @@
 /* eslint-disable max-lines-per-function */
 import 'dotenv/config'
 import type { NetworkEnum } from '@1inch/sdk-core'
-import { Address, HexString } from '@1inch/sdk-core'
+import { Address, HexString, Interaction } from '@1inch/sdk-core'
 import { ADDRESSES } from '@1inch/sdk-core/test-utils'
 import type { Hex } from 'viem'
-import { decodeFunctionResult, parseUnits } from 'viem'
+import { decodeEventLog, decodeFunctionResult, parseUnits, toHex } from 'viem'
 import { AquaProtocolContract, ABI } from '@1inch/aqua-sdk'
 import { ReadyEvmFork } from './setup-evm.js'
 import { Order } from '../src/swap-vm/order.js'
@@ -310,13 +310,17 @@ describe('SwapVM', () => {
   test('should swap with custom swap vm', async () => {
     const liquidityProvider = forkNode.liqProvider
     const swapper = forkNode.swapper
+    const otherSwapperAddress = '0xff989b7f90e304033f692c9b6613a70458d3df22'
+    const otherSwapper = await forkNode.walletForAddress(otherSwapperAddress)
 
     const aqua = new AquaProtocolContract(new Address(forkNode.addresses.aqua))
     const swapVM = new SwapVMContract(new Address(forkNode.addresses.customSwapVM))
 
     const USDC = new Address(ADDRESSES.USDC)
     const WETH = new Address(ADDRESSES.WETH)
-    await swapper.unlimitedApprove(swapVM.address.toString(), USDC.toString())
+    await swapper.unlimitedApprove(USDC.toString(), swapVM.address.toString())
+    await swapper.transferToken(USDC.toString(), otherSwapperAddress, parseUnits('100', 6))
+    await otherSwapper.unlimitedApprove(USDC.toString(), swapVM.address.toString())
 
     class OnlyAllowedTakerArgs implements IArgsData {
       constructor(public readonly allowedTaker: Address) {}
@@ -328,7 +332,7 @@ describe('SwapVM', () => {
 
     class OnlyAllowedTakerCoder implements IArgsCoder<OnlyAllowedTakerArgs> {
       encode(args: OnlyAllowedTakerArgs): HexString {
-        return new HexString('0x' + args.allowedTaker.toString().padStart(40, '0'))
+        return new HexString(args.allowedTaker.toString())
       }
 
       decode(data: HexString): OnlyAllowedTakerArgs {
@@ -351,6 +355,138 @@ describe('SwapVM', () => {
       maker: new Address(liqProviderAddress),
       program,
       traits: MakerTraits.default(),
+    })
+
+    const strategyHash = order
+      .hash({
+        chainId: forkNode.chainId as NetworkEnum,
+        name: 'TestCustomSwapVM',
+        version: '1.0',
+        verifyingContract: swapVM.address,
+      })
+      .toString()
+
+    const tx = aqua.ship({
+      app: swapVM.address,
+      strategy: order.encode(),
+      amountsAndTokens: [
+        {
+          amount: parseUnits('10000', 6),
+          token: USDC,
+        },
+        {
+          amount: parseUnits('5', 18),
+          token: WETH,
+        },
+      ],
+    })
+
+    await liquidityProvider.send(tx)
+
+    const providerWethBalanceBefore = await getAquaBalance(
+      liqProviderAddress,
+      swapVM.address.toString(),
+      strategyHash,
+      ADDRESSES.WETH,
+    )
+    const providerUsdcBalanceBefore = await getAquaBalance(
+      liqProviderAddress,
+      swapVM.address.toString(),
+      strategyHash,
+      ADDRESSES.USDC,
+    )
+    const swapperWethBalanceBefore = await swapper.tokenBalance(ADDRESSES.WETH)
+    const swapperUsdcBalanceBefore = await swapper.tokenBalance(ADDRESSES.USDC)
+
+    const srcAmount = parseUnits('100', 6)
+
+    const swapParams = {
+      order,
+      amount: srcAmount,
+      takerTraits: TakerTraits.default(),
+      tokenIn: USDC,
+      tokenOut: WETH,
+    }
+
+    // Simulate the call to get the dstAmount
+    const simulateResult = await forkNode.provider.call({
+      account: swapperAddress,
+      ...swapVM.quote(swapParams),
+    })
+
+    const [_, dstAmount] = decodeFunctionResult({
+      abi: SWAP_VM_ABI,
+      functionName: 'quote',
+      data: simulateResult.data!,
+    })
+
+    const swap = swapVM.swap(swapParams)
+
+    await swapper.send(swap)
+
+    const providerWethBalanceAfter = await getAquaBalance(
+      liqProviderAddress,
+      swapVM.address.toString(),
+      strategyHash,
+      ADDRESSES.WETH,
+    )
+    const providerUsdcBalanceAfter = await getAquaBalance(
+      liqProviderAddress,
+      swapVM.address.toString(),
+      strategyHash,
+      ADDRESSES.USDC,
+    )
+
+    expect(providerWethBalanceAfter).to.equal(providerWethBalanceBefore - dstAmount)
+    expect(providerUsdcBalanceAfter).to.equal(providerUsdcBalanceBefore + srcAmount)
+
+    const swapperWethBalanceAfter = await swapper.tokenBalance(ADDRESSES.WETH)
+    const swapperUsdcBalanceAfter = await swapper.tokenBalance(ADDRESSES.USDC)
+    expect(swapperWethBalanceAfter).to.equal(swapperWethBalanceBefore + dstAmount)
+    expect(swapperUsdcBalanceAfter).to.equal(swapperUsdcBalanceBefore - srcAmount)
+
+    expect(() =>
+      forkNode.provider.call({
+        account: otherSwapperAddress,
+        ...swapVM.quote(swapParams),
+      }),
+    ).rejects.toThrow('0xf774ea08') // TakerNotAllowed()
+  })
+
+  test('should call maker hooks on external contract', async () => {
+    const liquidityProvider = forkNode.liqProvider
+    const swapper = forkNode.swapper
+
+    const aqua = new AquaProtocolContract(new Address(forkNode.addresses.aqua))
+    const swapVM = new SwapVMContract(new Address(forkNode.addresses.swapVMAquaRouter))
+
+    const USDC = new Address(ADDRESSES.USDC)
+    const WETH = new Address(ADDRESSES.WETH)
+
+    const program = AquaAMMStrategy.new({
+      tokenA: USDC,
+      tokenB: WETH,
+    }).build()
+
+    const makerHooksTarget = new Address(forkNode.addresses.makerHooks)
+    const order = Order.new({
+      maker: new Address(liqProviderAddress),
+      program,
+      traits: MakerTraits.default().with({
+        preTransferInHook: new Interaction(makerHooksTarget, new HexString(toHex('preTransferIn'))),
+        preTransferOutHook: new Interaction(
+          makerHooksTarget,
+          new HexString(toHex('preTransferOut')),
+        ),
+        postTransferInHook: new Interaction(
+          makerHooksTarget,
+          new HexString(toHex('postTransferIn')),
+        ),
+        postTransferOutHook: new Interaction(
+          makerHooksTarget,
+          new HexString(toHex('postTransferOut')),
+        ),
+      }),
     })
 
     const strategyHash = order
@@ -399,16 +535,18 @@ describe('SwapVM', () => {
     const swapParams = {
       order,
       amount: srcAmount,
-      takerTraits: TakerTraits.default(),
+      takerTraits: TakerTraits.default().with({
+        preTransferInHookData: new HexString(toHex('preTransferIn')),
+        preTransferOutHookData: new HexString(toHex('preTransferOut')),
+        postTransferInHookData: new HexString(toHex('postTransferIn')),
+        postTransferOutHookData: new HexString(toHex('postTransferOut')),
+      }),
       tokenIn: USDC,
       tokenOut: WETH,
     }
 
     // Simulate the call to get the dstAmount
-    const simulateResult = await forkNode.provider.call({
-      account: swapperAddress,
-      ...swapVM.quote(swapParams),
-    })
+    const simulateResult = await swapper.provider.call(swapVM.quote(swapParams))
 
     const [_, dstAmount] = decodeFunctionResult({
       abi: SWAP_VM_ABI,
@@ -418,7 +556,8 @@ describe('SwapVM', () => {
 
     const swap = swapVM.swap(swapParams)
 
-    await swapper.send(swap)
+    const { txHash: swapTxHash } = await swapper.send({ ...swap, allowFail: true })
+    await forkNode.printTrace(swapTxHash)
 
     const providerWethBalanceAfter = await getAquaBalance(
       liqProviderAddress,
@@ -440,5 +579,65 @@ describe('SwapVM', () => {
     const swapperUsdcBalanceAfter = await swapper.tokenBalance(ADDRESSES.USDC)
     expect(swapperWethBalanceAfter).to.equal(swapperWethBalanceBefore + dstAmount)
     expect(swapperUsdcBalanceAfter).to.equal(swapperUsdcBalanceBefore - srcAmount)
+
+    const txReceipt = await forkNode.provider.getTransactionReceipt({ hash: swapTxHash })
+
+    const logsFromHooks = txReceipt.logs.filter(
+      (l) => l.address.toLowerCase() === makerHooksTarget.toString(),
+    )
+
+    expect(logsFromHooks.length).toBe(4)
+
+    const hooksAbi = [
+      {
+        type: 'event',
+        name: 'HookCalled',
+        inputs: [
+          {
+            name: 'name',
+            type: 'string',
+            indexed: false,
+            internalType: 'string',
+          },
+          {
+            name: 'makerData',
+            type: 'bytes',
+            indexed: false,
+            internalType: 'bytes',
+          },
+          {
+            name: 'takerData',
+            type: 'bytes',
+            indexed: false,
+            internalType: 'bytes',
+          },
+        ],
+      },
+    ] as const
+
+    const events = logsFromHooks.map((l) =>
+      decodeEventLog({ abi: hooksAbi, topics: l.topics, data: l.data, eventName: 'HookCalled' }),
+    )
+
+    for (const event of events) {
+      expect(event.args.makerData).toEqual(toHex(event.args.name))
+      expect(event.args.takerData).toEqual(toHex(event.args.name))
+    }
   })
 })
+
+// 0x706f73745472616e736665724f7574
+
+// 0000  threshold
+// 0000  to
+// 0000  preTransferInHookData
+// 0000  postTransferInHookData
+// 0000  preTransferOutHookData
+// 000f  postTransferOutHookData
+// 000f  preTransferInCallbackData
+// 000f  preTransferOutCallbackData
+// 000f  instructionsArgs
+// ---
+// 0041  flags
+// ---   data
+// 706f73745472616e736665724f7574

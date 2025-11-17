@@ -13,14 +13,7 @@ type SwapVmSwapInfo = {
 }
 export type QuoteArgs = SwapVmSwapInfo
 
-export type QuoteNonViewArgs = SwapVmSwapInfo
-
-export type SwapArgs = SwapVmSwapInfo & {
-  /**
-   * Optional - not needed if using Aqua
-   */
-  signature?: HexString
-}
+export type SwapArgs = SwapVmSwapInfo
 
 export type QuoteResult = {
   amountIn: bigint

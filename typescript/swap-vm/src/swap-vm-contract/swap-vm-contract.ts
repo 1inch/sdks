@@ -3,10 +3,7 @@
 import { encodeFunctionData } from 'viem'
 import type { CallInfo, Address } from '@1inch/sdk-core'
 import { HexString } from '@1inch/sdk-core'
-import { BytesBuilder, trim0x } from '@1inch/byte-utils'
-import assert from 'node:assert'
 import type { QuoteArgs, SwapArgs } from './types'
-import type { TakerTraits } from '../swap-vm'
 import { SWAP_VM_ABI } from '../abi/SwapVM.abi'
 import type { Order } from '../swap-vm/order'
 
@@ -55,12 +52,6 @@ export class SwapVMContract {
    * @see https://github.com/1inch/swap-vm/blob/main/src/SwapVM.sol#L124
    */
   static encodeSwapCallData(args: SwapArgs): HexString {
-    const sigPlusTakerTraitsAndData = this.buildSigPlusTakerTraitsAndData(
-      args.order,
-      args.takerTraits,
-      args.signature,
-    )
-
     const result = encodeFunctionData({
       abi: SWAP_VM_ABI,
       functionName: 'swap',
@@ -69,7 +60,7 @@ export class SwapVMContract {
         args.tokenIn.toString(),
         args.tokenOut.toString(),
         args.amount,
-        sigPlusTakerTraitsAndData.toString(),
+        args.takerTraits.encode().toString(),
       ],
     })
 
@@ -104,36 +95,6 @@ export class SwapVMContract {
       data: this.encodeHashOrderCallData(order).toString(),
       value: 0n,
     }
-  }
-
-  /**
-   * Build sigPlusTakerTraitsAndData parameter from components
-   * Structure depends on whether signature is required or using Aqua
-   */
-  private static buildSigPlusTakerTraitsAndData(
-    order: Order,
-    takerTraits: TakerTraits,
-    signature?: HexString,
-    additionalData?: HexString,
-  ): HexString {
-    const useAquaInsteadOfSignature = order.traits.useAquaInsteadOfSignature
-
-    const builder = new BytesBuilder()
-
-    if (!useAquaInsteadOfSignature) {
-      assert(signature, 'signature required when useOfAquaInsteadOfSignature disabled')
-      const sigBytes = trim0x(signature.toString())
-      builder.addUint16(BigInt(sigBytes.length / 2))
-      builder.addBytes(signature.toString())
-    }
-
-    builder.addBytes(takerTraits.encode().toString())
-
-    if (additionalData) {
-      builder.addBytes(additionalData.toString())
-    }
-
-    return new HexString(builder.asHex())
   }
 
   public swap(args: SwapArgs): CallInfo {
