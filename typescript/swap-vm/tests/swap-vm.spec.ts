@@ -625,19 +625,3 @@ describe('SwapVM', () => {
     }
   })
 })
-
-// 0x706f73745472616e736665724f7574
-
-// 0000  threshold
-// 0000  to
-// 0000  preTransferInHookData
-// 0000  postTransferInHookData
-// 0000  preTransferOutHookData
-// 000f  postTransferOutHookData
-// 000f  preTransferInCallbackData
-// 000f  preTransferOutCallbackData
-// 000f  instructionsArgs
-// ---
-// 0041  flags
-// ---   data
-// 706f73745472616e736665724f7574
