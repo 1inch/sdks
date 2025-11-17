@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-Aqua-Source-1.1
 
-import type { Log } from 'viem'
+import type { LogLike } from '@1inch/sdk-core'
 import { decodeEventLog } from 'viem'
 import { Address, HexString } from '@1inch/sdk-core'
 import { AQUA_ABI } from '../../abi/Aqua.abi'
@@ -21,7 +21,7 @@ export class ShippedEvent {
    * Creates a ShippedEvent
    * @throws Error if the log data is invalid or doesn't match the expected event structure
    */
-  static fromLog(log: Log): ShippedEvent {
+  static fromLog(log: LogLike): ShippedEvent {
     const decoded = decodeEventLog({
       abi: AQUA_ABI,
       data: log.data,

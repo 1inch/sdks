@@ -103,13 +103,12 @@ const dockTx = aqua.dock({
 
 ### Pushed Event
 
-Emitted when funds are pushed to a strategy.
+Emitted when funds are pushed to a strategy/wallet.
 
 ```typescript
 import { PushedEvent } from '@1inch/aqua-sdk'
-import { Log } from 'viem'
 
-const log: Log = { /* ... */ }
+const log = { data: '0x...', topics: ['0x...'] }
 const event = PushedEvent.fromLog(log)
 
 console.log(event.maker)        // Address
@@ -121,7 +120,7 @@ console.log(event.amount)       // bigint
 
 ### Pulled Event
 
-Emitted when funds are pulled from a strategy.
+Emitted when funds are pulled from a strategy/wallet.
 
 ```typescript
 import { PulledEvent } from '@1inch/aqua-sdk'
