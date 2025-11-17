@@ -170,13 +170,13 @@ Manually encode function call data if needed.
 ```typescript
 import { AquaProtocolContract } from '@1inch/aqua-sdk'
 
-const encoded = AquaProtocolContract.encodeShipCallData({
+const encodedShip = AquaProtocolContract.encodeShipCallData({
   app: new Address('0x...'),
   strategy: new HexString('0x...'),
   amountsAndTokens: [ /* ... */ ],
 })
 
-const encoded = AquaProtocolContract.encodeDockCallData({
+const encodedDock = AquaProtocolContract.encodeDockCallData({
   app: new Address('0x...'),
   strategyHash: new HexString('0x...'),
   tokens: [ /* ... */ ],
@@ -189,18 +189,18 @@ The SDK includes pre-configured contract addresses for the following networks:
 
 | Network | Chain ID | Address |
 |---------|----------|---------|
-| Ethereum | 1 | [0x407bb6447c1328f41ebb2d3cc018c54158775159](https://etherscan.io/address/0x407bb6447c1328f41ebb2d3cc018c54158775159) |
-| BNB Chain | 56 | [0x68d16542c60c1affae3a18896c1ad01c969c652f](https://bscscan.com/address/0x68d16542c60c1affae3a18896c1ad01c969c652f) |
-| Polygon | 137 | [0x0d5c0881cba1a88a6ebf90e89a25ecd2506bb967](https://polygonscan.com/address/0x0d5c0881cba1a88a6ebf90e89a25ecd2506bb967) |
-| Arbitrum | 42161 | [0x68d16542c60c1affae3a18896c1ad01c969c652f](https://arbiscan.io/address/0x68d16542c60c1affae3a18896c1ad01c969c652f) |
-| Avalanche | 43114 | [0x68d16542c60c1affae3a18896c1ad01c969c652f](https://subnets.avax.network/c-chain/address/0x68d16542c60c1affae3a18896c1ad01c969c652f) |
-| Gnosis | 100 | [0x68d16542c60c1affae3a18896c1ad01c969c652f](https://gnosisscan.io/address/0x68d16542c60c1affae3a18896c1ad01c969c652f) |
-| Coinbase Base | 8453 | [0xa7868b134f447914dd60c0984889ac57ddaa1a21](https://basescan.org/address/0xa7868b134f447914dd60c0984889ac57ddaa1a21) |
-| Optimism | 10 | [0x0d5c0881cba1a88a6ebf90e89a25ecd2506bb967](https://optimistic.etherscan.io/address/0x0d5c0881cba1a88a6ebf90e89a25ecd2506bb967) |
-| zkSync Era | 324 | [0x68d16542c60c1affae3a18896c1ad01c969c652f](https://era.zksync.network/address/0x68d16542c60c1affae3a18896c1ad01c969c652f) |
-| Linea | 59144 | [0x68d16542c60c1affae3a18896c1ad01c969c652f](https://lineascan.build/address/0x68d16542c60c1affae3a18896c1ad01c969c652f) |
-| Unichain | 1301 | [0x68d16542c60c1affae3a18896c1ad01c969c652f](https://unichain.blockscout.com/address/0x68d16542c60c1affae3a18896c1ad01c969c652f) |
-| Sonic | 146 | [0x68d16542c60c1affae3a18896c1ad01c969c652f](https://sonicscan.org/address/0x68d16542c60c1affae3a18896c1ad01c969c652f) |
+| Ethereum | 1 | [0x499943e74fb0ce105688beee8ef2abec5d936d31](https://etherscan.io/address/0x499943e74fb0ce105688beee8ef2abec5d936d31) |
+| BNB Chain | 56 | [0x499943e74fb0ce105688beee8ef2abec5d936d31](https://bscscan.com/address/0x499943e74fb0ce105688beee8ef2abec5d936d31) |
+| Polygon | 137 | [0x499943e74fb0ce105688beee8ef2abec5d936d31](https://polygonscan.com/address/0x499943e74fb0ce105688beee8ef2abec5d936d31) |
+| Arbitrum | 42161 | [0x499943e74fb0ce105688beee8ef2abec5d936d31](https://arbiscan.io/address/0x499943e74fb0ce105688beee8ef2abec5d936d31) |
+| Avalanche | 43114 | [0x499943e74fb0ce105688beee8ef2abec5d936d31](http://snowscan.xyz/address/0x499943e74fb0ce105688beee8ef2abec5d936d31) |
+| Gnosis | 100 | [0x499943e74fb0ce105688beee8ef2abec5d936d31](https://gnosisscan.io/address/0x499943e74fb0ce105688beee8ef2abec5d936d31) |
+| Coinbase Base | 8453 | [0x499943e74fb0ce105688beee8ef2abec5d936d31](https://basescan.org/address/0x499943e74fb0ce105688beee8ef2abec5d936d31) |
+| Optimism | 10 | [0x499943e74fb0ce105688beee8ef2abec5d936d31](https://optimistic.etherscan.io/address/0x499943e74fb0ce105688beee8ef2abec5d936d31) |
+| zkSync Era | 324 | [0x499943e74fb0ce105688beee8ef2abec5d936d31](https://era.zksync.network/address/0x499943e74fb0ce105688beee8ef2abec5d936d31) |
+| Linea | 59144 | [0x499943e74fb0ce105688beee8ef2abec5d936d31](https://lineascan.build/address/0x499943e74fb0ce105688beee8ef2abec5d936d31) |
+| Unichain | 1301 | [0x499943e74fb0ce105688beee8ef2abec5d936d31](https://uniscan.xyz/address/0x499943e74fb0ce105688beee8ef2abec5d936d31) |
+| Sonic | 146 | [0x499943e74fb0ce105688beee8ef2abec5d936d31](https://sonicscan.org/address/0x499943e74fb0ce105688beee8ef2abec5d936d31) |
 
 Access addresses using:
 
