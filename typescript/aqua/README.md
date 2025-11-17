@@ -8,7 +8,7 @@ The Aqua Protocol is a decentralized protocol for liquidity management. This SDK
 
 - **Encoding/Decoding**: Build typed call data for `ship`, `dock` operations
 - **Event Parsing**: Decode and parse `Pushed`, `Pulled`, `Shipped`, and `Docked` events
-- **Multi-Chain Support**: Pre-configured addresses for 13+ blockchain networks
+- **Multi-Chain Support**: Pre-configured addresses for 10+ blockchain networks
 
 For detailed protocol documentation, see the [Aqua Protocol Documentation](https://github.com/1inch/aqua#table-of-contents).
 
