@@ -173,7 +173,7 @@ export class TakerTraits {
   static decode(packed: HexString): TakerTraits {
     const iter = BytesIter.BigInt(packed.toString())
 
-    const offsets = Array.from({ length: 9 }, () => Number(iter.nextUint16()))
+    const offsets = Array.from({ length: 9 }, () => Number(iter.nextUint16())).reverse()
     const flags = new BN(iter.nextUint16())
 
     const dataStr = trim0x(packed.toString()).slice(40)
