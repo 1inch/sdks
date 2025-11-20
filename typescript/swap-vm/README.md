@@ -236,7 +236,7 @@ Available instruction categories in the full Swap VM instruction set include:
 ### Trading instructions
 - `XYC_SWAP_XD` - XYC swap for multi-dimensional pools
 - `CONCENTRATE_GROW_LIQUIDITY_XD` - Concentrate liquidity in multi-dimensional pools
-- `CONCENTRATE_GROW_LIQUIDITY_2D` - Concentrate liquidity in 2D pools
+- `CONCENTRATE_GROW_LIQUIDITY_2D` - Concentrate liquidity in 2 tokens pools
 - `DECAY_XD` - Apply decay calculation
 - `LIMIT_SWAP_1D` - Execute limit order swap
 - `LIMIT_SWAP_ONLY_FULL_1D` - Execute limit order only if fully fillable
