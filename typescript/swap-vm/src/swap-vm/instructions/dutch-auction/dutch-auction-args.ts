@@ -2,7 +2,7 @@
 
 import type { HexString } from '@1inch/sdk-core'
 import { UINT_16_MAX, UINT_32_MAX, UINT_40_MAX } from '@1inch/byte-utils'
-import assert from 'node:assert'
+import assert from 'assert'
 import { DutchAuctionArgsCoder } from './dutch-auction-args-coder'
 import type { IArgsData } from '../types'
 

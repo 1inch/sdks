@@ -1,4 +1,4 @@
-import assert from 'node:assert'
+import assert from 'assert'
 import { assertHexString } from '../validators/should-be-hex-string'
 import type { Hex } from '../types'
 

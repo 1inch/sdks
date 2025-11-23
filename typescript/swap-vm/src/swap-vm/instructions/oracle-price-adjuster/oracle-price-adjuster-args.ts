@@ -2,7 +2,7 @@
 
 import type { Address, HexString } from '@1inch/sdk-core'
 import { UINT_8_MAX, UINT_16_MAX, UINT_64_MAX } from '@1inch/byte-utils'
-import assert from 'node:assert'
+import assert from 'assert'
 import { OraclePriceAdjusterArgsCoder } from './oracle-price-adjuster-args-coder'
 import type { IArgsData } from '../types'
 

@@ -1,4 +1,4 @@
-import assert from 'node:assert'
+import assert from 'assert'
 
 export function assertNotEmpty<T>(value: T, name = 'value'): asserts value is NonNullable<T> {
   if (typeof value === 'number' || typeof value === 'boolean') {

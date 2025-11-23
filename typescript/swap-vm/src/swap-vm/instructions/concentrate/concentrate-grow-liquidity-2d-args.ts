@@ -2,7 +2,7 @@
 
 import type { Address, HexString } from '@1inch/sdk-core'
 import { UINT_256_MAX } from '@1inch/byte-utils'
-import assert from 'node:assert'
+import assert from 'assert'
 import { ConcentrateGrowLiquidity2DArgsCoder } from './concentrate-grow-liquidity-2d-args-coder'
 import type { IArgsData } from '../types'
 
