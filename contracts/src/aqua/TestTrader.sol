@@ -2,10 +2,10 @@
 pragma solidity ^0.8.30;
 
 import {IAqua, IERC20} from "@1inch/aqua/src/Aqua.sol";
-import {IAquaTakerCallback} from "@1inch/aqua/src/interfaces/IAquaTakerCallback.sol";
-import {XYCSwap} from "@1inch/aqua/src/apps/XYCSwap.sol";
+import {IXYCSwapCallback} from "@1inch/aqua/examples/apps/interfaces/IXYCSwapCallback.sol";
+import {XYCSwap} from "@1inch/aqua/examples/apps/XYCSwap.sol";
 
-contract TestTrader is IAquaTakerCallback {
+contract TestTrader is IXYCSwapCallback {
     IAqua public immutable AQUA;
 
     constructor(IAqua _aqua, IERC20[] memory tokens) {
@@ -38,11 +38,11 @@ contract TestTrader is IAquaTakerCallback {
             );
     }
 
-    function aquaTakerCallback(
+    function xycSwapCallback(
         address tokenIn,
-        address, // tokenOut
+        address,
         uint256 amountIn,
-        uint256, // amountOut
+        uint256,
         address maker,
         address app,
         bytes32 strategyHash,
