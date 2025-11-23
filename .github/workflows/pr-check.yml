@@ -31,7 +31,7 @@ jobs:
         run: pnpm build:contracts
 
       - name: Build packages
-        run: pnpm build:contracts
+        run: pnpm build
 
       - name: Lint affected packages
         run: pnpm affected:lint --base=origin/${{ github.base_ref }}
