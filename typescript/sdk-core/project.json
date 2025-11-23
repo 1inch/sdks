@@ -8,7 +8,7 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "typescript/sdk-core",
+        "cwd": "{projectRoot}",
         "commands": ["tsdown"]
       }
     },
@@ -20,12 +20,11 @@
       }
     },
     "test": {
-      "executor": "@nx/vite:test",
+      "executor": "@nx/vitest:test",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "passWithNoTests": true,
-        "coverage": true,
-        "reportsDirectory": "../../coverage/typescript/sdk-core"
+        "coverage": true
       }
     },
     "lint": {

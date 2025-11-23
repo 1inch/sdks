@@ -1,4 +1,4 @@
-import assert from 'node:assert'
+import assert from 'assert'
 
 export function assertHexString(value: string, name = 'value'): asserts value is `0x${string}` {
   const hexRegex = /^(0x)[0-9a-f]*$/i

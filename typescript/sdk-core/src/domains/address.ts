@@ -1,6 +1,6 @@
 import { isAddress } from 'viem'
 import { add0x } from '@1inch/byte-utils'
-import assert from 'node:assert'
+import assert from 'assert'
 import type { Hex } from '../types'
 
 /**

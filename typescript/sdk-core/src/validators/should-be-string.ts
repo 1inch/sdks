@@ -1,4 +1,4 @@
-import assert from 'node:assert'
+import assert from 'assert'
 
 export function assertString(value: unknown, name = 'value'): asserts value is string {
   assert(

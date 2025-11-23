@@ -12,29 +12,28 @@
   "targetDefaults": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["production", "^production"],
+      "inputs": ["production"],
       "outputs": ["{projectRoot}/dist"]
     },
     "test": {
       "inputs": [
         "default",
-        "^production",
+        "production",
         "{workspaceRoot}/typescript/vitest.preset.mjs",
-        "{projectRoot}/vitest.config.{j,t}s"
-      ],
-      "dependsOn": ["^build"]
+        "{projectRoot}/vitest.config.[m]{j,t}s"
+      ]
     },
     "lint": {
       "inputs": ["default", "{workspaceRoot}/typescript/eslint.config.mjs"]
     },
     "test:e2e": {
-      "inputs": ["default", "^production"],
+      "inputs": ["default", "production"],
       "dependsOn": ["^build"]
     }
   },
   "namedInputs": {
-    "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "sharedGlobals": ["{workspaceRoot}/.github/workflows/*"],
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "production": [
       "default",
       "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
@@ -68,9 +67,9 @@
   },
   "plugins": [
     {
-      "plugin": "@nx/vite/plugin",
+      "plugin": "@nx/vitest",
       "options": {
-        "testTargetName": "test"
+        "targetName": "test"
       }
     }
   ],

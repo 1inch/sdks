@@ -2,7 +2,7 @@
 
 import type { HexString } from '@1inch/sdk-core'
 import { UINT_16_MAX } from '@1inch/byte-utils'
-import assert from 'node:assert'
+import assert from 'assert'
 import { DecayXDArgsCoder } from './decay-xd-args-coder'
 import type { IArgsData } from '../types'
 

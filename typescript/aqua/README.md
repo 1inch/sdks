@@ -241,7 +241,7 @@ Initialize a liquidity strategy by depositing tokens into Aqua's virtual balance
 import { encodeAbiParameters, parseUnits, http, createWalletClient, isHex } from 'viem'
 import { privateKeyToAccount, privateKeyToAddress } from 'viem/accounts'
 import { mainnet } from 'viem/chains'
-import assert from 'node:assert'
+import assert from 'assert'
 import 'dotenv/config'
 
 const makerPrivateKey = process.env.MAKER_PRIVATE_KEY
@@ -329,7 +329,7 @@ import {
 } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { mainnet } from 'viem/chains'
-import assert from 'node:assert'
+import assert from 'assert'
 import 'dotenv/config'
 
 const takerPrivateKey = process.env.TAKER_PRIVATE_KEY
@@ -444,7 +444,7 @@ import { AquaProtocolContract, Address, HexString, AQUA_CONTRACT_ADDRESSES, Netw
 import { http, createWalletClient, isHex } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { mainnet } from 'viem/chains'
-import assert from 'node:assert'
+import assert from 'assert'
 import 'dotenv/config'
 
 const makerPrivateKey = process.env.MAKER_PRIVATE_KEY

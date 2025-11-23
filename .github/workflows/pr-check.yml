@@ -10,7 +10,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Need full history for affected commands
+          fetch-depth: 0 # Need full history for affected commands
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -21,8 +21,17 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
       - name: Install Dependencies
         run: pnpm install
+
+      - name: Build contracts
+        run: pnpm build:contracts
+
+      - name: Build packages
+        run: pnpm affected:build --base=origin/${{ github.base_ref }}
 
       - name: Lint affected packages
         run: pnpm affected:lint --base=origin/${{ github.base_ref }}
@@ -32,6 +41,3 @@ jobs:
 
       - name: Test affected packages
         run: pnpm affected:test --base=origin/${{ github.base_ref }}
-
-      - name: Build affected packages
-        run: pnpm affected:build --base=origin/${{ github.base_ref }}

@@ -44,8 +44,9 @@
     "changelog:generate": "changelog generate -a"
   },
   "dependencies": {
-    "viem": "^2.21.0",
-    "tslib": "^2.8.1"
+    "@1inch/byte-utils": "^3",
+    "tslib": "^2.8.1",
+    "viem": "^2.21.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.0",
@@ -58,5 +59,13 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "peerDependencies": {
+    "assert": "*"
+  },
+  "peerDependenciesMeta": {
+    "assert": {
+      "optional": true
+    }
   }
 }
