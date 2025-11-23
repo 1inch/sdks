@@ -50,7 +50,7 @@
     "@1inch/byte-utils": "3.0.0"
   },
   "devDependencies": {
-    "@1inch/aqua": "github:1inch/aqua#a7eb2858d76aee98e697be602601ca28ca19c697",
+    "@1inch/aqua": "github:1inch/aqua",
     "@1inch/eslint-config": "^3.0.8",
     "@1inch/swap-vm": "github:1inch/swap-vm",
     "@1inch/tsconfig": "^1.0.12",
