@@ -161,7 +161,7 @@ jobs:
             TAG_ARG="--tag next"
           fi
 
-          npm publish --access public $TAG_ARG
+          npm publish --access public --provenance $TAG_ARG
 
   publish-github-packages:
     runs-on: ubuntu-latest
