@@ -143,6 +143,9 @@ jobs:
           registry-url: https://registry.npmjs.org
           always-auth: true
 
+      - name: Install npm@11
+        run: npm install -g npm@11
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
