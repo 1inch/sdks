@@ -81,14 +81,16 @@ pnpm lint:types
 ### Release Process
 
 1. **Create a new release:**
-   - Go to GitHub Actions → "Release new version"
-   - Select the SDK to release
-   - Choose version bump type (patch, minor, major, prerelease)
+   - Go to GitHub Actions → "Release"
+   - Pick the SDK to release
+   - Choose the bump (patch, minor, major, prerelease, or custom version)
+   - Releases run on `master` and refuse to proceed if local `master` is behind `origin/master`
+   - Dependents are not auto-bumped (NX `updateDependents=never`)
 
 2. **Automatic publishing:**
-   - The release workflow creates a version tag (e.g., `aqua/v1.0.0`)
-   - This triggers the publish workflow automatically
-   - The SDK is published to public NPM registry
+   - The release workflow commits + tags (e.g., `aqua/v1.0.0`)
+   - Tag push triggers the publish workflow
+   - Publish workflow builds and publishes to npmjs and GitHub Packages (`next` tag is used for `-rc` prereleases)
 
 ### Version Tags
 
