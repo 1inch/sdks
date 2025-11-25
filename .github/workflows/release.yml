@@ -22,7 +22,7 @@ on:
           - prerelease
       dry_run:
         type: boolean
-        description: Preview only
+        description: Dry Run
         required: false
         default: false
 
@@ -75,7 +75,8 @@ jobs:
 
           npx nx release version "$SPECIFIER" --projects="${{ inputs.project }}" $DRY_RUN_FLAG --verbose
 
-          echo "version=$(node -p \"require('./typescript/${{ inputs.project }}/package.json').version\")" >> "$GITHUB_OUTPUT"
+          VERSION=$(node -p "require('./typescript/${{ inputs.project }}/package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Show next version
         run: echo "Version = ${{ steps.version.outputs.version }}"
