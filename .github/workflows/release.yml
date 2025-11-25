@@ -39,6 +39,12 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    outputs:
+      project: ${{ steps.pkg.outputs.project }}
+      sdk_path: ${{ steps.pkg.outputs.sdk_path }}
+      package_name: ${{ steps.pkg.outputs.package_name }}
+      pkg_version: ${{ steps.pkg.outputs.pkg_version }}
+      tag: ${{ steps.pkg.outputs.tag }}
     steps:
       - name: Checkout master
         uses: actions/checkout@v4
@@ -90,10 +96,108 @@ jobs:
             --skip-publish \
             --verbose
 
+      - name: Resolve package info
+        id: pkg
+        run: |
+          SDK_PATH="typescript/${{ inputs.project }}"
+          PKG_NAME=$(node -p "require('./$SDK_PATH/package.json').name")
+          PKG_VERSION=$(node -p "require('./$SDK_PATH/package.json').version")
+          TAG="${{ inputs.project }}/v${PKG_VERSION}"
+
+          echo "project=${{ inputs.project }}" >> "$GITHUB_OUTPUT"
+          echo "sdk_path=$SDK_PATH" >> "$GITHUB_OUTPUT"
+          echo "package_name=$PKG_NAME" >> "$GITHUB_OUTPUT"
+          echo "pkg_version=$PKG_VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
       - name: Show updated version
         run: |
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             echo "(dry-run: version on disk is unchanged)"
           fi
-          VERSION=$(node -p "require('./typescript/${{ inputs.project }}/package.json').version")
-          echo "Version = $VERSION"
+          echo "Version = ${{ steps.pkg.outputs.pkg_version }}"
+
+  publish-npmjs:
+    runs-on: ubuntu-latest
+    needs: release
+    if: ${{ github.event.inputs.dry_run != 'true' }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+          always-auth: true
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build package (pnpm)
+        run: pnpm --filter "${{ needs.release.outputs.package_name }}" build
+
+      - name: Publish to npmjs
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          cd "${{ needs.release.outputs.sdk_path }}/dist"
+
+          TAG_ARG=""
+          VERSION="${{ needs.release.outputs.pkg_version }}"
+          if [[ "$VERSION" == *"-rc"* ]]; then
+            TAG_ARG="--tag next"
+          fi
+
+          npm publish --access public $TAG_ARG
+
+  publish-github-packages:
+    runs-on: ubuntu-latest
+    needs: release
+    if: ${{ github.event.inputs.dry_run != 'true' }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build package (pnpm)
+        run: pnpm --filter "${{ needs.release.outputs.package_name }}" build
+
+      - name: Publish to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        run: |
+          cd "${{ needs.release.outputs.sdk_path }}/dist"
+
+          npm config set @1inch:registry https://npm.pkg.github.com
+          npm config set //npm.pkg.github.com/:_authToken "${NODE_AUTH_TOKEN}"
+
+          npm publish --access public
