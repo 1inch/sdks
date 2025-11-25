@@ -88,7 +88,6 @@ jobs:
             $PREID_FLAG \
             $DRY_RUN_FLAG \
             --skip-publish \
-            --yes \
             --verbose
 
       - name: Show updated version
