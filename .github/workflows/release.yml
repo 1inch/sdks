@@ -143,9 +143,6 @@ jobs:
           registry-url: https://registry.npmjs.org
           always-auth: true
 
-      - name: Install npm@11
-        run: npm install -g npm@11
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -157,7 +154,6 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         working-directory: ${{ needs.release.outputs.sdk_path }}
         run: |
-          npm config set loglevel silly
           npm config set //registry.npmjs.org/:_authToken "${NODE_AUTH_TOKEN}"
           npm config set registry https://registry.npmjs.org
           TAG_ARG=""
