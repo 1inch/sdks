@@ -155,8 +155,7 @@ jobs:
           cd "${{ needs.release.outputs.sdk_path }}/dist"
 
           TAG_ARG=""
-          VERSION="${{ needs.release.outputs.pkg_version }}"
-          if [[ "$VERSION" == *"-rc"* ]]; then
+          if [ "${{ github.event.inputs.bump }}" = "prerelease" ]; then
             TAG_ARG="--tag next"
           fi
 
