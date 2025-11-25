@@ -152,8 +152,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          cd "${{ needs.release.outputs.sdk_path }}/dist"
-
           TAG_ARG=""
           if [ "${{ github.event.inputs.bump }}" = "prerelease" ]; then
             TAG_ARG="--tag next"
@@ -194,8 +192,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
         run: |
-          cd "${{ needs.release.outputs.sdk_path }}/dist"
-
           npm config set @1inch:registry https://npm.pkg.github.com
           npm config set //npm.pkg.github.com/:_authToken "${NODE_AUTH_TOKEN}"
 
