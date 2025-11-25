@@ -20,6 +20,11 @@ on:
           - minor
           - major
           - prerelease
+      preid:
+        type: string
+        description: Prerelease identifier (used when bump = prerelease)
+        required: false
+        default: rc
       dry_run:
         type: boolean
         description: Dry Run
@@ -78,5 +83,5 @@ jobs:
           VERSION=$(node -p "require('./typescript/${{ inputs.project }}/package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Show next version
+      - name: Show next version (not updated in case of dry run)
         run: echo "Version = ${{ steps.version.outputs.version }}"
