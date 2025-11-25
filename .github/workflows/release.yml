@@ -142,6 +142,9 @@ jobs:
           registry-url: https://registry.npmjs.org
           always-auth: true
 
+      - name: Install npm@11
+        run: npm install -g npm@11
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -151,8 +154,10 @@ jobs:
       - name: Publish to npmjs
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        working-directory: ${{ needs.release.outputs.sdk_path }}
+        working-directory: ${{ needs.release.outputs.sdk_path }}/dist
         run: |
+          npm config set //registry.npmjs.org/:_authToken "${NODE_AUTH_TOKEN}"
+          npm config set registry https://registry.npmjs.org
           TAG_ARG=""
           if [ "${{ github.event.inputs.bump }}" = "prerelease" ]; then
             TAG_ARG="--tag next"
@@ -192,7 +197,7 @@ jobs:
       - name: Publish to GitHub Packages
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
-        working-directory: ${{ needs.release.outputs.sdk_path }}
+        working-directory: ${{ needs.release.outputs.sdk_path }}/dist
         run: |
           npm config set @1inch:registry https://npm.pkg.github.com
           npm config set //npm.pkg.github.com/:_authToken "${NODE_AUTH_TOKEN}"
