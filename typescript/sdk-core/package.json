@@ -1,6 +1,6 @@
 {
   "name": "@1inch/sdk-core",
-  "version": "0.1.0",
+  "version": "0.1.1-pipeline-final-test.0",
   "description": "Core utilities and types for 1inch SDKs",
   "author": "@1inch",
   "repository": {
