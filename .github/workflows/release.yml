@@ -156,8 +156,6 @@ jobs:
       - name: Publish to npmjs
         working-directory: ${{ needs.release.outputs.sdk_path }}
         run: |
-          npm config set //registry.npmjs.org/:_authToken "${NODE_AUTH_TOKEN}"
-          npm config set registry https://registry.npmjs.org
           TAG_ARG=""
           if [ "${{ github.event.inputs.bump }}" = "prerelease" ]; then
             TAG_ARG="--tag next"
