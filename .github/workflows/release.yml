@@ -124,6 +124,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     steps:
       - name: Checkout tag
         uses: actions/checkout@v4
