@@ -82,15 +82,15 @@
       "automaticFromRef": true
     },
     "version": {
-      "git": {
-        "commit": true,
-        "commitMessage": "chore(release): {version}",
-        "tag": true,
-        "push": true,
-        "stageChanges": true
-      },
       "updateDependents": "never",
       "logUnchangedProjects": true
+    },
+    "git": {
+      "commit": true,
+      "commitMessage": "chore(release): {version}",
+      "tag": true,
+      "push": true,
+      "stageChanges": true
     },
     "groups": {
       "typescript": {
