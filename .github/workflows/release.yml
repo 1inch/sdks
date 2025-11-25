@@ -73,14 +73,21 @@ jobs:
         run: |
           SPECIFIER="${{ inputs.bump }}"
 
+          PREID_FLAG=""
+          if [ "${{ inputs.bump }}" = "prerelease" ] && [ -n "${{ inputs.preid }}" ]; then
+            PREID_FLAG="--preid ${{ inputs.preid }}"
+          fi
+
           DRY_RUN_FLAG=""
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             DRY_RUN_FLAG="--dry-run"
           fi
 
-          npx nx release version "$SPECIFIER" --projects="${{ inputs.project }}" $DRY_RUN_FLAG --verbose
+          OUTPUT_JSON=$(mktemp)
+          npx nx release version "$SPECIFIER" --projects="${{ inputs.project }}" $PREID_FLAG $DRY_RUN_FLAG --verbose --output-style=json > "$OUTPUT_JSON"
 
-          VERSION=$(node -p "require('./typescript/${{ inputs.project }}/package.json').version")
+          VERSION=$(node -e "const o=require('${OUTPUT_JSON}'); const p=o.projects?.['${{ inputs.project }}']; console.log(p?.newVersion || p?.currentVersion || 'unknown');")
+
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Show next version (not updated in case of dry run)

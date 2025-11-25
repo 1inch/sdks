@@ -1,105 +1,127 @@
-# name: Publish
+name: Publish
 
-# on:
-#   push:
-#     tags:
-#       - '*/v*.*.*'
-#   workflow_dispatch:
-#     inputs:
-#       tag:
-#         type: string
-#         description: Tag to publish (e.g. aqua/v1.2.3)
-#         required: true
+on:
+  push:
+    tags:
+      - '*/v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        type: string
+        description: Tag to publish (e.g. aqua/v1.2.3)
+        required: true
+      dry_run:
+        type: boolean
+        description: Dry run (preview publish commands)
+        required: false
+        default: false
 
-# permissions:
-#   contents: read
-#   packages: write
+permissions:
+  id-token: write
+  contents: read
+  packages: write
 
-# jobs:
-#   determine:
-#     runs-on: ubuntu-latest
-#     outputs:
-#       tag: ${{ steps.tag.outputs.value }}
-#       project: ${{ steps.project.outputs.value }}
-#       sdk_path: ${{ steps.project.outputs.sdk_path }}
-#     steps:
-#       - id: tag
-#         run: |
-#           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-#             echo "value=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
-#           else
-#             echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-#           fi
+jobs:
+  determine:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.value }}
+      project: ${{ steps.project.outputs.value }}
+      sdk_path: ${{ steps.project.outputs.sdk_path }}
+      package_name: ${{ steps.project.outputs.package_name }}
+    steps:
+      - id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "value=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
 
-#       - id: project
-#         run: |
-#           TAG="${{ steps.tag.outputs.value }}"
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.tag.outputs.value }}
+          fetch-depth: 1
 
-#           case "$TAG" in
-#             aqua/v*) PROJECT="aqua" ;;
-#             sdk-core/v*) PROJECT="sdk-core" ;;
-#             swap-vm/v*) PROJECT="swap-vm" ;;
-#             *)
-#               echo "Unknown tag pattern: $TAG"
-#               exit 1
-#               ;;
-#           esac
+      - id: project
+        run: |
+          TAG="${{ steps.tag.outputs.value }}"
 
-#           echo "value=$PROJECT" >> "$GITHUB_OUTPUT"
-#           echo "sdk_path=typescript/$PROJECT" >> "$GITHUB_OUTPUT"
+          PROJECT="${TAG%%/v*}"
+          if [ -z "$PROJECT" ] || [ "$PROJECT" = "$TAG" ]; then
+            echo "Unable to derive project from tag: $TAG"
+            exit 1
+          fi
 
-#   publish:
-#     needs: determine
-#     runs-on: ubuntu-latest
-#     permissions:
-#       contents: read
-#       packages: write
-#     steps:
-#       - name: Checkout
-#         uses: actions/checkout@v4
-#         with:
-#           ref: ${{ needs.determine.outputs.tag }}
-#           fetch-depth: 0
+          echo "value=$PROJECT" >> "$GITHUB_OUTPUT"
+          SDK_PATH="typescript/$PROJECT"
+          echo "sdk_path=$SDK_PATH" >> "$GITHUB_OUTPUT"
+          PKG_NAME=$(node -p "require('./$SDK_PATH/package.json').name")
+          echo "package_name=$PKG_NAME" >> "$GITHUB_OUTPUT"
 
-#       - name: Install pnpm
-#         uses: pnpm/action-setup@v4
+  publish:
+    needs: determine
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      PUBLISH_DRY_RUN: ${{ inputs.dry_run || 'false' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.determine.outputs.tag }}
+          fetch-depth: 0
 
-#       - name: Setup Node
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: 22
-#           cache: pnpm
-#           registry-url: https://registry.npmjs.org
-#           always-auth: true
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
 
-#       - name: Install dependencies
-#         run: pnpm install --frozen-lockfile
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+          always-auth: true
 
-#       - name: Build
-#         run: npx nx build ${{ needs.determine.outputs.project }}
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-#       - name: Publish to npmjs
-#         env:
-#           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-#         run: |
-#           SDK_PATH=${{ needs.determine.outputs.sdk_path }}
-#           cd "$SDK_PATH/dist"
+      - name: Build package (pnpm)
+        run: pnpm --filter "${{ needs.determine.outputs.package_name }}" build
 
-#           TAG_ARG=""
-#           VERSION=$(node -p "require('../package.json').version")
-#           if [[ "$VERSION" == *"-rc"* ]]; then
-#             TAG_ARG="--tag next"
-#           fi
+      - name: Publish to npmjs
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          SDK_PATH=${{ needs.determine.outputs.sdk_path }}
+          cd "$SDK_PATH/dist"
 
-#           npm publish --access public $TAG_ARG
+          TAG_ARG=""
+          VERSION=$(node -p "require('../package.json').version")
+          if [[ "$VERSION" == *"-rc"* ]]; then
+            TAG_ARG="--tag next"
+          fi
 
-#       - name: Publish to GitHub Packages
-#         env:
-#           NODE_AUTH_TOKEN: ${{ github.token }}
-#         run: |
-#           SDK_PATH=${{ needs.determine.outputs.sdk_path }}
-#           cd "$SDK_PATH/dist"
+          if [ "$PUBLISH_DRY_RUN" = "true" ]; then
+            npm publish --access public $TAG_ARG --dry-run
+          else
+            npm publish --access public $TAG_ARG
+          fi
 
-#           npm config set @1inch:registry https://npm.pkg.github.com
-#           npm config set //npm.pkg.github.com/:_authToken "${NODE_AUTH_TOKEN}"
-#           npm publish --access public
+      - name: Publish to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        run: |
+          SDK_PATH=${{ needs.determine.outputs.sdk_path }}
+          cd "$SDK_PATH/dist"
+
+          npm config set @1inch:registry https://npm.pkg.github.com
+          npm config set //npm.pkg.github.com/:_authToken "${NODE_AUTH_TOKEN}"
+          if [ "$PUBLISH_DRY_RUN" = "true" ]; then
+            npm publish --access public --dry-run
+          else
+            npm publish --access public
+          fi
