@@ -83,12 +83,14 @@ jobs:
             DRY_RUN_FLAG="--dry-run"
           fi
 
-          OUTPUT_JSON=$(mktemp)
-          npx nx release version "$SPECIFIER" --projects="${{ inputs.project }}" $PREID_FLAG $DRY_RUN_FLAG --verbose --output-style=json > "$OUTPUT_JSON"
+          CURRENT_VERSION=$(node -p "require('./typescript/${{ inputs.project }}/package.json').version")
+          npx nx release version "$SPECIFIER" --projects="${{ inputs.project }}" $PREID_FLAG $DRY_RUN_FLAG --verbose
 
-          VERSION=$(node -e "const o=require('${OUTPUT_JSON}'); const p=o.projects?.['${{ inputs.project }}']; console.log(p?.newVersion || p?.currentVersion || 'unknown');")
-
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Show next version (not updated in case of dry run)
-        run: echo "Version = ${{ steps.version.outputs.version }}"
+      - name: Show updated version
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "(dry-run: version on disk is unchanged)"
+          else
+            VERSION=$(node -p "require('./typescript/${{ inputs.project }}/package.json').version")
+            echo "Version = $VERSION"
+          fi

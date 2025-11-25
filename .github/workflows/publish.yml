@@ -104,12 +104,8 @@ jobs:
           if [[ "$VERSION" == *"-rc"* ]]; then
             TAG_ARG="--tag next"
           fi
-
-          if [ "$PUBLISH_DRY_RUN" = "true" ]; then
-            npm publish --access public $TAG_ARG --dry-run
-          else
-            npm publish --access public $TAG_ARG
-          fi
+          DRY_ARG=$([ "$PUBLISH_DRY_RUN" = "true" ] && echo "--dry-run")
+          npm publish --access public $TAG_ARG $DRY_ARG
 
       - name: Publish to GitHub Packages
         env:
@@ -120,8 +116,5 @@ jobs:
 
           npm config set @1inch:registry https://npm.pkg.github.com
           npm config set //npm.pkg.github.com/:_authToken "${NODE_AUTH_TOKEN}"
-          if [ "$PUBLISH_DRY_RUN" = "true" ]; then
-            npm publish --access public --dry-run
-          else
-            npm publish --access public
-          fi
+          DRY_ARG=$([ "$PUBLISH_DRY_RUN" = "true" ] && echo "--dry-run")
+          npm publish --access public $DRY_ARG
