@@ -82,20 +82,21 @@ pnpm lint:types
 
 1. **Create a new release:**
    - Go to GitHub Actions → "Release"
-   - Pick the SDK to release
-   - Choose the bump (patch, minor, major, prerelease, or custom version)
-   - Releases run on `master` and refuse to proceed if local `master` is behind `origin/master`
+   - Pick the SDK to release (aqua, sdk-core, swap-vm)
+   - Choose the bump (patch, minor, major, prerelease; prerelease can take a `preid`)
    - Dependents are not auto-bumped (NX `updateDependents=never`)
 
 2. **Automatic publishing:**
-   - The release workflow commits + tags (e.g., `aqua/v1.0.0`)
-   - Tag push triggers the publish workflow
-   - Publish workflow builds and publishes to npmjs and GitHub Packages (`next` tag is used for `-rc` prereleases)
+   - The release workflow commits + tags (e.g., `aqua/v1.0.0`) and generates changelogs/GitHub Releases
+   - Publish happens in the same workflow (split jobs for npmjs and GitHub Packages)
+   - Prerelease bumps publish with npm dist-tag `next`; normal bumps use the default tag
+   - Dry runs skip publishing and leave on-disk versions unchanged
 
 ### Version Tags
 
 Each SDK has independent versioning with specific tag patterns:
 - `aqua/v*.*.*` - @1inch/aqua-sdk
+- `sdk-core/v*.*.*` - @1inch/sdk-core
 - `swap-vm/v*.*.*` - @1inch/swap-vm-sdk
 
 ## 🔧 Configuration
