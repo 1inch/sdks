@@ -1,6 +1,7 @@
 {
   "name": "@1inch/sdks",
   "version": "0.0.0",
+  "private": true,
   "description": "1inch Protocol SDKs monorepo managed with NX",
   "scripts": {
     "nx": "nx",
