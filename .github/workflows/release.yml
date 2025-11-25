@@ -66,7 +66,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      - name: Run Nx release version
+      - name: Run Nx release
         id: version
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -83,14 +83,18 @@ jobs:
             DRY_RUN_FLAG="--dry-run"
           fi
 
-          CURRENT_VERSION=$(node -p "require('./typescript/${{ inputs.project }}/package.json').version")
-          npx nx release version "$SPECIFIER" --projects="${{ inputs.project }}" $PREID_FLAG $DRY_RUN_FLAG --verbose
+          npx nx release "$SPECIFIER" \
+            --projects="${{ inputs.project }}" \
+            $PREID_FLAG \
+            $DRY_RUN_FLAG \
+            --skip-publish \
+            --yes \
+            --verbose
 
       - name: Show updated version
         run: |
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             echo "(dry-run: version on disk is unchanged)"
-          else
-            VERSION=$(node -p "require('./typescript/${{ inputs.project }}/package.json').version")
-            echo "Version = $VERSION"
           fi
+          VERSION=$(node -p "require('./typescript/${{ inputs.project }}/package.json').version")
+          echo "Version = $VERSION"
