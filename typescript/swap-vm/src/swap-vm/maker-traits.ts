@@ -345,7 +345,7 @@ export class MakerTraits {
     const { data, offsets } = MakerTraits.HOOKS.reduce(
       (acc, hookName, i) => {
         const hook = this[hookName]
-        const hasTarget = this.hasTargetForHook(hookName)
+        const hasTarget = this.hasTargetForHook(hookName, maker)
         const encoded = hook && hasTarget ? hook.encode() : hook?.data || HexString.EMPTY
 
         acc.sum += BigInt(encoded.bytesCount())
