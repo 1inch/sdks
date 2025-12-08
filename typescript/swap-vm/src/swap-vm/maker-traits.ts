@@ -345,7 +345,7 @@ export class MakerTraits {
     const { data, offsets } = MakerTraits.HOOKS.reduce(
       (acc, hookName, i) => {
         const hook = this[hookName]
-        const hasTarget = this.hasTargetForHook(hookName)
+        const hasTarget = this.hasTargetForHook(hookName, maker)
         const encoded = hook && hasTarget ? hook.encode() : hook?.data || HexString.EMPTY
 
         acc.sum += BigInt(encoded.bytesCount())
@@ -367,7 +367,7 @@ export class MakerTraits {
 
   private hasTargetForHook(
     hookName: (typeof MakerTraits.HOOKS)[number],
-    maker: Address = Address.ZERO_ADDRESS,
+    maker = Address.ZERO_ADDRESS,
   ): boolean {
     const hook = this[hookName]
 
