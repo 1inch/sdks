@@ -41,16 +41,16 @@
   },
   "dependencies": {
     "@1inch/sdk-core": "workspace:*",
-    "tslib": "^2.8.1",
-    "viem": "^2.39.3"
+    "tslib": "catalog:",
+    "viem": "catalog:"
   },
   "devDependencies": {
     "@types/node": "^22.19.1",
     "dotenv": "17.2.3",
     "eslint-plugin-license-header": "0.8.0",
-    "tsdown": "^0.16.6",
-    "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "publishConfig": {
     "access": "public"

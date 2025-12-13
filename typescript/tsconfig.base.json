@@ -25,6 +25,5 @@
       "@1inch/swap-vm-sdk": ["swap-vm/src/index.ts"]
     }
   },
-  "exclude": [
-    "node_modules", "tmp", "dist", "build", ".nx"]
+  "exclude": ["node_modules", "tmp", "dist", "build", ".nx"]
 }
