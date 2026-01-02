@@ -1,6 +1,6 @@
 # @1inch/aqua-sdk - TypeScript SDK for 1inch Aqua Protocol
 
-A TypeScript SDK for encoding, decoding, and interacting with the 1inch Aqua Protocol smart contract. This SDK provides utilities for building transactions and parsing events for the Aqua Protocol's core operations.
+A TypeScript SDK for encoding, decoding, and  interacting with the 1inch Aqua Protocol smart contract. This SDK provides utilitiesfor building transactions and parsing events for the Aqua Protocol's core operations.
 
 ## Overview
 
