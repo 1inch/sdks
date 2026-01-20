@@ -1,37 +1,52 @@
-name: Release new version
+name: Release typescript
 
 on:
   workflow_dispatch:
     inputs:
-      sdk:
+      project:
         type: choice
-        description: SDK to release
+        description: Library to release
         required: true
         options:
           - aqua
-          - cross-chain
-          - fusion
-          - limit-order
+          - sdk-core
           - swap-vm
-      version:
+      bump:
         type: choice
-        description: Version bump type
+        description: Semver bump or custom
         required: true
         options:
           - patch
           - minor
           - major
           - prerelease
+      preid:
+        type: string
+        description: Prerelease identifier (used when bump = prerelease)
+        required: false
+        default: rc
+      dry_run:
+        type: boolean
+        description: Dry Run
+        required: false
+        default: false
+
+permissions:
+  contents: write
+  packages: write
+  actions: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-      actions: write
+    outputs:
+      project: ${{ steps.pkg.outputs.project }}
+      sdk_path: ${{ steps.pkg.outputs.sdk_path }}
+      package_name: ${{ steps.pkg.outputs.package_name }}
+      pkg_version: ${{ steps.pkg.outputs.pkg_version }}
+      tag: ${{ steps.pkg.outputs.tag }}
     steps:
-      - name: Checkout
+      - name: Checkout master
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -45,55 +60,144 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+          registry-url: https://registry.npmjs.org
 
-      - name: Install Dev Dependencies
-        run: pnpm install -D
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Get SDK info
-        id: sdk_info
+      - name: Configure git
         run: |
-          SDK_PATH="typescript/${{ github.event.inputs.sdk }}"
-          echo "SDK_PATH=$SDK_PATH" >> "$GITHUB_OUTPUT"
-          cd $SDK_PATH
-          echo "OLD_VERSION=$(pnpm pkg get version | tr -d '"')" >> "$GITHUB_OUTPUT"
-
-      - name: Bump package.json version
-        id: version
-        run: |
-          cd ${{ steps.sdk_info.outputs.SDK_PATH }}
-          pnpm version ${{ github.event.inputs.version }} --preid rc --git-tag-version=false
-          echo "NEW_VERSION=$(pnpm pkg get version | tr -d '"')" >> "$GITHUB_OUTPUT"
-
-      - name: Generate changelog
-        run: |
-          cd ${{ steps.sdk_info.outputs.SDK_PATH }}
-          # Try to generate changelog from the last tag for this SDK
-          LAST_TAG="${{ github.event.inputs.sdk }}-v${{ steps.sdk_info.outputs.OLD_VERSION }}"
-          pnpm changelog:generate -t $LAST_TAG || pnpm changelog:generate
-
-      - name: Create github release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config --global user.email ci_cd_bot@1inch.io
+          git config --global user.email "ci_cd_bot@1inch.io"
           git config --global user.name "CI/CD Bot"
-          
-          cd ${{ steps.sdk_info.outputs.SDK_PATH }}
-          git add package.json
-          git commit -m "version @1inch/${{ github.event.inputs.sdk }}-sdk v${{ steps.version.outputs.NEW_VERSION }}"
-          
-          TAG_NAME="${{ github.event.inputs.sdk }}-v${{ steps.version.outputs.NEW_VERSION }}"
-          git tag $TAG_NAME
-          git push
-          git push --tags
-          
-          if [ -f CHANGELOG.md ]; then
-            gh release create $TAG_NAME --notes-file CHANGELOG.md --title "@1inch/${{ github.event.inputs.sdk }}-sdk v${{ steps.version.outputs.NEW_VERSION }}"
-          else
-            gh release create $TAG_NAME --generate-notes --title "@1inch/${{ github.event.inputs.sdk }}-sdk v${{ steps.version.outputs.NEW_VERSION }}"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Run Nx release
+        id: version
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          SPECIFIER="${{ inputs.bump }}"
+
+          PREID_FLAG=""
+          if [ "${{ inputs.bump }}" = "prerelease" ] && [ -n "${{ inputs.preid }}" ]; then
+            PREID_FLAG="--preid ${{ inputs.preid }}"
           fi
 
-      - name: Trigger publish
+          DRY_RUN_FLAG=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            DRY_RUN_FLAG="--dry-run"
+          fi
+
+          npx nx release "$SPECIFIER" \
+            --projects="${{ inputs.project }}" \
+            $PREID_FLAG \
+            $DRY_RUN_FLAG \
+            --skip-publish \
+            --verbose
+
+      - name: Resolve package info
+        id: pkg
+        run: |
+          SDK_PATH="typescript/${{ inputs.project }}"
+          PKG_NAME=$(node -p "require('./$SDK_PATH/package.json').name")
+          PKG_VERSION=$(node -p "require('./$SDK_PATH/package.json').version")
+          TAG="${{ inputs.project }}/v${PKG_VERSION}"
+
+          echo "project=${{ inputs.project }}" >> "$GITHUB_OUTPUT"
+          echo "sdk_path=$SDK_PATH" >> "$GITHUB_OUTPUT"
+          echo "package_name=$PKG_NAME" >> "$GITHUB_OUTPUT"
+          echo "pkg_version=$PKG_VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Show updated version
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "(dry-run: version on disk is unchanged)"
+          fi
+          echo "Version = ${{ steps.pkg.outputs.pkg_version }}"
+
+  publish-npmjs:
+    runs-on: ubuntu-latest
+    needs: release
+    if: ${{ github.event.inputs.dry_run != 'true' }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+          always-auth: true
+
+      # Updating npm to 11 since it's minimal version supporting "npm publish" with OIDC token
+      - name: Install npm@11
+        run: npm install -g npm@11
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build package (pnpm)
+        run: pnpm --filter "${{ needs.release.outputs.package_name }}" build
+
+      - name: Publish to npmjs
+        working-directory: ${{ needs.release.outputs.sdk_path }}
+        run: |
+          TAG_ARG=""
+          if [ "${{ github.event.inputs.bump }}" = "prerelease" ]; then
+            TAG_ARG="--tag next"
+          fi
+
+          npm publish --access public --provenance $TAG_ARG
+
+  publish-github-packages:
+    runs-on: ubuntu-latest
+    needs: release
+    if: ${{ github.event.inputs.dry_run != 'true' }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build package (pnpm)
+        run: pnpm --filter "${{ needs.release.outputs.package_name }}" build
+
+      - name: Publish to GitHub Packages
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh workflow run publish.yml -r ${{ github.event.inputs.sdk }}-v${{ steps.version.outputs.NEW_VERSION }}
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        working-directory: ${{ needs.release.outputs.sdk_path }}
+        run: |
+          npm config set @1inch:registry https://npm.pkg.github.com
+          npm config set //npm.pkg.github.com/:_authToken "${NODE_AUTH_TOKEN}"
+
+          npm publish --access public

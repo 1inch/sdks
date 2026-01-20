@@ -367,7 +367,7 @@ export class MakerTraits {
 
   private hasTargetForHook(
     hookName: (typeof MakerTraits.HOOKS)[number],
-    maker: Address = Address.ZERO_ADDRESS,
+    maker = Address.ZERO_ADDRESS,
   ): boolean {
     const hook = this[hookName]
 

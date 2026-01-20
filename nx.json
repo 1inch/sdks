@@ -81,6 +81,17 @@
       },
       "automaticFromRef": true
     },
+    "version": {
+      "updateDependents": "never",
+      "logUnchangedProjects": true
+    },
+    "git": {
+      "commit": true,
+      "commitMessage": "chore(release): {version}",
+      "tag": true,
+      "push": true,
+      "stageChanges": true
+    },
     "groups": {
       "typescript": {
         "projects": ["typescript/*"],
@@ -88,10 +99,7 @@
       }
     },
     "releaseTag": {
-      "pattern": "{projectName}/{version}"
-    },
-    "git": {
-      "commitMessage": "chore(release): {version}"
+      "pattern": "{projectName}/v{version}"
     }
   }
 }

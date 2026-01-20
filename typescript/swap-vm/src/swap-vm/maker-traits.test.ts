@@ -176,4 +176,50 @@ describe('MakerTraits', () => {
       encodeDecodeTest(traits, maker)
     })
   })
+
+  it('should encode hooks where target is maker', () => {
+    const maker = new Address('0x742d35cc6634c0532925a3b844bc454e4438f44e')
+    const traits = MakerTraits.new({
+      shouldUnwrap: false,
+      useAquaInsteadOfSignature: true,
+      allowZeroAmountIn: false,
+      preTransferInHook: new Interaction(maker, new HexString('0xdeadbeef01')),
+      postTransferInHook: new Interaction(maker, new HexString('0xdeadbeef02')),
+      preTransferOutHook: new Interaction(maker, new HexString('0xdeadbeef03')),
+      postTransferOutHook: new Interaction(maker, new HexString('0xdeadbeef04')),
+    })
+
+    const encoded = traits.encode(maker)
+    const decoded = MakerTraits.decode(encoded.traits, encoded.hooksData)
+
+    expect(decoded.postTransferInHook?.data).toEqual(traits.postTransferInHook?.data)
+    expect(decoded.postTransferInHook?.data).toEqual(traits.postTransferInHook?.data)
+    expect(decoded.preTransferOutHook?.data).toEqual(traits.preTransferOutHook?.data)
+    expect(decoded.postTransferOutHook?.data).toEqual(traits.postTransferOutHook?.data)
+
+    // target is zero after decoding because target is same as maker
+    expect(decoded.postTransferInHook?.target).toEqual(Address.ZERO_ADDRESS)
+    expect(decoded.postTransferInHook?.target).toEqual(Address.ZERO_ADDRESS)
+    expect(decoded.preTransferOutHook?.target).toEqual(Address.ZERO_ADDRESS)
+    expect(decoded.postTransferOutHook?.target).toEqual(Address.ZERO_ADDRESS)
+  })
+
+  it('should encode hooks where target is not maker', () => {
+    const maker = new Address('0x742d35cc6634c0532925a3b844bc454e4438f44e')
+    const target = Address.fromBigInt(1n)
+    const traits = MakerTraits.new({
+      shouldUnwrap: false,
+      useAquaInsteadOfSignature: true,
+      allowZeroAmountIn: false,
+      preTransferInHook: new Interaction(target, new HexString('0xdeadbeef01')),
+      postTransferInHook: new Interaction(target, new HexString('0xdeadbeef02')),
+      preTransferOutHook: new Interaction(target, new HexString('0xdeadbeef03')),
+      postTransferOutHook: new Interaction(target, new HexString('0xdeadbeef04')),
+    })
+
+    const encoded = traits.encode(maker)
+    const decoded = MakerTraits.decode(encoded.traits, encoded.hooksData)
+
+    expect(decoded).toEqual(traits)
+  })
 })
