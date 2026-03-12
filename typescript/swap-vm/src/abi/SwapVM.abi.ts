@@ -129,6 +129,7 @@ export const SWAP_VM_ABI = [
       { name: 'balance', type: 'uint256', internalType: 'uint256' },
       { name: 'preBalance', type: 'uint256', internalType: 'uint256' },
       { name: 'amount', type: 'uint256', internalType: 'uint256' },
+      { name: 'amountNetPulled', type: 'uint256', internalType: 'uint256' },
     ],
   },
   {
@@ -152,6 +153,43 @@ export const SWAP_VM_ABI = [
     inputs: [
       { name: 'pc', type: 'uint256', internalType: 'uint256' },
       { name: 'programLength', type: 'uint256', internalType: 'uint256' },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'DeadlineReached',
+    inputs: [
+      { name: 'taker', type: 'address', internalType: 'address' },
+      { name: 'deadline', type: 'uint256', internalType: 'uint256' },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'TakerTokenBalanceIsZero',
+    inputs: [
+      { name: 'taker', type: 'address', internalType: 'address' },
+      { name: 'token', type: 'address', internalType: 'address' },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'TakerTokenBalanceIsLessThanRequired',
+    inputs: [
+      { name: 'taker', type: 'address', internalType: 'address' },
+      { name: 'token', type: 'address', internalType: 'address' },
+      { name: 'balance', type: 'uint256', internalType: 'uint256' },
+      { name: 'minAmount', type: 'uint256', internalType: 'uint256' },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'TakerTokenBalanceSupplyShareIsLessThanRequired',
+    inputs: [
+      { name: 'taker', type: 'address', internalType: 'address' },
+      { name: 'token', type: 'address', internalType: 'address' },
+      { name: 'balance', type: 'uint256', internalType: 'uint256' },
+      { name: 'totalSupply', type: 'uint256', internalType: 'uint256' },
+      { name: 'minShareE18', type: 'uint256', internalType: 'uint256' },
     ],
   },
   { type: 'error', name: 'SafeTransferFromFailed', inputs: [] },
@@ -213,5 +251,6 @@ export const SWAP_VM_ABI = [
       { name: 'computedAmount', type: 'uint256', internalType: 'uint256' },
     ],
   },
+  { type: 'error', name: 'TakerTraitsDeadlineExpired', inputs: [] },
   { type: 'error', name: 'UnexpectedLock', inputs: [] },
 ] as const
