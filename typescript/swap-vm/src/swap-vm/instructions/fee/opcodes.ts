@@ -7,13 +7,13 @@ import { Opcode } from '../opcode'
 
 /**
  * Applies fee to amountIn
- * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L66
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L72
  **/
 export const flatFeeAmountInXD = new Opcode(Symbol('Fee.flatFeeAmountInXD'), FlatFeeArgs.CODER)
 
 /**
  * Protocol fee on amountIn (feeBps + to). Fee transferred from maker to recipient.
- * Main branch: Fee._protocolFeeAmountInXD
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L101
  **/
 export const protocolFeeAmountInXD = new Opcode(
   Symbol('Fee.protocolFeeAmountInXD'),
@@ -22,7 +22,7 @@ export const protocolFeeAmountInXD = new Opcode(
 
 /**
  * Protocol fee on amountIn for Aqua (feeBps + to). Pulls from maker's Aqua balance.
- * Main branch: Fee._aquaProtocolFeeAmountInXD
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L121
  **/
 export const aquaProtocolFeeAmountInXD = new Opcode(
   Symbol('Fee.aquaProtocolFeeAmountInXD'),
@@ -31,7 +31,7 @@ export const aquaProtocolFeeAmountInXD = new Opcode(
 
 /**
  * Dynamic protocol fee: args = feeProvider address (20 bytes).
- * Main branch: Fee._dynamicProtocolFeeAmountInXD, buildDynamicProtocolFee(address)
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L148
  **/
 export const dynamicProtocolFeeAmountInXD = new Opcode(
   Symbol('Fee.dynamicProtocolFeeAmountInXD'),
@@ -40,7 +40,7 @@ export const dynamicProtocolFeeAmountInXD = new Opcode(
 
 /**
  * Dynamic protocol fee for Aqua: args = feeProvider address (20 bytes).
- * Main branch: Fee._aquaDynamicProtocolFeeAmountInXD
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L197
  **/
 export const aquaDynamicProtocolFeeAmountInXD = new Opcode(
   Symbol('Fee.aquaDynamicProtocolFeeAmountInXD'),
