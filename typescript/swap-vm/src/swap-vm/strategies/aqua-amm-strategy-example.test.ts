@@ -26,8 +26,10 @@ describe('AquaAMMStrategy Examples', () => {
       .withFeeTokenIn(0.00003)
       .build()
 
+    const flatFeeInInstructionIndex = 21
+
     const hex = program.toString()
-    expect(hex).toContain('16')
+    expect(hex).toContain(flatFeeInInstructionIndex.toString(16))
     expect(hex).toContain('10')
   })
 

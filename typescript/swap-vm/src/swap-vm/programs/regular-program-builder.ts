@@ -381,46 +381,43 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Applies fee to amountOut
-   **/
-  public flatFeeAmountOutXD(data: DataFor<fee.FlatFeeArgs>): this {
-    super.add(fee.flatFeeAmountOutXD.createIx(new fee.FlatFeeArgs(data.fee)))
-
-    return this
-  }
-
-  /**
-   * Applies progressive fee to amountIn
-   **/
-  public progressiveFeeInXD(data: DataFor<fee.FlatFeeArgs>): this {
-    super.add(fee.progressiveFeeInXD.createIx(new fee.FlatFeeArgs(data.fee)))
-
-    return this
-  }
-
-  /**
-   * Applies progressive fee to amountOut
-   **/
-  public progressiveFeeOutXD(data: DataFor<fee.FlatFeeArgs>): this {
-    super.add(fee.progressiveFeeOutXD.createIx(new fee.FlatFeeArgs(data.fee)))
-
-    return this
-  }
-
-  /**
    * Applies protocol fee to amountOut with direct transfer
    **/
-  public protocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
-    super.add(fee.protocolFeeAmountOutXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
+  public protocolFeeAmountInXD(data: DataFor<fee.ProtocolFeeArgs>): this {
+    super.add(fee.protocolFeeAmountInXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
 
     return this
   }
 
   /**
-   * Applies protocol fee to amountOut through Aqua protocol
+   * Applies protocol fee to amountIn through Aqua protocol
    **/
-  public aquaProtocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
-    super.add(fee.aquaProtocolFeeAmountOutXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
+  public aquaProtocolFeeAmountInXD(data: DataFor<fee.ProtocolFeeArgs>): this {
+    super.add(fee.aquaProtocolFeeAmountInXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
+
+    return this
+  }
+
+  /**
+   * Applies protocol fee, fetched from external contract, to amountIn with direct transfer
+   **/
+  public dynamicProtocolFeeAmountInXD(data: DataFor<fee.DynamicProtocolFeeArgs>): this {
+    super.add(
+      fee.dynamicProtocolFeeAmountInXD.createIx(new fee.DynamicProtocolFeeArgs(data.feeProvider)),
+    )
+
+    return this
+  }
+
+  /**
+   * Applies protocol fee, fetched from external contract, to amountIn through Aqua protocol
+   **/
+  public aquaDynamicProtocolFeeAmountInXD(data: DataFor<fee.DynamicProtocolFeeArgs>): this {
+    super.add(
+      fee.aquaDynamicProtocolFeeAmountInXD.createIx(
+        new fee.DynamicProtocolFeeArgs(data.feeProvider),
+      ),
+    )
 
     return this
   }

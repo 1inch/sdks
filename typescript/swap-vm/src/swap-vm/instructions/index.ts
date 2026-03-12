@@ -99,11 +99,10 @@ export const _allInstructions: Opcode<IArgsData>[] = [
   extruction.extruction, // 36 - EXTRUCTION
   controls.salt, // 37 - SALT
   fee.flatFeeAmountInXD, // 38 - FLAT_FEE_AMOUNT_IN_XD
-  fee.flatFeeAmountOutXD, // 39 - FLAT_FEE_AMOUNT_OUT_XD
-  fee.progressiveFeeInXD, // 40 - PROGRESSIVE_FEE_IN_XD
-  fee.progressiveFeeOutXD, // 41 - PROGRESSIVE_FEE_OUT_XD
-  fee.protocolFeeAmountOutXD, // 42 - PROTOCOL_FEE_AMOUNT_OUT_XD
-  fee.aquaProtocolFeeAmountOutXD, // 43 - AQUA_PROTOCOL_FEE_AMOUNT_OUT_XD
+  fee.protocolFeeAmountInXD, // 23
+  fee.aquaProtocolFeeAmountInXD, // 24
+  fee.dynamicProtocolFeeAmountInXD, // 25
+  fee.aquaDynamicProtocolFeeAmountInXD, // 26
   // stableSwap.stableSwap2D, // STABLE_SWAP_2D - not in production
 ] as const
 
@@ -129,26 +128,26 @@ export const aquaInstructions: Opcode<IArgsData>[] = [
   /**
    * Controls (11-17)
    */
-  controls.jump, // 11 - JUMP
-  controls.jumpIfTokenIn, // 12 - JUMP_IF_TOKEN_IN
-  controls.jumpIfTokenOut, // 13 - JUMP_IF_TOKEN_OUT
-  controls.deadline, // 14 - DEADLINE
-  controls.onlyTakerTokenBalanceNonZero, // 15 - ONLY_TAKER_TOKEN_BALANCE_NON_ZERO
-  controls.onlyTakerTokenBalanceGte, // 16 - ONLY_TAKER_TOKEN_BALANCE_GTE
-  controls.onlyTakerTokenSupplyShareGte, // 17 - ONLY_TAKER_TOKEN_SUPPLY_SHARE_GTE
+  controls.jump, // 11
+  controls.jumpIfTokenIn, // 12
+  controls.jumpIfTokenOut, // 13
+  controls.deadline, // 14
+  controls.onlyTakerTokenBalanceNonZero, // 15
+  controls.onlyTakerTokenBalanceGte, // 16
+  controls.onlyTakerTokenSupplyShareGte, // 17
+
+  // todo: finalize once contracts will be ready
 
   /**
    * Trading instructions (18+)
    */
-  xycSwap.xycSwapXD, // 18 - XYC_SWAP_XD
-  concentrate.concentrateGrowLiquidityXD, // 19 - CONCENTRATE_GROW_LIQUIDITY_XD
-  concentrate.concentrateGrowLiquidity2D, // 20 - CONCENTRATE_GROW_LIQUIDITY_2D
-  decay.decayXD, // 21 - DECAY_XD
-  controls.salt, // 22 - SALT
-  fee.flatFeeAmountInXD, // 23 - FLAT_FEE_AMOUNT_IN_XD
-  fee.flatFeeAmountOutXD, // 24 - FLAT_FEE_AMOUNT_OUT_XD
-  fee.progressiveFeeInXD, // 25 - PROGRESSIVE_FEE_IN_XD
-  fee.progressiveFeeOutXD, // 26 - PROGRESSIVE_FEE_OUT_XD
-  fee.protocolFeeAmountOutXD, // 27 - PROTOCOL_FEE_AMOUNT_OUT_XD
-  fee.aquaProtocolFeeAmountOutXD, // 28 - AQUA_PROTOCOL_FEE_AMOUNT_OUT_XD
+  xycSwap.xycSwapXD, // 18
+  concentrate.concentrateGrowLiquidity2D, // 19
+  decay.decayXD, // 20
+  controls.salt, // 21
+  fee.flatFeeAmountInXD, // 22
+  fee.protocolFeeAmountInXD, // 23
+  fee.aquaProtocolFeeAmountInXD, // 24
+  fee.dynamicProtocolFeeAmountInXD, // 25
+  fee.aquaDynamicProtocolFeeAmountInXD, // 26
 ] as const

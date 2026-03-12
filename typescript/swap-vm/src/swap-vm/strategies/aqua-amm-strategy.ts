@@ -89,7 +89,7 @@ export class AquaAMMStrategy {
 
     if (this.protocolFee) {
       const data = fee.ProtocolFeeArgs.fromBps(this.protocolFee.bps, this.protocolFee.receiver)
-      builder.add(fee.aquaProtocolFeeAmountOutXD.createIx(data))
+      builder.add(fee.aquaProtocolFeeAmountInXD.createIx(data))
     }
 
     builder.xycSwapXD()
