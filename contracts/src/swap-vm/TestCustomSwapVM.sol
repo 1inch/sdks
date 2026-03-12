@@ -3,7 +3,7 @@
 pragma solidity 0.8.30;
 
 import {Simulator, SwapVM, AquaOpcodes, Context} from "@1inch/swap-vm/routers/AquaSwapVMRouter.sol";
-import {Calldata} from "@1inch/swap-vm/libs/Calldata.sol";
+import {Calldata} from "@1inch/solidity-utils/contracts/libraries/Calldata.sol";
 
 library ArgsBuilder {
     using Calldata for bytes;
@@ -22,8 +22,10 @@ contract TestCustomSwapVM is Simulator, SwapVM, AquaOpcodes {
     error TakerNotAllowed();
 
     constructor(
-        address aqua
-    ) SwapVM(aqua, "TestCustomSwapVM", "1.0") AquaOpcodes(aqua) {}
+        address aqua,
+        address weth,
+        address owner
+    ) SwapVM(aqua, weth, owner, "TestCustomSwapVM", "1.0") AquaOpcodes(aqua) {}
 
     function _instructions()
         internal

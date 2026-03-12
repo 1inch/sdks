@@ -196,8 +196,18 @@ async function deployContracts(transport: Transport, chain: Chain): Promise<Test
 
   const nonce = await deployer.getTransactionCount({ address: account.address })
   const [swapVMAquaRouter, customSwapVM, makerHooks, testTrader] = await Promise.all([
-    deploy(TestAquaSwapVMRouter as ContractParams, [aqua], deployer, nonce),
-    deploy(TestCustomSwapVM as ContractParams, [aqua], deployer, nonce + 1),
+    deploy(
+      TestAquaSwapVMRouter as ContractParams,
+      [aqua, ADDRESSES.WETH, deployer],
+      deployer,
+      nonce,
+    ),
+    deploy(
+      TestCustomSwapVM as ContractParams,
+      [aqua, ADDRESSES.WETH, deployer],
+      deployer,
+      nonce + 1,
+    ),
     deploy(TestMakerHooks as ContractParams, [], deployer, nonce + 2),
     deploy(
       TestTrader as ContractParams,
