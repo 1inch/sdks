@@ -10,7 +10,7 @@ export class DutchAuctionArgsCoder implements IArgsCoder<DutchAuctionArgs> {
     const builder = new BytesBuilder()
     builder.addUint40(args.startTime)
     builder.addUint16(args.duration)
-    builder.addUint32(args.decayFactor)
+    builder.addUint64(args.decayFactor)
 
     return new HexString(add0x(builder.asHex()))
   }
@@ -19,7 +19,7 @@ export class DutchAuctionArgsCoder implements IArgsCoder<DutchAuctionArgs> {
     const iter = BytesIter.BigInt(data.toString())
     const startTime = iter.nextUint40()
     const duration = iter.nextUint16()
-    const decayFactor = iter.nextUint32()
+    const decayFactor = iter.nextUint64()
 
     return new DutchAuctionArgs(startTime, duration, decayFactor)
   }

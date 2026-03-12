@@ -48,7 +48,7 @@ describe('DutchAuctionArgs', () => {
   it('should throw on invalid values', () => {
     const maxUint40 = (1n << 40n) - 1n
     const maxUint16 = 65535n
-    const maxUint32 = (1n << 32n) - 1n
+    const maxUint64 = (1n << 64n) - 1n
 
     expect(() => new DutchAuctionArgs(-1n, 100n, 500000000n)).toThrow()
     expect(() => new DutchAuctionArgs(maxUint40 + 1n, 100n, 500000000n)).toThrow()
@@ -57,6 +57,6 @@ describe('DutchAuctionArgs', () => {
     expect(() => new DutchAuctionArgs(100n, maxUint16 + 1n, 500000000n)).toThrow()
 
     expect(() => new DutchAuctionArgs(100n, 100n, -1n)).toThrow()
-    expect(() => new DutchAuctionArgs(100n, 100n, maxUint32 + 1n)).toThrow()
+    expect(() => new DutchAuctionArgs(100n, 100n, maxUint64 + 1n)).toThrow()
   })
 })
