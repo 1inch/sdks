@@ -22,7 +22,7 @@ describe('DutchAuctionArgs', () => {
   it('should handle maximum values', () => {
     const maxUint40 = (1n << 40n) - 1n
     const maxUint16 = 65535n
-    const maxDecayFactor = 999999999n
+    const maxDecayFactor = 999999999999999999n
 
     const args = new DutchAuctionArgs(maxUint40, maxUint16, maxDecayFactor)
 
