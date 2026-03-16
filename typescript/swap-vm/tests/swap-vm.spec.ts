@@ -251,7 +251,7 @@ describe('SwapVM', () => {
     const swapperWethBalanceBefore = await swapper.tokenBalance(ADDRESSES.WETH)
     const swapperUsdcBalanceBefore = await swapper.tokenBalance(ADDRESSES.USDC)
     const protocol = await forkNode.walletForAddress(protocolAddress.toString())
-    const protocolWethBalanceBefore = await protocol.tokenBalance(ADDRESSES.WETH)
+    const protocolUsdcBalanceBefore = await protocol.tokenBalance(ADDRESSES.USDC)
 
     const srcAmount = parseUnits('100', 6)
 
@@ -269,7 +269,7 @@ describe('SwapVM', () => {
       ...swapVM.quote(swapParams),
     })
 
-    const [_, dstAmount] = decodeFunctionResult({
+    const [quotedSrcAmount, dstAmount] = decodeFunctionResult({
       abi: SWAP_VM_ABI,
       functionName: 'quote',
       data: simulateResult.data!,
@@ -292,13 +292,13 @@ describe('SwapVM', () => {
       strategyHash,
       ADDRESSES.USDC,
     )
-    const protocolWethBalanceAfter = await protocol.tokenBalance(ADDRESSES.WETH)
+    const protocolUsdcBalanceAfter = await protocol.tokenBalance(ADDRESSES.USDC)
 
-    const protocolFee = dstAmount / 99n // 100 bps = 1%
-    expect(protocolWethBalanceAfter - protocolWethBalanceBefore).to.equal(protocolFee)
+    const protocolFee = (quotedSrcAmount * 1n) / 100n // 100 bps = 1%
+    expect(protocolUsdcBalanceAfter - protocolUsdcBalanceBefore).to.equal(protocolFee)
 
-    expect(providerWethBalanceAfter).to.equal(providerWethBalanceBefore - dstAmount - protocolFee)
-    expect(providerUsdcBalanceAfter).to.equal(providerUsdcBalanceBefore + srcAmount)
+    expect(providerWethBalanceAfter).to.equal(providerWethBalanceBefore - dstAmount)
+    expect(providerUsdcBalanceAfter).to.equal(providerUsdcBalanceBefore + srcAmount - protocolFee)
 
     const swapperWethBalanceAfter = await swapper.tokenBalance(ADDRESSES.WETH)
     const swapperUsdcBalanceAfter = await swapper.tokenBalance(ADDRESSES.USDC)
@@ -445,7 +445,7 @@ describe('SwapVM', () => {
     expect(swapperWethBalanceAfter).to.equal(swapperWethBalanceBefore + dstAmount)
     expect(swapperUsdcBalanceAfter).to.equal(swapperUsdcBalanceBefore - srcAmount)
 
-    expect(() =>
+    await expect(() =>
       forkNode.provider.call({
         account: otherSwapperAddress,
         ...swapVM.quote(swapParams),
