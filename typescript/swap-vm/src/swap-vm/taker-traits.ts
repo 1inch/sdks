@@ -72,6 +72,11 @@ export class TakerTraits {
      */
     public readonly customReceiver: Address = Address.ZERO_ADDRESS,
     /**
+     * Optional expiration timestamp (uint40, Unix seconds). 0 = no deadline.
+     * When non-zero, contract validates block.timestamp <= deadline (TakerTraitsDeadlineExpired otherwise).
+     */
+    public readonly deadline: bigint = 0n,
+    /**
      * Optional data passed to the maker's pre-transfer-in hook.
      */
     public readonly preTransferInHookData: HexString = HexString.EMPTY,
@@ -121,6 +126,7 @@ export class TakerTraits {
       data.useTransferFromAndAquaPush ?? true,
       data.threshold,
       data.customReceiver,
+      data.deadline,
       data.preTransferInHookData,
       data.postTransferInHookData,
       data.preTransferOutHookData,
@@ -150,6 +156,7 @@ export class TakerTraits {
       firstTransferFromTaker: false,
       useTransferFromAndAquaPush: true,
       threshold: 0n,
+      deadline: 0n,
       customReceiver: Address.ZERO_ADDRESS,
       preTransferInHookData: HexString.EMPTY,
       postTransferInHookData: HexString.EMPTY,
@@ -165,18 +172,18 @@ export class TakerTraits {
   /**
    * Decodes a packed TakerTraits from a hex string.
    * The packed format consists of:
-   * - 18 bytes: 9 uint16 offsets for data sections
+   * - 20 bytes: 10 uint16 offsets for data sections
    * - 2 bytes: uint16 flags
-   * - Variable: data sections (threshold, to, hook data, callback data, etc.)
+   * - Variable: data sections (threshold, to, deadline, hook data, callback data, etc.)
    * - Variable: signature
    */
   static decode(packed: HexString): TakerTraits {
     const iter = BytesIter.BigInt(packed.toString())
 
-    const offsets = Array.from({ length: 9 }, () => Number(iter.nextUint16())).reverse()
+    const offsets = Array.from({ length: 10 }, () => Number(iter.nextUint16())).reverse()
     const flags = new BN(iter.nextUint16())
 
-    const dataStr = trim0x(packed.toString()).slice(40)
+    const dataStr = trim0x(packed.toString()).slice(44)
     const sections: string[] = []
 
     offsets.forEach((offset, i) => {
@@ -190,6 +197,7 @@ export class TakerTraits {
     const [
       threshold,
       to,
+      deadline,
       preTransferInHookData,
       postTransferInHookData,
       preTransferOutHookData,
@@ -217,6 +225,7 @@ export class TakerTraits {
       ),
       threshold: threshold ? BigInt(add0x(threshold)) : 0n,
       customReceiver: to ? new Address(add0x(to)) : Address.ZERO_ADDRESS,
+      deadline: deadline ? BigInt(add0x(deadline)) : 0n,
       preTransferInHookData: preTransferInHookData
         ? new HexString(add0x(preTransferInHookData))
         : HexString.EMPTY,
@@ -264,6 +273,9 @@ export class TakerTraits {
         : HexString.EMPTY,
       !this.customReceiver.isZero()
         ? new HexString(this.customReceiver.toString())
+        : HexString.EMPTY,
+      this.deadline > 0n
+        ? new HexString('0x' + this.deadline.toString(16).padStart(10, '0'))
         : HexString.EMPTY,
       this.preTransferInHookData,
       this.postTransferInHookData,

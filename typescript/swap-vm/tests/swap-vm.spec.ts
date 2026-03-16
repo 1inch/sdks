@@ -10,7 +10,7 @@ import { ReadyEvmFork } from './setup-evm.js'
 import { Order } from '../src/swap-vm/order.js'
 import { MakerTraits } from '../src/swap-vm/maker-traits.js'
 import {
-  AquaAMMStrategy,
+  AquaXYCAmmStrategy,
   AquaProgramBuilder,
   ProgramBuilder,
   SwapVMContract,
@@ -74,7 +74,7 @@ describe('SwapVM', () => {
     expect(calculatedHash.toString()).toEqual(hashFromContract)
   })
 
-  test('should swap by AquaAMMStrategy', async () => {
+  test('should swap by AquaXYCAmmStrategy', async () => {
     const liquidityProvider = forkNode.liqProvider
     const swapper = forkNode.swapper
 
@@ -84,7 +84,7 @@ describe('SwapVM', () => {
     const USDC = new Address(ADDRESSES.USDC)
     const WETH = new Address(ADDRESSES.WETH)
 
-    const program = AquaAMMStrategy.new({
+    const program = AquaXYCAmmStrategy.new({
       tokenA: USDC,
       tokenB: WETH,
     }).build()
@@ -184,7 +184,7 @@ describe('SwapVM', () => {
     expect(swapperUsdcBalanceAfter).to.equal(swapperUsdcBalanceBefore - srcAmount)
   })
 
-  test('should swap by AquaAMMStrategy with protocol fee', async () => {
+  test('should swap by AquaXYCAmmStrategy with protocol fee', async () => {
     const liquidityProvider = forkNode.liqProvider
     const swapper = forkNode.swapper
 
@@ -197,7 +197,7 @@ describe('SwapVM', () => {
     const protocolAddress = Address.fromBigInt(0xdeadbeefn)
 
     const feeBps = 100
-    const program = AquaAMMStrategy.new({
+    const program = AquaXYCAmmStrategy.new({
       tokenA: USDC,
       tokenB: WETH,
     })
@@ -463,7 +463,7 @@ describe('SwapVM', () => {
     const USDC = new Address(ADDRESSES.USDC)
     const WETH = new Address(ADDRESSES.WETH)
 
-    const program = AquaAMMStrategy.new({
+    const program = AquaXYCAmmStrategy.new({
       tokenA: USDC,
       tokenB: WETH,
     }).build()

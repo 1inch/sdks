@@ -198,13 +198,13 @@ async function deployContracts(transport: Transport, chain: Chain): Promise<Test
   const [swapVMAquaRouter, customSwapVM, makerHooks, testTrader] = await Promise.all([
     deploy(
       TestAquaSwapVMRouter as ContractParams,
-      [aqua, ADDRESSES.WETH, deployer],
+      [aqua, ADDRESSES.WETH, account.address],
       deployer,
       nonce,
     ),
     deploy(
       TestCustomSwapVM as ContractParams,
-      [aqua, ADDRESSES.WETH, deployer],
+      [aqua, ADDRESSES.WETH, account.address],
       deployer,
       nonce + 1,
     ),
@@ -216,6 +216,8 @@ async function deployContracts(transport: Transport, chain: Chain): Promise<Test
       nonce + 3,
     ),
   ])
+
+  console.log(aqua, customSwapVM, swapVMAquaRouter)
 
   return {
     aqua,
