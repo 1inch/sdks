@@ -10,6 +10,7 @@ import * as concentrate from '../instructions/concentrate'
 import * as decay from '../instructions/decay'
 import * as fee from '../instructions/fee'
 import * as debug from '../instructions/debug/opcodes'
+import * as peggedSwap from '../instructions/pegged-swap'
 
 export class AquaProgramBuilder extends ProgramBuilder {
   constructor() {
@@ -145,6 +146,19 @@ export class AquaProgramBuilder extends ProgramBuilder {
     super.add(
       concentrate.concentrateGrowLiquidity2D.createIx(
         new concentrate.ConcentrateGrowLiquidity2DArgs(data.deltaLt, data.deltaGt),
+      ),
+    )
+
+    return this
+  }
+
+  /**
+   * Square-root linear swap curve for pegged assets
+   **/
+  public peggedSwapGrowPriceRange2D(data: DataFor<peggedSwap.PeggedSwapArgs>): this {
+    super.add(
+      peggedSwap.peggedSwapGrowPriceRange2D.createIx(
+        new peggedSwap.PeggedSwapArgs(data.x0, data.y0, data.linearWidth, data.rateLt, data.rateGt),
       ),
     )
 

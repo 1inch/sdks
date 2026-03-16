@@ -17,6 +17,7 @@ import * as fee from './fee'
 import * as extruction from './extruction'
 import type { Opcode } from './opcode'
 import type { IArgsData } from './types'
+import * as peggedSwap from './pegged-swap'
 
 export * from './types'
 export { EMPTY_OPCODE } from './empty'
@@ -32,9 +33,10 @@ export * as dutchAuction from './dutch-auction'
 export * as oraclePriceAdjuster from './oracle-price-adjuster'
 export * as baseFeeAdjuster from './base-fee-adjuster'
 export * as twapSwap from './twap-swap'
-export * as stableSwap from './stable-swap'
+export * as stableSwap from './pegged-swap'
 export * as fee from './fee'
 export * as extruction from './extruction'
+export * as peggedSwap from './pegged-swap'
 
 /**
  * Regular opcodes array - matching SwapVM contract exactly (44 opcodes)
@@ -101,7 +103,7 @@ export const _allInstructions: Opcode<IArgsData>[] = [
   fee.progressiveFeeOutXD, // 39
   fee.protocolFeeAmountOutXD, // 40
   fee.aquaProtocolFeeAmountOutXD, // 41
-  // todo: Pegged swap // 42
+  peggedSwap.peggedSwapGrowPriceRange2D, // 42
   fee.protocolFeeAmountInXD, // 43
   fee.aquaProtocolFeeAmountInXD, // 44
   fee.dynamicProtocolFeeAmountInXD, // 45
@@ -155,6 +157,6 @@ export const aquaInstructions: Opcode<IArgsData>[] = [
   fee.aquaProtocolFeeAmountInXD, // 29
   fee.dynamicProtocolFeeAmountInXD, // 30
   fee.aquaDynamicProtocolFeeAmountInXD, // 31
-  // todo: Pegged swap // 32
+  peggedSwap.peggedSwapGrowPriceRange2D, // 32
   extruction.extruction, // 33
 ] as const

@@ -2,15 +2,15 @@
 
 import { describe, it, expect } from 'vitest'
 import { Address } from '@1inch/sdk-core'
-import { AquaAMMStrategy } from './aqua-amm-strategy'
+import { AquaXYCAmmStrategy } from './aqua-xyc-amm-strategy'
 import { AquaProgramBuilder } from '../programs/aqua-program-builder'
 
-describe('AquaAMMStrategy Examples', () => {
+describe('AquaXycAmmStrategy Examples', () => {
   const USDC = new Address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
   const WETH = new Address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2')
 
   it('Example: Minimal AMM', () => {
-    const program = AquaAMMStrategy.new({
+    const program = AquaXYCAmmStrategy.new({
       tokenA: USDC,
       tokenB: WETH,
     }).build()
@@ -19,7 +19,7 @@ describe('AquaAMMStrategy Examples', () => {
   })
 
   it('Example: AMM with fee', () => {
-    const program = AquaAMMStrategy.new({
+    const program = AquaXYCAmmStrategy.new({
       tokenA: USDC,
       tokenB: WETH,
     })
@@ -34,7 +34,7 @@ describe('AquaAMMStrategy Examples', () => {
   })
 
   it('Example: Concentrated liquidity', () => {
-    const program = AquaAMMStrategy.new({
+    const program = AquaXYCAmmStrategy.new({
       tokenA: USDC,
       tokenB: WETH,
     })
@@ -47,7 +47,7 @@ describe('AquaAMMStrategy Examples', () => {
   })
 
   it('Example: MEV-protected with decay', () => {
-    const program = AquaAMMStrategy.new({
+    const program = AquaXYCAmmStrategy.new({
       tokenA: USDC,
       tokenB: WETH,
     })
@@ -60,7 +60,7 @@ describe('AquaAMMStrategy Examples', () => {
   })
 
   it('Example: Full configuration', () => {
-    const program = AquaAMMStrategy.new({
+    const program = AquaXYCAmmStrategy.new({
       tokenA: USDC,
       tokenB: WETH,
     })
