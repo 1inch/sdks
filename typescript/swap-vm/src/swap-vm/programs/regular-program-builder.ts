@@ -13,7 +13,6 @@ import * as decay from '../instructions/decay'
 import * as limitSwap from '../instructions/limit-swap'
 import * as minRate from '../instructions/min-rate'
 import * as dutchAuction from '../instructions/dutch-auction'
-import * as oraclePriceAdjuster from '../instructions/oracle-price-adjuster'
 import * as baseFeeAdjuster from '../instructions/base-fee-adjuster'
 import * as twapSwap from '../instructions/twap-swap'
 import * as fee from '../instructions/fee'
@@ -196,21 +195,6 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Concentrates liquidity within price bounds for multiple tokens
-   **/
-  public concentrateGrowLiquidityXD(
-    data: DataFor<concentrate.ConcentrateGrowLiquidityXDArgs>,
-  ): this {
-    super.add(
-      concentrate.concentrateGrowLiquidityXD.createIx(
-        new concentrate.ConcentrateGrowLiquidityXDArgs(data.tokenDeltas),
-      ),
-    )
-
-    return this
-  }
-
-  /**
    * Concentrates liquidity within price bounds for two tokens
    **/
   public concentrateGrowLiquidity2D(
@@ -303,24 +287,6 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Adjusts swap prices based on Chainlink oracle feeds
-   **/
-  public oraclePriceAdjuster1D(data: DataFor<oraclePriceAdjuster.OraclePriceAdjusterArgs>): this {
-    super.add(
-      oraclePriceAdjuster.oraclePriceAdjuster1D.createIx(
-        new oraclePriceAdjuster.OraclePriceAdjusterArgs(
-          data.maxPriceDecay,
-          data.maxStaleness,
-          data.oracleDecimals,
-          data.oracleAddress,
-        ),
-      ),
-    )
-
-    return this
-  }
-
-  /**
    * Adjusts swap prices based on network gas costs
    **/
   public baseFeeAdjuster1D(data: DataFor<baseFeeAdjuster.BaseFeeAdjusterArgs>): this {
@@ -381,10 +347,46 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Applies protocol fee to amountOut with direct transfer
+   * Applies fee to amountOut
+   **/
+  public flatFeeAmountOutXD(data: DataFor<fee.FlatFeeArgs>): this {
+    super.add(fee.flatFeeAmountOutXD.createIx(new fee.FlatFeeArgs(data.fee)))
+
+    return this
+  }
+
+  /**
+   * Applies progressive fee to amountIn
+   **/
+  public progressiveFeeInXD(data: DataFor<fee.FlatFeeArgs>): this {
+    super.add(fee.progressiveFeeInXD.createIx(new fee.FlatFeeArgs(data.fee)))
+
+    return this
+  }
+
+  /**
+   * Applies progressive fee to amountOut
+   **/
+  public progressiveFeeOutXD(data: DataFor<fee.FlatFeeArgs>): this {
+    super.add(fee.progressiveFeeOutXD.createIx(new fee.FlatFeeArgs(data.fee)))
+
+    return this
+  }
+
+  /**
+   * Applies protocol fee to amountIn with direct transfer
    **/
   public protocolFeeAmountInXD(data: DataFor<fee.ProtocolFeeArgs>): this {
     super.add(fee.protocolFeeAmountInXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
+
+    return this
+  }
+
+  /**
+   * Applies protocol fee to amountOut with direct transfer
+   **/
+  public protocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
+    super.add(fee.protocolFeeAmountOutXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
 
     return this
   }
@@ -394,6 +396,15 @@ export class RegularProgramBuilder extends ProgramBuilder {
    **/
   public aquaProtocolFeeAmountInXD(data: DataFor<fee.ProtocolFeeArgs>): this {
     super.add(fee.aquaProtocolFeeAmountInXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
+
+    return this
+  }
+
+  /**
+   * Applies protocol fee to amountOut through Aqua protocol
+   **/
+  public aquaProtocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
+    super.add(fee.aquaProtocolFeeAmountOutXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
 
     return this
   }

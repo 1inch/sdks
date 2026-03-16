@@ -10,7 +10,7 @@ const FEE_100_PERCENT = 1e9 // 1e9 = 100%
 
 /**
  * Arguments for protocol fee instructions (protocolFeeAmountInXD, aquaProtocolFeeAmountInXD)
- * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L102
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L101
  **/
 export class ProtocolFeeArgs implements IArgsData {
   public static readonly CODER = new ProtocolFeeArgsCoder()

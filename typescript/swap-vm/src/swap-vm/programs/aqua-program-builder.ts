@@ -137,21 +137,6 @@ export class AquaProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Concentrates liquidity within price bounds for multiple tokens
-   **/
-  public concentrateGrowLiquidityXD(
-    data: DataFor<concentrate.ConcentrateGrowLiquidityXDArgs>,
-  ): this {
-    super.add(
-      concentrate.concentrateGrowLiquidityXD.createIx(
-        new concentrate.ConcentrateGrowLiquidityXDArgs(data.tokenDeltas),
-      ),
-    )
-
-    return this
-  }
-
-  /**
    * Concentrates liquidity within price bounds for two tokens
    **/
   public concentrateGrowLiquidity2D(
