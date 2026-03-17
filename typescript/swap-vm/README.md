@@ -28,7 +28,8 @@ import {
   NetworkEnum,
   Order,
   MakerTraits,
-  AquaAMMStrategy
+  AquaXYCAmmStrategy,
+  instructions
 } from '@1inch/swap-vm-sdk'
 import { AquaProtocolContract, AQUA_CONTRACT_ADDRESSES } from '@1inch/aqua-sdk'
 
@@ -40,9 +41,11 @@ const maker = '0xmaker_address'
 const USDC = new Address('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')
 const WETH = new Address('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')
 
-const program = AquaAMMStrategy.new({
-  tokenA: USDC,
-  tokenB: WETH
+// Price range as P = tokenGt/tokenLt (1e18). E.g. 1500–3000 USDC per WETH → rawPriceMin = 1e18/3000, rawPriceMax = 1e18/1500
+const { ONE_E18 } = instructions.concentrate
+const program = AquaXYCAmmStrategy.newConcentrate({
+  rawPriceMin: ONE_E18 / 3000n,
+  rawPriceMax: ONE_E18 / 1500n
 }).build()
 
 const order = Order.new({
@@ -235,8 +238,7 @@ Available instruction categories in the full Swap VM instruction set include:
 
 ### Trading instructions
 - `XYC_SWAP_XD` - XYC swap for multi-dimensional pools
-- `CONCENTRATE_GROW_LIQUIDITY_XD` - Concentrate liquidity in multi-dimensional pools
-- `CONCENTRATE_GROW_LIQUIDITY_2D` - Concentrate liquidity in 2 tokens pools
+- `CONCENTRATE_GROW_LIQUIDITY_2D` - Concentrate liquidity in 2-token pools (sqrtPriceMin/sqrtPriceMax, P = tokenGt/tokenLt, 1e18)
 - `DECAY_XD` - Apply decay calculation
 - `LIMIT_SWAP_1D` - Execute limit order swap
 - `LIMIT_SWAP_ONLY_FULL_1D` - Execute limit order only if fully fillable
@@ -338,14 +340,14 @@ const { concentrate, fee } = instructions
 
 /**
  * Minimal strategy:
- * - concentrates liquidity for a 2-token pool
+ * - concentrates liquidity for a 2-token pool (price range in raw P = tokenGt/tokenLt, 1e18)
  * - optionally charges a taker fee on input
  * - always finishes with a simple XYC swap
  */
 export class SimpleAmmStrategy {
-  private liquidityA?: bigint
+  private rawPriceMin?: bigint
 
-  private liquidityB?: bigint
+  private rawPriceMax?: bigint
 
   private feeBpsIn?: number
 
@@ -355,11 +357,12 @@ export class SimpleAmmStrategy {
   ) {}
 
   /**
-   * Sets initial virtual liquidity for the pair.
+   * Sets the concentrated liquidity price range.
+   * Prices are P = tokenGt/tokenLt in 1e18 fixed-point (e.g. WETH per USDC when USDC < WETH).
    */
-  public withLiquidity(a: bigint, b: bigint): this {
-    this.liquidityA = a
-    this.liquidityB = b
+  public withPriceRange(rawPriceMin: bigint, rawPriceMax: bigint): this {
+    this.rawPriceMin = rawPriceMin
+    this.rawPriceMax = rawPriceMax
 
     return this
   }
@@ -381,12 +384,10 @@ export class SimpleAmmStrategy {
   public build(): SwapVmProgram {
     const builder = new AquaProgramBuilder()
 
-    if (this.liquidityA !== undefined && this.liquidityB !== undefined) {
-      const data = concentrate.ConcentrateGrowLiquidity2DArgs.fromTokenDeltas(
-        this.tokenA,
-        this.tokenB,
-        this.liquidityA,
-        this.liquidityB,
+    if (this.rawPriceMin !== undefined && this.rawPriceMax !== undefined) {
+      const data = concentrate.ConcentrateGrowLiquidity2DArgs.fromRawPrices(
+        this.rawPriceMin,
+        this.rawPriceMax,
       )
       builder.add(concentrate.concentrateGrowLiquidity2D.createIx(data))
     }
@@ -403,13 +404,12 @@ export class SimpleAmmStrategy {
   }
 }
 
-// Example usage:
+// Example usage (price range: e.g. 1500–3000 USDC per WETH → P = WETH per USDC = 1/3000 .. 1/1500 in 1e18):
+
+const { ONE_E18 } = concentrate
 
 const strategy = new SimpleAmmStrategy(USDC, WETH)
-  .withLiquidity(
-    10_000n * 10n ** 6n, // 10k USDC
-    5n * 10n ** 18n, // 5 WETH
-  )
+  .withPriceRange(ONE_E18 / 3000n, ONE_E18 / 1500n) // 1500–3000 USDC per WETH
   .withFeeTokenIn(5) // 5 bps taker fee on input (optional)
 
 const program = strategy.build()
@@ -558,12 +558,13 @@ The SDK exports:
 - **[`MakerTraits`](./src/swap-vm/maker-traits.ts)** - Maker-side configuration and flags
 - **[`TakerTraits`](./src/swap-vm/taker-traits.ts)** - Taker-side configuration and flags
 - **[`ABI`](./src/abi/)** - Contract ABI exports
+- **Strategies** - [`AquaAMMStrategy`](./src/swap-vm/strategies/aqua-amm-strategy.ts) (base), [`AquaXYCAmmStrategy`](./src/swap-vm/strategies/aqua-xyc-amm-strategy.ts) (use `new()` or `newConcentrate({ rawPriceMin, rawPriceMax })` / `{ sqrtPriceMin, sqrtPriceMax }`), [`AquaPeggedAmmStrategy`](./src/swap-vm/strategies/aqua-pegged-amm-strategy.ts)
 - **[Instructions](./src/swap-vm/instructions/)** - Comprehensive instruction system:
   - `controls` - Flow control instructions
   - `balances` - Balance manipulation instructions
   - `invalidators` - Invalidation instructions
   - `xycSwap` - XYC swap instructions
-  - `concentrate` - Liquidity concentration instructions
+  - `concentrate` - Liquidity concentration (e.g. `ConcentrateGrowLiquidity2DArgs.fromSqrtPrices` / `fromRawPrices`; P = tokenGt/tokenLt in 1e18)
   - `decay` - Decay calculation instructions
   - `limitSwap` - Limit order instructions
   - `minRate` - Minimum rate guard instructions
