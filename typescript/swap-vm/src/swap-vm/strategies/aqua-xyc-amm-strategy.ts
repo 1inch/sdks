@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-import type { Address } from '@1inch/sdk-core'
 import { AquaAMMStrategy } from './aqua-amm-strategy'
+import type { ConcentrateRawPrices, ConcentrateSqrtPrices } from './types'
 import { AquaProgramBuilder } from '../programs/aqua-program-builder'
 import type { SwapVmProgram } from '../programs'
 import * as concentrate from '../instructions/concentrate'
@@ -9,23 +9,34 @@ import * as fee from '../instructions/fee'
 import { FlatFeeArgs } from '../instructions/fee'
 
 export class AquaXYCAmmStrategy extends AquaAMMStrategy {
-  deltas?: { a: bigint; b: bigint }
-
-  constructor(
-    public readonly tokenA: Address,
-    public readonly tokenB: Address,
-  ) {
+  constructor(public readonly xycConcentrateArgs?: concentrate.ConcentrateGrowLiquidity2DArgs) {
     super()
   }
 
-  static new(tokens: { tokenA: Address; tokenB: Address }): AquaXYCAmmStrategy {
-    return new AquaXYCAmmStrategy(tokens.tokenA, tokens.tokenB)
+  static new(): AquaXYCAmmStrategy {
+    return new AquaXYCAmmStrategy()
   }
 
-  public withDeltas(a: bigint, b: bigint): this {
-    this.deltas = { a, b }
+  static newConcentrate(prices: ConcentrateRawPrices | ConcentrateSqrtPrices): AquaXYCAmmStrategy {
+    if ('rawPriceMin' in prices && 'rawPriceMax' in prices) {
+      const args = concentrate.ConcentrateGrowLiquidity2DArgs.fromRawPrices(
+        prices.rawPriceMin,
+        prices.rawPriceMax,
+      )
 
-    return this
+      return new AquaXYCAmmStrategy(args)
+    }
+
+    if ('sqrtPriceMin' in prices && 'sqrtPriceMax' in prices) {
+      const args = concentrate.ConcentrateGrowLiquidity2DArgs.fromSqrtPrices(
+        prices.sqrtPriceMin,
+        prices.sqrtPriceMax,
+      )
+
+      return new AquaXYCAmmStrategy(args)
+    }
+
+    throw new Error('unknown parameters for newXYCConcentrate')
   }
 
   public build(): SwapVmProgram {
@@ -36,15 +47,8 @@ export class AquaXYCAmmStrategy extends AquaAMMStrategy {
       builder.add(fee.aquaProtocolFeeAmountInXD.createIx(data))
     }
 
-    if (this.deltas) {
-      const data = concentrate.ConcentrateGrowLiquidity2DArgs.fromTokenDeltas(
-        this.tokenA,
-        this.tokenB,
-        this.deltas.a,
-        this.deltas.b,
-      )
-
-      builder.add(concentrate.concentrateGrowLiquidity2D.createIx(data))
+    if (this.xycConcentrateArgs) {
+      builder.add(concentrate.concentrateGrowLiquidity2D.createIx(this.xycConcentrateArgs))
     }
 
     if (this.decayPeriod) {

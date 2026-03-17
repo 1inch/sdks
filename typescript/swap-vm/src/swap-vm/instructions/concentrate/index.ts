@@ -3,4 +3,4 @@
 export * from './opcodes'
 export { ConcentrateGrowLiquidity2DArgs } from './concentrate-grow-liquidity-2d-args'
 export type { TokenDelta } from './types'
-export * from './utils'
+export * from './bigint-sqrt'

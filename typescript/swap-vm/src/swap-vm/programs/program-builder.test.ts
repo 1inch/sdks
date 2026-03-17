@@ -295,8 +295,8 @@ describe('ProgramBuilder', () => {
       })
       .xycSwapXD()
       .concentrateGrowLiquidity2D({
-        deltaLt: 1000n * 10n ** 18n,
-        deltaGt: 500n * 10n ** 18n,
+        sqrtPriceMax: 1000n * 10n ** 18n,
+        sqrtPriceMin: 500n * 10n ** 18n,
       })
       .decayXD({ decayPeriod: 3600n })
       .build()
@@ -317,8 +317,8 @@ describe('ProgramBuilder', () => {
 
     expect(ixs[2].opcode.id.toString()).toContain('concentrateGrowLiquidity2D')
     const concentrate2D = ixs[2].args as concentrate.ConcentrateGrowLiquidity2DArgs
-    expect(concentrate2D.deltaLt).toBe(1000n * 10n ** 18n)
-    expect(concentrate2D.deltaGt).toBe(500n * 10n ** 18n)
+    expect(concentrate2D.sqrtPriceMax).toBe(1000n * 10n ** 18n)
+    expect(concentrate2D.sqrtPriceMin).toBe(500n * 10n ** 18n)
 
     expect(ixs[3].opcode.id.toString()).toContain('decayXD')
     const decayArgs = ixs[3].args as decay.DecayXDArgs
@@ -344,8 +344,8 @@ describe('ProgramBuilder', () => {
       .invalidateTokenIn1D()
       .invalidateTokenOut1D()
       .concentrateGrowLiquidity2D({
-        deltaLt: 2000n * 10n ** 18n,
-        deltaGt: 1000n * 10n ** 18n,
+        sqrtPriceMax: 2000n * 10n ** 18n,
+        sqrtPriceMin: 1000n * 10n ** 18n,
       })
       .jump({ nextPC: 50n })
       .build()
@@ -382,8 +382,8 @@ describe('ProgramBuilder', () => {
 
     expect(ixs[8].opcode.id.toString()).toContain('concentrateGrowLiquidity2D')
     const concentrate2D = ixs[8].args as concentrate.ConcentrateGrowLiquidity2DArgs
-    expect(concentrate2D.deltaLt).toBe(2000n * 10n ** 18n)
-    expect(concentrate2D.deltaGt).toBe(1000n * 10n ** 18n)
+    expect(concentrate2D.sqrtPriceMax).toBe(2000n * 10n ** 18n)
+    expect(concentrate2D.sqrtPriceMin).toBe(1000n * 10n ** 18n)
 
     expect(ixs[9].opcode.id.toString()).toContain('jump')
     expect((ixs[9].args as controls.JumpArgs).nextPC).toBe(50n)

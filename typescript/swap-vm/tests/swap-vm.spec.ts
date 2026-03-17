@@ -49,7 +49,7 @@ describe('SwapVM', () => {
 
   test('should correct calculate order hash', async () => {
     const program = new AquaProgramBuilder()
-      .concentrateGrowLiquidity2D({ deltaGt: 1n, deltaLt: 2n })
+      .concentrateGrowLiquidity2D({ sqrtPriceMin: 1000n, sqrtPriceMax: 2000n })
       .build()
     const order = Order.new({
       maker: new Address(swapperAddress),
@@ -84,10 +84,7 @@ describe('SwapVM', () => {
     const USDC = new Address(ADDRESSES.USDC)
     const WETH = new Address(ADDRESSES.WETH)
 
-    const program = AquaXYCAmmStrategy.new({
-      tokenA: USDC,
-      tokenB: WETH,
-    }).build()
+    const program = AquaXYCAmmStrategy.new().build()
 
     const order = Order.new({
       maker: new Address(liqProviderAddress),
@@ -197,12 +194,7 @@ describe('SwapVM', () => {
     const protocolAddress = Address.fromBigInt(0xdeadbeefn)
 
     const feeBps = 100
-    const program = AquaXYCAmmStrategy.new({
-      tokenA: USDC,
-      tokenB: WETH,
-    })
-      .withProtocolFee(feeBps, protocolAddress)
-      .build()
+    const program = AquaXYCAmmStrategy.new().withProtocolFee(feeBps, protocolAddress).build()
 
     const order = Order.new({
       maker: new Address(liqProviderAddress),
@@ -463,10 +455,7 @@ describe('SwapVM', () => {
     const USDC = new Address(ADDRESSES.USDC)
     const WETH = new Address(ADDRESSES.WETH)
 
-    const program = AquaXYCAmmStrategy.new({
-      tokenA: USDC,
-      tokenB: WETH,
-    }).build()
+    const program = AquaXYCAmmStrategy.new().build()
 
     const makerHooksTarget = new Address(forkNode.addresses.makerHooks)
     const order = Order.new({

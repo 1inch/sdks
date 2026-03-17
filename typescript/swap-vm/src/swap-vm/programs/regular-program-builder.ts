@@ -203,7 +203,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
   ): this {
     super.add(
       concentrate.concentrateGrowLiquidity2D.createIx(
-        new concentrate.ConcentrateGrowLiquidity2DArgs(data.deltaLt, data.deltaGt),
+        new concentrate.ConcentrateGrowLiquidity2DArgs(data.sqrtPriceMin, data.sqrtPriceMax),
       ),
     )
 

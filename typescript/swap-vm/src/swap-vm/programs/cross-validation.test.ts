@@ -152,8 +152,8 @@ describe('Cross-validation with Concentrate', () => {
         ],
       })
       .concentrateGrowLiquidity2D({
-        deltaLt: 200000n,
-        deltaGt: 100000n,
+        sqrtPriceMax: 200000n,
+        sqrtPriceMin: 100000n,
       })
       .flatFeeAmountInXD({ fee: 0n })
       .xycSwapXD()
