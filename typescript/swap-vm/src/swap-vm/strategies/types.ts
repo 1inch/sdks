@@ -23,8 +23,8 @@ export type ConcentrateSqrtPrices = {
  *   priceMax: 3000.11 USDC per WETH
  *
  * BigInt(WETH) > BigInt(USDC), so
- * rawPriceMin = (1n * 10n ** BigInt(USDC_DECIMALS)) * 10n ** 18n / parseUnits('3000.11', USDC_DECIMALS)
- * rawPriceMax = (1n * 10n ** BigInt(USDC_DECIMALS)) * 10n ** 18n / parseUnits('1500.23', USDC_DECIMALS)
+ * rawPriceMin = (1n * 10n ** BigInt(WETH_DECIMALS)) * 10n ** 18n / parseUnits('3000.11', USDC_DECIMALS)
+ * rawPriceMax = (1n * 10n ** BigInt(WETH_DECIMALS)) * 10n ** 18n / parseUnits('1500.23', USDC_DECIMALS)
  */
 export type ConcentrateRawPrices = {
   rawPriceMin: bigint
