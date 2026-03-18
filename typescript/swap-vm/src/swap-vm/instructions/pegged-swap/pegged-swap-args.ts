@@ -55,10 +55,22 @@ export class PeggedSwapArgs implements IArgsData {
     const tokenBRate = resolveRate(tokenB.decimals, tokenA.decimals)
 
     if (BigInt(tokenA.address.toString()) < BigInt(tokenB.address.toString())) {
-      return new PeggedSwapArgs(tokenA.reserve, tokenB.reserve, linearWidth, tokenARate, tokenBRate)
+      return new PeggedSwapArgs(
+        tokenA.reserve * tokenARate,
+        tokenB.reserve * tokenBRate,
+        linearWidth,
+        tokenARate,
+        tokenBRate,
+      )
     }
 
-    return new PeggedSwapArgs(tokenB.reserve, tokenA.reserve, linearWidth, tokenBRate, tokenARate)
+    return new PeggedSwapArgs(
+      tokenB.reserve * tokenBRate,
+      tokenA.reserve * tokenARate,
+      linearWidth,
+      tokenBRate,
+      tokenARate,
+    )
   }
 
   static decode(data: HexString): PeggedSwapArgs {

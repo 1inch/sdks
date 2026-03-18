@@ -10,7 +10,7 @@ describe('PeggedSwapArgs', () => {
   const coder = new PeggedSwapArgsCoder()
 
   it('should encode and decode pegged swap args', () => {
-    const x0 = 10_000n * 10n ** 6n
+    const x0 = 10_000n * 10n ** 18n
     const y0 = 10_000n * 10n ** 18n
     const linearWidth = 8n * 10n ** 26n
     const rateLt = 10n ** 12n
@@ -146,7 +146,7 @@ describe('PeggedSwapArgs', () => {
     const linearWidth = 5n * 10n ** 26n
     const args = PeggedSwapArgs.fromTokens(token18, token6, linearWidth)
     expect(args.x0).toBe(10n ** 18n)
-    expect(args.y0).toBe(10n ** 6n)
+    expect(args.y0).toBe(10n ** 6n * 10n ** 12n)
     expect(args.linearWidth).toBe(linearWidth)
     expect(args.rateLt).toBe(1n)
     expect(args.rateGt).toBe(10n ** 12n)
