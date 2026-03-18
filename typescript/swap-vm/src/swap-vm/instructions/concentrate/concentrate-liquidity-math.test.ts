@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { expect } from 'vitest'
+import { parseUnits } from 'viem'
+import { UINT_256_MAX } from '@1inch/byte-utils'
 import { ONE_E18 } from './concentrate-grow-liquidity-2d-args'
 import {
   computeBalances,
   computeLiquidityAndPrice,
   computeLiquidityFromAmounts,
 } from './concentrate-liquidity-math'
+import { bigintSqrt } from './bigint-sqrt'
 
 describe('concentrate-liquidity-math', () => {
   describe('computeLiquidityAndPrice', () => {
@@ -214,6 +217,83 @@ describe('concentrate-liquidity-math', () => {
       expect(result.targetL).toBe(ONE_E18)
       expect(result.actualLt).toBe(bLt)
       expect(result.actualGt).toBe(bGt)
+    })
+
+    it('should compute available liquidity for the given price range', () => {
+      // USDC < WETH
+      const USDC_DECIMALS = 6n
+      const WETH_DECIMALS = 18n
+
+      const prices = {
+        leftBound: 2000n, // 2000 USDC per 1 WETH
+        spotPrice: 2500n, // 2500 USDC per 1 WETH
+        rightBound: 3000n, // 3000 USDC per 1 WETH
+      }
+
+      const rawPriceMin =
+        (10n ** WETH_DECIMALS * ONE_E18) / (prices.rightBound * 10n ** USDC_DECIMALS)
+      const rawSpotPrice =
+        (10n ** WETH_DECIMALS * ONE_E18) / (prices.spotPrice * 10n ** USDC_DECIMALS)
+      const rawPriceMax =
+        (10n ** WETH_DECIMALS * ONE_E18) / (prices.leftBound * 10n ** USDC_DECIMALS)
+
+      const sqrtPriceMin = bigintSqrt(rawPriceMin * ONE_E18)
+      const sqrtPriceSpot = bigintSqrt(rawSpotPrice * ONE_E18)
+      const sqrtPriceMax = bigintSqrt(rawPriceMax * ONE_E18)
+
+      const maxAvailableBalanceUSDC = parseUnits('1000000', 6)
+      const maxAvailableBalanceWETH = parseUnits('400', 18)
+
+      const { actualLt, actualGt } = computeLiquidityFromAmounts(
+        maxAvailableBalanceUSDC,
+        maxAvailableBalanceWETH,
+        sqrtPriceSpot,
+        sqrtPriceMin,
+        sqrtPriceMax,
+      )
+
+      // 999_999.999999 USDC
+      expect(actualLt).toBe(999999999999n)
+      // 330.119361793776327274 WETH
+      expect(actualGt).toBe(330119361793776327274n)
+    })
+
+    it('should compute available liquidity for the given price range and one specified amount', () => {
+      // USDC < WETH
+      const USDC_DECIMALS = 6n
+      const WETH_DECIMALS = 18n
+
+      const prices = {
+        leftBound: 2000n, // 2000 USDC per 1 WETH
+        spotPrice: 2500n, // 2500 USDC per 1 WETH
+        rightBound: 3000n, // 3000 USDC per 1 WETH
+      }
+
+      const rawPriceMin =
+        (10n ** WETH_DECIMALS * ONE_E18) / (prices.rightBound * 10n ** USDC_DECIMALS)
+      const rawSpotPrice =
+        (10n ** WETH_DECIMALS * ONE_E18) / (prices.spotPrice * 10n ** USDC_DECIMALS)
+      const rawPriceMax =
+        (10n ** WETH_DECIMALS * ONE_E18) / (prices.leftBound * 10n ** USDC_DECIMALS)
+
+      const sqrtPriceMin = bigintSqrt(rawPriceMin * ONE_E18)
+      const sqrtPriceSpot = bigintSqrt(rawSpotPrice * ONE_E18)
+      const sqrtPriceMax = bigintSqrt(rawPriceMax * ONE_E18)
+
+      const maxAvailableBalanceWETH = parseUnits('400', 18)
+
+      const { actualLt, actualGt } = computeLiquidityFromAmounts(
+        UINT_256_MAX,
+        maxAvailableBalanceWETH,
+        sqrtPriceSpot,
+        sqrtPriceMin,
+        sqrtPriceMax,
+      )
+
+      // 1_211_682.943485 USDC
+      expect(actualLt).toBe(1211682943485n)
+      // 399.999999999999998795n WETH
+      expect(actualGt).toBe(399999999999999998795n)
     })
   })
 })
