@@ -91,8 +91,8 @@ describe('ConcentrateGrowLiquidity2DArgs', () => {
     const WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
     expect(BigInt(USDC) < BigInt(WETH)).toBe(true)
 
-    const rawPriceMin = ONE_E18 / 3000n
-    const rawPriceMax = ONE_E18 / 2000n
+    const rawPriceMin = (ONE_E18 * ONE_E18) / (3000n * 10n ** 6n)
+    const rawPriceMax = (ONE_E18 * ONE_E18) / (2000n * 10n ** 6n)
 
     const args = ConcentrateGrowLiquidity2DArgs.fromRawPrices(rawPriceMin, rawPriceMax)
     expect(args.sqrtPriceMin).toBeGreaterThan(0n)
