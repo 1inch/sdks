@@ -2,6 +2,10 @@
 
 export * from './opcodes'
 export { ConcentrateGrowLiquidity2DArgs, ONE_E18 } from './concentrate-grow-liquidity-2d-args'
-export { computeLiquidityFromAmounts, computeBalances } from './concentrate-liquidity-math'
+export {
+  computeLiquidityFromAmounts,
+  computeBalances,
+  computeLiquidityAndPrice,
+} from './concentrate-liquidity-math'
 export type { TokenDelta } from './types'
 export * from './bigint-sqrt'

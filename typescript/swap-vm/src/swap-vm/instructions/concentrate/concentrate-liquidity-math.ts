@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { UINT_256_MAX } from '@1inch/byte-utils'
+import { bigintSqrt } from './bigint-sqrt'
 
 const ONE = 10n ** 18n
 
@@ -73,6 +74,44 @@ export function computeBalances(
   const bGt = sqrtPspot > sqrtPmin ? mulDiv(targetL, sqrtPspot - sqrtPmin, ONE) : 0n
 
   return { bLt, bGt }
+}
+
+/**
+ * Compute the implied spot price and liquidity from real balances and price bounds.
+ *
+ * Mirrors XYCConcentrateArgsBuilder.computeLiquidityAndPrice in XYCConcentrate.sol.
+ *
+ * @param balanceLt Real balance of the token with lower address
+ * @param balanceGt Real balance of the token with higher address
+ * @param sqrtPriceMin sqrt(P_min) in 1e18 fixed-point
+ * @param sqrtPriceMax sqrt(P_max) in 1e18 fixed-point
+ * @returns { liquidity, sqrtPriceSpot } L and implied sqrt(P_spot) in 1e18 fixed-point
+ */
+export function computeLiquidityAndPrice(
+  balanceLt: bigint,
+  balanceGt: bigint,
+  sqrtPriceMin: bigint,
+  sqrtPriceMax: bigint,
+): { liquidity: bigint; sqrtPriceSpot: bigint } {
+  const liquidity = computeL(balanceLt, balanceGt, sqrtPriceMin, sqrtPriceMax)
+  const virtualLt = balanceLt + mulDiv(liquidity, ONE, sqrtPriceMax)
+  const virtualGt = balanceGt + mulDiv(liquidity, sqrtPriceMin, ONE)
+  const sqrtPriceSpot = bigintSqrt(mulDiv(virtualGt, ONE * ONE, virtualLt))
+
+  return { liquidity, sqrtPriceSpot }
+}
+
+/**
+ * Compute L from real balances and price bounds.
+ * Mirrors XYCConcentrateArgsBuilder._computeL in XYCConcentrate.sol.
+ */
+function computeL(bLt: bigint, bGt: bigint, sqrtPriceMin: bigint, sqrtPriceMax: bigint): bigint {
+  const alpha = ONE - mulDiv(sqrtPriceMin, ONE, sqrtPriceMax)
+  const beta = mulDiv(bLt, sqrtPriceMin, ONE) + mulDiv(bGt, ONE, sqrtPriceMax)
+  const fourAC = mulDiv(4n * alpha, bLt, ONE) * bGt
+  const disc = beta * beta + fourAC
+
+  return mulDiv(beta + bigintSqrt(disc), ONE, 2n * alpha)
 }
 
 function mulDiv(a: bigint, b: bigint, c: bigint): bigint {

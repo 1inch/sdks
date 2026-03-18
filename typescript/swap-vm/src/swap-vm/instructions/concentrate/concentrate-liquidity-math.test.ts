@@ -1,9 +1,50 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
+import { expect } from 'vitest'
 import { ONE_E18 } from './concentrate-grow-liquidity-2d-args'
-import { computeBalances, computeLiquidityFromAmounts } from './concentrate-liquidity-math'
+import {
+  computeBalances,
+  computeLiquidityAndPrice,
+  computeLiquidityFromAmounts,
+} from './concentrate-liquidity-math'
 
 describe('concentrate-liquidity-math', () => {
+  describe('computeLiquidityAndPrice', () => {
+    it('should compute liquidity and implied sqrtPriceSpot from real balances and bounds', () => {
+      const balanceLt = 1000n * ONE_E18
+      const balanceGt = 500n * ONE_E18
+      const sqrtPriceMin = 9n * 10n ** 17n
+      const sqrtPriceMax = 11n * 10n ** 17n
+
+      const { liquidity, sqrtPriceSpot } = computeLiquidityAndPrice(
+        balanceLt,
+        balanceGt,
+        sqrtPriceMin,
+        sqrtPriceMax,
+      )
+
+      expect(liquidity).toBe(7802453249272148273618n)
+      expect(sqrtPriceSpot).toBe(964082408958572419n)
+    })
+
+    it('should return spot within [sqrtPriceMin, sqrtPriceMax] for positive balances', () => {
+      const balanceLt = 100n * ONE_E18
+      const balanceGt = 100n * ONE_E18
+      const sqrtPriceMin = 95n * 10n ** 16n
+      const sqrtPriceMax = 105n * 10n ** 16n
+
+      const { liquidity, sqrtPriceSpot } = computeLiquidityAndPrice(
+        balanceLt,
+        balanceGt,
+        sqrtPriceMin,
+        sqrtPriceMax,
+      )
+
+      expect(liquidity).toBe(2048750744047355406501n)
+      expect(sqrtPriceSpot).toBe(998810232426052786n)
+    })
+  })
+
   describe('computeBalances', () => {
     it('should compute bLt and bGt from targetL and price bounds', () => {
       const targetL = 1000n * ONE_E18
