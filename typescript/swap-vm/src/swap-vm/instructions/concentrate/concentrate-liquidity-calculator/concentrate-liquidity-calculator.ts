@@ -17,8 +17,8 @@ import { computeLiquidityFromAmounts } from '../concentrate-liquidity-math/conce
  * or "fixed allocation" (fix one token amount and solve for the other).
  *
  * Token ordering follows the pool convention: token0 = lower address, token1 = higher address.
- * Prices are supplied as ScaledPrices (quote token + raw-scaled min/spot/max); they are
- * converted internally to P = token1/token0 in 1e18 and then to sqrt(P) for the math.
+ * Prices are supplied as ScaledPrices with scale 10^(token0Decimals + token1Decimals); they are
+ * converted internally to P = token1/token0 in 1e18 and then to sqrt(P * 1e18) for the math.
  */
 export class ConcentrateLiquidityCalculator {
   static readonly ONE_E18 = 10n ** 18n
@@ -118,7 +118,7 @@ export class ConcentrateLiquidityCalculator {
   }
 
   /**
-   * Convert user-facing ScaledPrices (quote-token raw scale) into internal
+   * Convert user-facing ScaledPrices (scale 10^(token0Decimals+token1Decimals)) into internal
    * raw prices P = token1/token0 (before sqrt), so that sqrt(P * 1e18) can be
    * passed to the liquidity math. Handles both quote = token0 and quote = token1.
    */

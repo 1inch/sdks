@@ -13,9 +13,8 @@ export type ConcentrateTokenInfo = {
 }
 
 /**
- * Price range in "raw" form: each price is in units of quote-token raw amount per
- * one unit of the other token (scaled by 10^decimals of the quote token).
- * minPrice < spotPrice < maxPrice (left to right on the price axis).
+ * Price range in "raw" form: each price is quote token per 1 unit of the other token,
+ * scaled by 10^(token0Decimals + token1Decimals). minPrice < spotPrice < maxPrice.
  */
 export type ScaledPrices = {
   quoteToken: Address

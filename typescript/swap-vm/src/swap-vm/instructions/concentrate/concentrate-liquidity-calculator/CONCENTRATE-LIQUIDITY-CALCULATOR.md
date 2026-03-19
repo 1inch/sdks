@@ -5,7 +5,7 @@ Calculator for concentrated liquidity positions: given two tokens and a price ra
 ## Overview
 
 - **Token ordering**: Pool convention is token0 = lower address, token1 = higher address. The calculator derives token0/token1 from the two tokens you pass (order of tokenA/tokenB does not matter).
-- **Price convention**: User prices are expressed as “quote token per 1 unit of the other token”, scaled by the quote token’s decimals (`priceRaw = humanPrice * 10^decimalsQuote`). The calculator converts these to internal P = token1/token0 and then to sqrt(P) in 1e18 for the underlying math.
+- **Price convention**: User prices are expressed as “quote token per 1 unit of the other token”, scaled by `10^(token0Decimals + token1Decimals)` (`priceRaw = humanPrice * 10^(token0Decimals + token1Decimals)`). The calculator converts these to internal P = token1/token0 in 1e18 and then to sqrt(P * 1e18) for the underlying math.
 - **Two modes**:
   - **Max allocation**: Use all available balances (from `ConcentrateTokenInfo.maxAvailableLiquidity`) to maximize liquidity L.
   - **Fixed allocation**: Fix the amount of one token; the other token amount is computed so that the position has the same L.
@@ -24,7 +24,7 @@ Per-token input:
 
 ### `ScaledPrices`
 
-Price range in “raw” form. Each price is in units of **quote token raw amount per 1 unit of the other token** (i.e. already scaled by 10^decimals of the quote token).
+Price range in “raw” form. Each price is **quote token per 1 unit of the other token**, scaled by `10^(token0Decimals + token1Decimals)` (e.g. for USDC/WETH: `10^24`).
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -80,11 +80,13 @@ Uses `token0.maxAvailableLiquidity` and `token1.maxAvailableLiquidity` to maximi
 **Use case**: “Deposit all my available USDC and WETH into this range.”
 
 ```ts
+// multiplier = 10^(token0Decimals + token1Decimals), e.g. 10^24 for USDC(6)/WETH(18)
+const PRICE_MULTIPLIER = 10n ** (6n + 18n)
 const prices: ScaledPrices = {
   quoteToken: wethAddress,
-  minPriceRaw: parseUnits('0.0003', 18),   // left bound
-  spotPriceRaw: parseUnits('0.0004', 18),  // spot
-  maxPriceRaw: parseUnits('0.0005', 18),   // right bound
+  minPriceRaw: parseUnits('0.0003', 18 + 6),   // left bound
+  spotPriceRaw: parseUnits('0.0004', 18 + 6),  // spot
+  maxPriceRaw: parseUnits('0.0005', 18 + 6),   // right bound
 }
 
 const result = calculator.computeMaxAllocation(prices)
@@ -111,9 +113,10 @@ const result = calculator.computeFixedAllocation(
 
 ## Price scaling
 
-- User-facing prices are **quote token per 1 of the other token**, in **raw** form: `priceRaw = humanPrice * 10^decimalsQuote`.
-- Example: “2000 USDC per 1 WETH” with USDC (6 decimals) as quote → `minPriceRaw = 2000 * 10^6 = 2_000_000_000n`.
-- Example: “0.0005 WETH per 1 USDC” with WETH (18 decimals) as quote → `spotPriceRaw = 0.0005 * 10^18 = 5e14`.
+- User-facing prices are **quote token per 1 of the other token**, scaled by **`10^(token0Decimals + token1Decimals)`**: `priceRaw = humanPrice * 10^(token0Decimals + token1Decimals)`.
+- For a USDC (6 decimals) / WETH (18 decimals) pair the multiplier is `10^24`.
+- Example: “2000 USDC per 1 WETH” with USDC as quote → `minPriceRaw = 2000 * 10^24`.
+- Example: “0.0005 WETH per 1 USDC” with WETH as quote → `spotPriceRaw = 0.0005 * 10^24 = 5e20`.
 
 The calculator accepts either token as `quoteToken` and converts internally to P = token1/token0, then to sqrt(P * 1e18) for the concentrated liquidity math.
 
