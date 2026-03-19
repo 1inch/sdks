@@ -63,7 +63,7 @@ describe('ConcentrateLiquidityCalculator', () => {
       expect(result.sqrtPriceSpot).toBe(20000000000000000000000n)
       expect(result.sqrtPriceMax).toBe(22360679774997896964091n)
       expect(result.token0Reserve).toBe(999999999999n)
-      expect(result.token1Reserve).toBe(330119361793776327274n)
+      expect(result.token1Reserve).toBe(330119361793825978647n)
     })
 
     it('should return same allocation when quote is token1 (WETH)', () => {
@@ -85,7 +85,7 @@ describe('ConcentrateLiquidityCalculator', () => {
       expect(result.sqrtPriceSpot).toBe(20000000000000000000000n)
       expect(result.sqrtPriceMax).toBe(22360679774997896964091n)
       expect(result.token0Reserve).toBe(999999999999n)
-      expect(result.token1Reserve).toBe(330119361793776327276n)
+      expect(result.token1Reserve).toBe(330119361793825978648n)
     })
   })
 
@@ -112,7 +112,7 @@ describe('ConcentrateLiquidityCalculator', () => {
       expect(result.sqrtPriceSpot).toBe(20000000000000000000000n)
       expect(result.sqrtPriceMax).toBe(22360679774997896964091n)
       expect(result.token0Reserve).toBe(999999999999n)
-      expect(result.token1Reserve).toBe(330119361793776327274n)
+      expect(result.token1Reserve).toBe(330119361793825978647n)
     })
 
     it('should compute reserves when token1 (WETH) amount is fixed', () => {
@@ -171,7 +171,7 @@ describe('ConcentrateLiquidityCalculator', () => {
       expect(result.sqrtPriceMin).toBe(44721359549995793928n)
       expect(result.sqrtPriceSpot).toBe(50000000000000000000n)
       expect(result.sqrtPriceMax).toBe(54772255750516611345n)
-      expect(result.token0Reserve).toBe(330119361793826001957n)
+      expect(result.token0Reserve).toBe(330119361793825980083n)
       expect(result.token1Reserve).toBe(999999999999999999999998n)
     })
 
@@ -193,7 +193,7 @@ describe('ConcentrateLiquidityCalculator', () => {
       expect(result.sqrtPriceMin).toBe(44721359549995793928n)
       expect(result.sqrtPriceSpot).toBe(50000000000000000000n)
       expect(result.sqrtPriceMax).toBe(54772255750516611345n)
-      expect(result.token0Reserve).toBe(330119361793826001957n)
+      expect(result.token0Reserve).toBe(330119361793825980083n)
       expect(result.token1Reserve).toBe(999999999999999999999998n)
     })
 
@@ -215,7 +215,7 @@ describe('ConcentrateLiquidityCalculator', () => {
       expect(result.sqrtPriceMin).toBe(44721359549995793928n)
       expect(result.sqrtPriceSpot).toBe(50000000000000000000n)
       expect(result.sqrtPriceMax).toBe(54772255750516611345n)
-      expect(result.token0Reserve).toBe(33011936179382600195n)
+      expect(result.token0Reserve).toBe(33011936179382598008n)
       expect(result.token1Reserve).toBe(99999999999999999999998n)
     })
 
@@ -238,7 +238,7 @@ describe('ConcentrateLiquidityCalculator', () => {
       expect(result.sqrtPriceSpot).toBe(50000000000000000000n)
       expect(result.sqrtPriceMax).toBe(54772255750516611345n)
       expect(result.token0Reserve).toBe(9999999999999999999n)
-      expect(result.token1Reserve).toBe(30292073587145239667743n)
+      expect(result.token1Reserve).toBe(30292073587145241674914n)
     })
   })
 

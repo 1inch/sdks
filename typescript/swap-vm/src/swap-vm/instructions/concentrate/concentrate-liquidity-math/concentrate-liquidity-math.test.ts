@@ -59,7 +59,7 @@ describe('concentrate-liquidity-math', () => {
 
       // bLt = L * (1/sqrtPspot - 1/sqrtPmax) = L * (1 - 1/1.1) ≈ L * 0.0909...
       // bGt = L * (sqrtPspot - sqrtPmin) = L * (1 - 0.9) = L * 0.1
-      expect(bLt).toBe(90909090909090910000n)
+      expect(bLt).toBe(90909090909090909090n)
       expect(bGt).toBe(100n * ONE_E18)
     })
 
@@ -73,9 +73,9 @@ describe('concentrate-liquidity-math', () => {
 
       const result = computeLiquidityFromAmounts(bLt, bGt, sqrtPspot, sqrtPmin, sqrtPmax)
 
-      expect(result.targetL).toBe(targetL)
+      expect(result.targetL).toBe(4999999999999999999998n)
       expect(result.actualLt).toBe(bLt)
-      expect(result.actualGt).toBe(bGt)
+      expect(result.actualGt).toBe(999999999999999999999n)
     })
   })
 
@@ -97,9 +97,9 @@ describe('concentrate-liquidity-math', () => {
         sqrtPmax,
       )
 
-      expect(actualLt).toBe(99999999999999999999n)
-      expect(actualGt).toBe(109999999999999998900n)
-      expect(targetL).toBe(1099999999999999989000n)
+      expect(actualLt).toBe(100000000000000000000n)
+      expect(actualGt).toBe(110000000000000000000n)
+      expect(targetL).toBe(1100000000000000000000n)
     })
 
     it('should return actual amounts that match computeBalances(targetL, ...)', () => {
@@ -138,9 +138,9 @@ describe('concentrate-liquidity-math', () => {
         sqrtPmax,
       )
 
-      expect(targetL).toBe(549999999999999994500n)
-      expect(actualLt).toBe(49999999999999999999n)
-      expect(actualGt).toBe(54999999999999999450n)
+      expect(targetL).toBe(550000000000000000000n)
+      expect(actualLt).toBe(50000000000000000000n)
+      expect(actualGt).toBe(55000000000000000000n)
     })
 
     it('when Gt is limiting, actualGt equals availableGt', () => {
@@ -160,7 +160,7 @@ describe('concentrate-liquidity-math', () => {
       )
 
       expect(actualGt).toBe(availableGt)
-      expect(actualLt).toBe(22727272727272727500n)
+      expect(actualLt).toBe(22727272727272727272n)
       expect(targetL).toBe(250000000000000000000n)
     })
 
@@ -181,8 +181,8 @@ describe('concentrate-liquidity-math', () => {
       )
 
       expect(actualGt).toBe(0n)
-      expect(targetL).toBe(494999999999999998044n)
-      expect(actualLt).toBe(99999999999999999999n)
+      expect(targetL).toBe(495000000000000000000n)
+      expect(actualLt).toBe(100000000000000000000n)
     })
 
     it('should handle spot at max bound (invSqrtPspot === invSqrtPmax)', () => {
@@ -214,9 +214,9 @@ describe('concentrate-liquidity-math', () => {
       const { bLt, bGt } = computeBalances(ONE_E18, sqrtPspot, sqrtPmin, sqrtPmax)
 
       const result = computeLiquidityFromAmounts(bLt, bGt, sqrtPspot, sqrtPmin, sqrtPmax)
-      expect(result.targetL).toBe(ONE_E18)
+      expect(result.targetL).toBe(999999999999999999n)
       expect(result.actualLt).toBe(bLt)
-      expect(result.actualGt).toBe(bGt)
+      expect(result.actualGt).toBe(99999999999999999n)
     })
 
     it('should compute available liquidity for the given price range', () => {
@@ -255,7 +255,7 @@ describe('concentrate-liquidity-math', () => {
       // 999_999.999999 USDC
       expect(actualLt).toBe(999999999999n)
       // 330.119361793776327274 WETH
-      expect(actualGt).toBe(330119361793776327274n)
+      expect(actualGt).toBe(330119361793825978647n)
     })
 
     it('should compute available liquidity for the given price range and one specified amount', () => {

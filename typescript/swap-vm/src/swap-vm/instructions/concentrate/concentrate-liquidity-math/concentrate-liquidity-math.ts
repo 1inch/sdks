@@ -30,11 +30,10 @@ export function computeLiquidityFromAmounts(
     throw new Error('sqrtPmax should be greater than sqrtPmin')
   }
 
-  const invSqrtPspot = mulDiv(ONE, ONE, sqrtPspot)
-  const invSqrtPmax = mulDiv(ONE, ONE, sqrtPmax)
-
   const lFromLt =
-    invSqrtPspot > invSqrtPmax ? mulDiv(availableLt, ONE, invSqrtPspot - invSqrtPmax) : UINT_256_MAX
+    sqrtPmax > sqrtPspot
+      ? mulDiv(availableLt, mulDiv(sqrtPmax, sqrtPspot, ONE), sqrtPmax - sqrtPspot)
+      : UINT_256_MAX
 
   const lFromGt =
     sqrtPspot > sqrtPmin ? mulDiv(availableGt, ONE, sqrtPspot - sqrtPmin) : UINT_256_MAX
@@ -47,7 +46,7 @@ export function computeLiquidityFromAmounts(
 
 /**
  * Compute the initial balances for given L, P_spot, P_min, P_max:
- *   bLt = L * (1/sqrtPspot - 1/sqrtPmax)
+ *   bLt = L * (sqrtPmax - sqrtPspot) / (sqrtPmax * sqrtPspot / ONE)
  *   bGt = L * (sqrtPspot - sqrtPmin)
  *
  * Mirrors XYCConcentrateArgsBuilder.computeBalances in XYCConcentrate.sol.
@@ -68,9 +67,10 @@ export function computeBalances(
     throw new Error('sqrtPmax should be greater than sqrtPmin')
   }
 
-  const invSqrtPspot = mulDiv(ONE, ONE, sqrtPspot)
-  const invSqrtPmax = mulDiv(ONE, ONE, sqrtPmax)
-  const bLt = invSqrtPspot > invSqrtPmax ? mulDiv(targetL, invSqrtPspot - invSqrtPmax, ONE) : 0n
+  const bLt =
+    sqrtPmax > sqrtPspot
+      ? mulDiv(targetL, sqrtPmax - sqrtPspot, mulDiv(sqrtPmax, sqrtPspot, ONE))
+      : 0n
   const bGt = sqrtPspot > sqrtPmin ? mulDiv(targetL, sqrtPspot - sqrtPmin, ONE) : 0n
 
   return { bLt, bGt }

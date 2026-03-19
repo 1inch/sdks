@@ -318,7 +318,7 @@ describe('SwapVM', () => {
 
     const price = +formatUnits(srcAmount, 6) / +formatUnits(dstAmount, 18)
 
-    expect(price).to.equal(2500.000263931784)
+    expect(price).to.equal(2500.0002639315903)
   })
 
   test('should swap by AquaXYCAmmStrategy Concentrated (2000 - 3000 range) with 2500 spot price (WETH -> USDC)', async () => {
@@ -431,8 +431,8 @@ describe('SwapVM', () => {
 
     const swap = swapVM.swap(swapParams)
 
-    const { txHash: swapTxHash } = await swapper.send({ ...swap, allowFail: true })
-    await forkNode.printTrace(swapTxHash)
+    const { txHash: _swapTxHash } = await swapper.send({ ...swap, allowFail: false })
+    // await forkNode.printTrace(swapTxHash)
 
     const providerWethBalanceAfter = await getAquaBalance(
       liqProviderAddress,
