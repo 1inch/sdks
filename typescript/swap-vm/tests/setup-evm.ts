@@ -262,15 +262,28 @@ async function setupBalances(
   )
   await daiDonor.transferToken(ADDRESSES.DAI, await swapper.getAddress(), parseUnits('100000', 18))
 
+  const usdtDonor = await TestWallet.fromAddress(ADDRESSES.USDT_DONOR, transport, chain)
+  await liqProvider.unlimitedApprove(ADDRESSES.USDT, addresses.aqua)
+  await usdtDonor.transferToken(
+    ADDRESSES.USDT,
+    await liqProvider.getAddress(),
+    parseUnits('1000000', 6),
+  )
+  // swapper have USDT
+  await usdtDonor.transferToken(ADDRESSES.USDT, await swapper.getAddress(), parseUnits('100000', 6))
+  await swapper.unlimitedApprove(ADDRESSES.USDT, addresses.swapVMAquaRouter)
+
   console.log('swapper address is', await swapper.getAddress())
   console.log('swapper USDC balance is', await swapper.tokenBalance(ADDRESSES.USDC))
   console.log('swapper DAI balance is', await swapper.tokenBalance(ADDRESSES.DAI))
   console.log('swapper WETH balance is', await swapper.tokenBalance(ADDRESSES.WETH))
+  console.log('swapper USDT balance is', await swapper.tokenBalance(ADDRESSES.USDT))
 
   console.log('liquidity provider address is', await liqProvider.getAddress())
   console.log('liquidity provider USDC balance is', await liqProvider.tokenBalance(ADDRESSES.USDC))
   console.log('liquidity provider DAI balance is', await liqProvider.tokenBalance(ADDRESSES.DAI))
   console.log('liquidity provider WETH balance is', await liqProvider.tokenBalance(ADDRESSES.WETH))
+  console.log('liquidity provider USDT balance is', await liqProvider.tokenBalance(ADDRESSES.USDT))
 }
 
 /**
