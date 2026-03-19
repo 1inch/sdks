@@ -52,7 +52,7 @@
   "devDependencies": {
     "@1inch/aqua": "github:1inch/aqua#af53fc31b636c683a6b72cf4755f5aad089c12e8",
     "@1inch/eslint-config": "^3.0.8",
-    "@1inch/swap-vm": "github:1inch/swap-vm#810112bf9aeee162840a048f09327cbe95784072",
+    "@1inch/swap-vm": "github:1inch/swap-vm#4838fcbccf5c122933957aafb1e767d516cf9e2d",
     "@1inch/tsconfig": "^1.0.12",
     "@nx/devkit": "^22.1.1",
     "@nx/eslint": "^22.1.1",
