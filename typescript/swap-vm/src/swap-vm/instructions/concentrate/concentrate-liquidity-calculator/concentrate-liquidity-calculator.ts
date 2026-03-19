@@ -11,6 +11,15 @@ import type {
 import { bigintSqrt } from '../bigint-sqrt'
 import { computeLiquidityFromAmounts } from '../concentrate-liquidity-math/concentrate-liquidity-math'
 
+/**
+ * Calculator for concentrated liquidity: given two tokens and a price range (min, spot, max),
+ * computes sqrt prices and token reserves for "max allocation" (use all available balances)
+ * or "fixed allocation" (fix one token amount and solve for the other).
+ *
+ * Token ordering follows the pool convention: token0 = lower address, token1 = higher address.
+ * Prices are supplied as ScaledPrices (quote token + raw-scaled min/spot/max); they are
+ * converted internally to P = token1/token0 in 1e18 and then to sqrt(P) for the math.
+ */
 export class ConcentrateLiquidityCalculator {
   static readonly ONE_E18 = 10n ** 18n
 
@@ -19,10 +28,16 @@ export class ConcentrateLiquidityCalculator {
     private readonly tokenB: ConcentrateTokenInfo,
   ) {}
 
+  /**
+   * Token with the smaller address (token0 in pool convention; "Lt" in the math).
+   */
   get token0(): ConcentrateTokenInfo {
     return this.tokenA.address.lt(this.tokenB.address) ? this.tokenA : this.tokenB
   }
 
+  /**
+   * Token with the larger address (token1 in pool convention; "Gt" in the math).
+   */
   get token1(): ConcentrateTokenInfo {
     return this.tokenA.address.lt(this.tokenB.address) ? this.tokenB : this.tokenA
   }
@@ -31,16 +46,24 @@ export class ConcentrateLiquidityCalculator {
     return new ConcentrateLiquidityCalculator(data.tokenA, data.tokenB)
   }
 
+  /**
+   * Compute reserves when one token amount is fixed: the position uses exactly
+   * `fixedReserve` of `fixedReserveForToken` and the other token amount is derived
+   * to keep the same liquidity L. Returns sqrt prices and token0/token1
+   * reserves (raw amounts).
+   * Due to integer math (floor division, sqrt), the fixed asset amount in the result
+   * may be less than requested by a few wei.
+   */
   computeFixedAllocation(
     scaledPrices: ScaledPrices,
     fixedReserveForToken: Address,
     fixedReserve: bigint,
   ): ConcentratedLiquidityInfo {
-    const { rawPriceMin, rawPriceSpot, rawPriceMax } = this.computeRawPrices(scaledPrices)
+    const { minPriceRaw, spotPriceRaw, maxPriceRaw } = this.computeRawPrices(scaledPrices)
 
-    const sqrtPriceMin = bigintSqrt(rawPriceMin * ConcentrateLiquidityCalculator.ONE_E18)
-    const sqrtPriceSpot = bigintSqrt(rawPriceSpot * ConcentrateLiquidityCalculator.ONE_E18)
-    const sqrtPriceMax = bigintSqrt(rawPriceMax * ConcentrateLiquidityCalculator.ONE_E18)
+    const sqrtPriceMin = bigintSqrt(minPriceRaw * ConcentrateLiquidityCalculator.ONE_E18)
+    const sqrtPriceSpot = bigintSqrt(spotPriceRaw * ConcentrateLiquidityCalculator.ONE_E18)
+    const sqrtPriceMax = bigintSqrt(maxPriceRaw * ConcentrateLiquidityCalculator.ONE_E18)
 
     const isFixedLt = fixedReserveForToken.equal(this.token0.address)
 
@@ -64,12 +87,18 @@ export class ConcentrateLiquidityCalculator {
     }
   }
 
+  /**
+   * Compute reserves when both token amounts are taken from token info: uses
+   * token0.maxAvailableLiquidity and token1.maxAvailableLiquidity to maximize
+   * L. Returns sqrt prices and the token0/token1 reserves that achieve
+   * that maximum.
+   */
   computeMaxAllocation(scaledPrices: ScaledPrices): ConcentratedLiquidityInfo {
-    const { rawPriceMin, rawPriceSpot, rawPriceMax } = this.computeRawPrices(scaledPrices)
+    const { minPriceRaw, spotPriceRaw, maxPriceRaw } = this.computeRawPrices(scaledPrices)
 
-    const sqrtPriceMin = bigintSqrt(rawPriceMin * ConcentrateLiquidityCalculator.ONE_E18)
-    const sqrtPriceSpot = bigintSqrt(rawPriceSpot * ConcentrateLiquidityCalculator.ONE_E18)
-    const sqrtPriceMax = bigintSqrt(rawPriceMax * ConcentrateLiquidityCalculator.ONE_E18)
+    const sqrtPriceMin = bigintSqrt(minPriceRaw * ConcentrateLiquidityCalculator.ONE_E18)
+    const sqrtPriceSpot = bigintSqrt(spotPriceRaw * ConcentrateLiquidityCalculator.ONE_E18)
+    const sqrtPriceMax = bigintSqrt(maxPriceRaw * ConcentrateLiquidityCalculator.ONE_E18)
 
     const { actualLt, actualGt } = computeLiquidityFromAmounts(
       this.token0.maxAvailableLiquidity,
@@ -88,10 +117,15 @@ export class ConcentrateLiquidityCalculator {
     }
   }
 
+  /**
+   * Convert user-facing ScaledPrices (quote-token raw scale) into internal
+   * raw prices P = token1/token0 (before sqrt), so that sqrt(P * 1e18) can be
+   * passed to the liquidity math. Handles both quote = token0 and quote = token1.
+   */
   private computeRawPrices(scaledPrices: ScaledPrices): {
-    rawPriceMin: bigint
-    rawPriceSpot: bigint
-    rawPriceMax: bigint
+    minPriceRaw: bigint
+    spotPriceRaw: bigint
+    maxPriceRaw: bigint
   } {
     const token0 = this.token0
     const token1 = this.token1
@@ -100,17 +134,17 @@ export class ConcentrateLiquidityCalculator {
       const numerator = 10n ** token1.decimals * ConcentrateLiquidityCalculator.ONE_E18
 
       return {
-        rawPriceMin: numerator / scaledPrices.maxPriceRaw,
-        rawPriceSpot: numerator / scaledPrices.spotPriceRaw,
-        rawPriceMax: numerator / scaledPrices.minPriceRaw,
+        minPriceRaw: numerator / scaledPrices.maxPriceRaw,
+        spotPriceRaw: numerator / scaledPrices.spotPriceRaw,
+        maxPriceRaw: numerator / scaledPrices.minPriceRaw,
       }
     }
 
     if (scaledPrices.quoteToken.equal(token1.address)) {
       return {
-        rawPriceMin: scaledPrices.minPriceRaw * ConcentrateLiquidityCalculator.ONE_E18,
-        rawPriceSpot: scaledPrices.spotPriceRaw * ConcentrateLiquidityCalculator.ONE_E18,
-        rawPriceMax: scaledPrices.minPriceRaw * ConcentrateLiquidityCalculator.ONE_E18,
+        minPriceRaw: scaledPrices.minPriceRaw * ConcentrateLiquidityCalculator.ONE_E18,
+        spotPriceRaw: scaledPrices.spotPriceRaw * ConcentrateLiquidityCalculator.ONE_E18,
+        maxPriceRaw: scaledPrices.maxPriceRaw * ConcentrateLiquidityCalculator.ONE_E18,
       }
     }
 
