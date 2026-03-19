@@ -1,0 +1,122 @@
+# ConcentrateLiquidityCalculator
+
+Calculator for concentrated liquidity positions: given two tokens and a price range (min, spot, max), it computes sqrt prices and token reserves for use with the SwapVM concentrated liquidity instructions (e.g. `ConcentrateGrowLiquidity2D`).
+
+## Overview
+
+- **Token ordering**: Pool convention is token0 = lower address, token1 = higher address. The calculator derives token0/token1 from the two tokens you pass (order of tokenA/tokenB does not matter).
+- **Price convention**: User prices are expressed as “quote token per 1 unit of the other token”, scaled by the quote token’s decimals (`priceRaw = humanPrice * 10^decimalsQuote`). The calculator converts these to internal P = token1/token0 and then to sqrt(P) in 1e18 for the underlying math.
+- **Two modes**:
+  - **Max allocation**: Use all available balances (from `ConcentrateTokenInfo.maxAvailableLiquidity`) to maximize liquidity L.
+  - **Fixed allocation**: Fix the amount of one token; the other token amount is computed so that the position has the same L.
+
+## Types
+
+### `ConcentrateTokenInfo`
+
+Per-token input:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `address` | `Address` | Token contract address (used for ordering and matching). |
+| `decimals` | `bigint` | Token decimals (e.g. 18n, 6n). |
+| `maxAvailableLiquidity` | `bigint` | Maximum raw amount the user is willing to allocate. Only used by `computeMaxAllocation`. |
+
+### `ScaledPrices`
+
+Price range in “raw” form. Each price is in units of **quote token raw amount per 1 unit of the other token** (i.e. already scaled by 10^decimals of the quote token).
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `quoteToken` | `Address` | Token in which prices are quoted (must be one of the two calculator tokens). |
+| `minPriceRaw` | `bigint` | Left (lowest) price bound, raw. |
+| `spotPriceRaw` | `bigint` | Current spot price, raw. |
+| `maxPriceRaw` | `bigint` | Right (highest) price bound, raw. |
+
+Constraint: `minPriceRaw < spotPriceRaw < maxPriceRaw`.
+
+### `ConcentratedLiquidityInfo`
+
+Result of an allocation: sqrt prices in 1e18 and reserves in raw token amounts.
+
+| Field | Type | Description                      |
+|-------|------|----------------------------------|
+| `sqrtPriceMin` | `bigint` | sqrt(P_min * 1e18).              |
+| `sqrtPriceSpot` | `bigint` | sqrt(P_spot * 1e18).             |
+| `sqrtPriceMax` | `bigint` | sqrt(P_max * 1e18).            |
+| `token0Reserve` | `bigint` | Raw amount of token0 to deposit. |
+| `token1Reserve` | `bigint` | Raw amount of token1 to deposit. |
+
+### `ConcentrateLiquidityCalculatorArgs`
+
+Constructor/factory input: the two tokens. Order is arbitrary.
+
+| Field | Type |
+|-------|------|
+| `tokenA` | `ConcentrateTokenInfo` |
+| `tokenB` | `ConcentrateTokenInfo` |
+
+## API
+
+### Creating a calculator
+
+```ts
+import { ConcentrateLiquidityCalculator } from '@1inch/swap-vm-sdk'
+
+const calculator = ConcentrateLiquidityCalculator.new({
+  tokenA: { address: usdcAddress, decimals: 6n, maxAvailableLiquidity: parseUnits('1000000', 6) },
+  tokenB: { address: wethAddress, decimals: 18n, maxAvailableLiquidity: parseUnits('400', 18) },
+})
+
+// token0 = lower address, token1 = higher address
+calculator.token0  // ConcentrateTokenInfo
+calculator.token1  // ConcentrateTokenInfo
+```
+
+### `computeMaxAllocation(scaledPrices)`
+
+Uses `token0.maxAvailableLiquidity` and `token1.maxAvailableLiquidity` to maximize L over the given range. Returns sqrt prices and the token0/token1 reserves that achieve that maximum.
+
+**Use case**: “Deposit all my available USDC and WETH into this range.”
+
+```ts
+const prices: ScaledPrices = {
+  quoteToken: wethAddress,
+  minPriceRaw: parseUnits('0.0003', 18),   // left bound
+  spotPriceRaw: parseUnits('0.0004', 18),  // spot
+  maxPriceRaw: parseUnits('0.0005', 18),   // right bound
+}
+
+const result = calculator.computeMaxAllocation(prices)
+// result.sqrtPriceMin, result.sqrtPriceSpot, result.sqrtPriceMax (1e18)
+// result.token0Reserve, result.token1Reserve (raw amounts)
+```
+
+### `computeFixedAllocation(scaledPrices, fixedReserveForToken, fixedReserve)`
+
+Fixes the amount of one token to `fixedReserve` and computes the required amount of the other token so that the position has the same liquidity L. Returns the same shape as `computeMaxAllocation`.
+
+**Precision**: Due to integer math (floor division, sqrt), the fixed asset amount in the result may be less than requested by a few wei.
+
+**Use case**: “I want to deposit exactly 1 WETH; how much USDC do I need?”
+
+```ts
+const result = calculator.computeFixedAllocation(
+  prices,
+  wethAddress,
+  parseUnits('1', 18),
+)
+// result.token0Reserve, result.token1Reserve are the two amounts to use
+```
+
+## Price scaling
+
+- User-facing prices are **quote token per 1 of the other token**, in **raw** form: `priceRaw = humanPrice * 10^decimalsQuote`.
+- Example: “2000 USDC per 1 WETH” with USDC (6 decimals) as quote → `minPriceRaw = 2000 * 10^6 = 2_000_000_000n`.
+- Example: “0.0005 WETH per 1 USDC” with WETH (18 decimals) as quote → `spotPriceRaw = 0.0005 * 10^18 = 5e14`.
+
+The calculator accepts either token as `quoteToken` and converts internally to P = token1/token0, then to sqrt(P * 1e18) for the concentrated liquidity math.
+
+## Relation to SwapVM
+
+The returned `ConcentratedLiquidityInfo` (sqrtPriceMin, sqrtPriceSpot, sqrtPriceMax, token0Reserve, token1Reserve) is designed to be mapped onto the arguments expected by the SwapVM concentrated liquidity instructions (e.g. `ConcentrateGrowLiquidity2DArgs` and the corresponding coders). token0/token1 here correspond to the pool’s Lt/Gt (lower/higher address) ordering used in the contract.
