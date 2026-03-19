@@ -19,8 +19,8 @@ importers:
         specifier: ^3.0.8
         version: 3.0.8(331c35d4ddb258f3f736329094e5daa0)
       '@1inch/swap-vm':
-        specifier: github:1inch/swap-vm#4838fcbccf5c122933957aafb1e767d516cf9e2d
-        version: https://codeload.github.com/1inch/swap-vm/tar.gz/4838fcbccf5c122933957aafb1e767d516cf9e2d(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)
+        specifier: github:1inch/swap-vm#a7293ca8dc393dffdbd253fe1f29ab2863715658
+        version: https://codeload.github.com/1inch/swap-vm/tar.gz/a7293ca8dc393dffdbd253fe1f29ab2863715658(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)
       '@1inch/tsconfig':
         specifier: ^1.0.12
         version: 1.0.12
@@ -258,8 +258,8 @@ packages:
   '@1inch/solidity-utils@6.9.7':
     resolution: {integrity: sha512-2vKx7+EGw+IS/UoyHW3+9d0TPb+F+018KEJ9sQVqMy9Xd3Q3VxypdSYklUgYF9YmrjNxRtCPTRll28sFEeqNiQ==}
 
-  '@1inch/swap-vm@https://codeload.github.com/1inch/swap-vm/tar.gz/4838fcbccf5c122933957aafb1e767d516cf9e2d':
-    resolution: {tarball: https://codeload.github.com/1inch/swap-vm/tar.gz/4838fcbccf5c122933957aafb1e767d516cf9e2d}
+  '@1inch/swap-vm@https://codeload.github.com/1inch/swap-vm/tar.gz/a7293ca8dc393dffdbd253fe1f29ab2863715658':
+    resolution: {tarball: https://codeload.github.com/1inch/swap-vm/tar.gz/a7293ca8dc393dffdbd253fe1f29ab2863715658}
     version: 0.0.6
 
   '@1inch/tsconfig@1.0.12':
@@ -5832,7 +5832,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@1inch/swap-vm@https://codeload.github.com/1inch/swap-vm/tar.gz/4838fcbccf5c122933957aafb1e767d516cf9e2d(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)':
+  '@1inch/swap-vm@https://codeload.github.com/1inch/swap-vm/tar.gz/a7293ca8dc393dffdbd253fe1f29ab2863715658(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)':
     dependencies:
       '@1inch/aqua': https://codeload.github.com/1inch/aqua/tar.gz/b51f3b6e3c02fa5208e1429f0f14706b025d9dd6(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)
       '@1inch/solidity-utils': 6.9.7(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)

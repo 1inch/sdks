@@ -557,6 +557,233 @@ describe('SwapVM', () => {
     expect(price).to.equal(2499.9975)
   })
 
+  test('should swap by AquaXYCAmmStrategy Concentrated (2000 - 3000 range) with 2500 spot price (USDT -> WETH)', async () => {
+    const liquidityProvider = forkNode.liqProvider
+    const swapper = forkNode.swapper
+
+    const aqua = new AquaProtocolContract(new Address(forkNode.addresses.aqua))
+    const swapVM = new SwapVMContract(new Address(forkNode.addresses.swapVMAquaRouter))
+
+    const USDT = new Address(ADDRESSES.USDT)
+    const WETH = new Address(ADDRESSES.WETH)
+    const USDT_DECIMALS = 6n
+    const WETH_DECIMALS = 18n
+
+    const calculator = ConcentrateLiquidityCalculator.new({
+      tokenA: {
+        address: WETH,
+        decimals: WETH_DECIMALS,
+        maxAvailableLiquidity: 400n * 10n ** WETH_DECIMALS,
+      },
+      tokenB: {
+        address: USDT,
+        decimals: USDT_DECIMALS,
+        maxAvailableLiquidity: 1_000_000n * 10n ** USDT_DECIMALS,
+      },
+    })
+
+    const info = calculator.computeMaxAllocation({
+      quoteToken: USDT,
+      minPriceRaw: 2000n * 10n ** (USDT_DECIMALS + WETH_DECIMALS),
+      spotPriceRaw: 2500n * 10n ** (USDT_DECIMALS + WETH_DECIMALS),
+      maxPriceRaw: 3000n * 10n ** (USDT_DECIMALS + WETH_DECIMALS),
+    })
+
+    const program = AquaXYCAmmStrategy.newConcentrate({
+      sqrtPriceMin: info.sqrtPriceMin,
+      sqrtPriceMax: info.sqrtPriceMax,
+    }).build()
+
+    const order = Order.new({
+      maker: new Address(liqProviderAddress),
+      program,
+      traits: MakerTraits.default(),
+    })
+
+    const strategyHash = order
+      .hash({
+        chainId: forkNode.chainId as NetworkEnum,
+        name: 'TestAquaSwapVMRouter',
+        version: '1.0',
+        verifyingContract: new Address(forkNode.addresses.swapVMAquaRouter),
+      })
+      .toString()
+
+    const tx = aqua.ship({
+      app: new Address(forkNode.addresses.swapVMAquaRouter),
+      strategy: order.encode(),
+      amountsAndTokens: [
+        {
+          token: calculator.token0.address,
+          amount: info.token0Reserve,
+        },
+        {
+          token: calculator.token1.address,
+          amount: info.token1Reserve,
+        },
+      ],
+    })
+
+    await liquidityProvider.send(tx)
+
+    const srcAmount = parseUnits('1', 6)
+
+    const swapParams = {
+      order,
+      amount: srcAmount,
+      takerTraits: TakerTraits.default(),
+      tokenIn: USDT,
+      tokenOut: WETH,
+    }
+
+    // Simulate the call to get the dstAmount
+    const simulateResult = await forkNode.provider.call({
+      account: swapperAddress,
+      ...swapVM.quote(swapParams),
+    })
+
+    const [_, dstAmount] = decodeFunctionResult({
+      abi: SWAP_VM_ABI,
+      functionName: 'quote',
+      data: simulateResult.data!,
+    })
+
+    const swap = swapVM.swap(swapParams)
+
+    await trackBalances(
+      swapper,
+      strategyHash,
+      swapParams.tokenIn,
+      swapParams.tokenOut,
+      swapParams.amount,
+      dstAmount,
+      async () => {
+        const { txHash } = await swapper.send({ ...swap, allowFail: false })
+
+        // await forkNode.printTrace(txHash)
+        return txHash
+      },
+    )
+
+    const price = +formatUnits(srcAmount, 6) / +formatUnits(dstAmount, 18)
+
+    expect(price).to.equal(2500.000263885709)
+  })
+
+  test('should swap by AquaXYCAmmStrategy Concentrated (2000 - 3000 range) with 2500 spot price (USDT -> WBTC)', async () => {
+    const liquidityProvider = forkNode.liqProvider
+    const swapper = forkNode.swapper
+
+    const aqua = new AquaProtocolContract(new Address(forkNode.addresses.aqua))
+    const swapVM = new SwapVMContract(new Address(forkNode.addresses.swapVMAquaRouter))
+
+    const USDT = new Address(ADDRESSES.USDT)
+    const WBTC = new Address(ADDRESSES.WBTC)
+    const USDT_DECIMALS = 6n
+    const WBTC_DECIMALS = 8n
+
+    const calculator = ConcentrateLiquidityCalculator.new({
+      tokenA: {
+        address: WBTC,
+        decimals: WBTC_DECIMALS,
+        maxAvailableLiquidity: 50n * 10n ** WBTC_DECIMALS,
+      },
+      tokenB: {
+        address: USDT,
+        decimals: USDT_DECIMALS,
+        maxAvailableLiquidity: 1_000_000n * 10n ** USDT_DECIMALS,
+      },
+    })
+
+    const info = calculator.computeMaxAllocation({
+      quoteToken: USDT,
+      minPriceRaw: 55_000n * 10n ** (USDT_DECIMALS + WBTC_DECIMALS),
+      spotPriceRaw: 60_000n * 10n ** (USDT_DECIMALS + WBTC_DECIMALS),
+      maxPriceRaw: 65_000n * 10n ** (USDT_DECIMALS + WBTC_DECIMALS),
+    })
+
+    const program = AquaXYCAmmStrategy.newConcentrate({
+      sqrtPriceMin: info.sqrtPriceMin,
+      sqrtPriceMax: info.sqrtPriceMax,
+    }).build()
+
+    const order = Order.new({
+      maker: new Address(liqProviderAddress),
+      program,
+      traits: MakerTraits.default(),
+    })
+
+    const strategyHash = order
+      .hash({
+        chainId: forkNode.chainId as NetworkEnum,
+        name: 'TestAquaSwapVMRouter',
+        version: '1.0',
+        verifyingContract: new Address(forkNode.addresses.swapVMAquaRouter),
+      })
+      .toString()
+
+    const tx = aqua.ship({
+      app: new Address(forkNode.addresses.swapVMAquaRouter),
+      strategy: order.encode(),
+      amountsAndTokens: [
+        {
+          token: calculator.token0.address,
+          amount: info.token0Reserve,
+        },
+        {
+          token: calculator.token1.address,
+          amount: info.token1Reserve,
+        },
+      ],
+    })
+
+    await liquidityProvider.send(tx)
+
+    const srcAmount = parseUnits('100', 6)
+
+    const swapParams = {
+      order,
+      amount: srcAmount,
+      takerTraits: TakerTraits.default(),
+      tokenIn: USDT,
+      tokenOut: WBTC,
+    }
+
+    // Simulate the call to get the dstAmount
+    const simulateResult = await forkNode.provider.call({
+      account: swapperAddress,
+      ...swapVM.quote(swapParams),
+    })
+
+    const [_, dstAmount] = decodeFunctionResult({
+      abi: SWAP_VM_ABI,
+      functionName: 'quote',
+      data: simulateResult.data!,
+    })
+
+    const swap = swapVM.swap(swapParams)
+
+    await trackBalances(
+      swapper,
+      strategyHash,
+      swapParams.tokenIn,
+      swapParams.tokenOut,
+      swapParams.amount,
+      dstAmount,
+      async () => {
+        const { txHash } = await swapper.send({ ...swap, allowFail: false })
+
+        // await forkNode.printTrace(txHash)
+
+        return txHash
+      },
+    )
+
+    const price = +formatUnits(srcAmount, 6) / +formatUnits(dstAmount, 8)
+
+    expect(price).to.equal(60000.60000600006)
+  })
+
   test('should swap by AquaXYCAmmStrategy Concentrated (2000 - 3000 range) and 30bps flat fees', async () => {
     const liquidityProvider = forkNode.liqProvider
     const swapper = forkNode.swapper
