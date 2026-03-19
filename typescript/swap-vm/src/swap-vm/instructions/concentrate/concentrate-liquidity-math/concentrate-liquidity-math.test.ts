@@ -3,13 +3,13 @@
 import { expect } from 'vitest'
 import { parseUnits } from 'viem'
 import { UINT_256_MAX } from '@1inch/byte-utils'
-import { ONE_E18 } from './concentrate-grow-liquidity-2d-args'
 import {
   computeBalances,
   computeLiquidityAndPrice,
   computeLiquidityFromAmounts,
 } from './concentrate-liquidity-math'
-import { bigintSqrt } from './bigint-sqrt'
+import { ONE_E18 } from '../concentrate-grow-liquidity-2d-args'
+import { bigintSqrt } from '../bigint-sqrt'
 
 describe('concentrate-liquidity-math', () => {
   describe('computeLiquidityAndPrice', () => {

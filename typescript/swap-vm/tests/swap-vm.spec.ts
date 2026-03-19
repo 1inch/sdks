@@ -21,11 +21,8 @@ import {
 } from '../src'
 import { SWAP_VM_ABI } from '../src/abi/SwapVM.abi.js'
 import { Opcode } from '../src/swap-vm/instructions/opcode.js'
-import {
-  bigintSqrt,
-  computeLiquidityFromAmounts,
-  ONE_E18,
-} from '../src/swap-vm/instructions/concentrate'
+
+import { ConcentrateLiquidityCalculator } from '../src/swap-vm/instructions/concentrate/concentrate-liquidity-calculator/concentrate-liquidity-calculator'
 
 describe('SwapVM', () => {
   let forkNode: ReadyEvmFork
@@ -200,28 +197,29 @@ describe('SwapVM', () => {
     const USDC_DECIMALS = 6n
     const WETH_DECIMALS = 18n
 
-    const rawPriceMin = (10n ** WETH_DECIMALS * ONE_E18) / (3000n * 10n ** USDC_DECIMALS)
-    const rawSpotPrice = (10n ** WETH_DECIMALS * ONE_E18) / (2500n * 10n ** USDC_DECIMALS)
-    const rawPriceMax = (10n ** WETH_DECIMALS * ONE_E18) / (2000n * 10n ** USDC_DECIMALS)
+    const calculator = ConcentrateLiquidityCalculator.new({
+      tokenA: {
+        address: WETH,
+        decimals: WETH_DECIMALS,
+        maxAvailableLiquidity: 400n * 10n ** WETH_DECIMALS,
+      },
+      tokenB: {
+        address: USDC,
+        decimals: USDC_DECIMALS,
+        maxAvailableLiquidity: 1_000_000n * 10n ** USDC_DECIMALS,
+      },
+    })
 
-    const sqrtPriceMin = bigintSqrt(rawPriceMin * ONE_E18)
-    const sqrtPriceSpot = bigintSqrt(rawSpotPrice * ONE_E18)
-    const sqrtPriceMax = bigintSqrt(rawPriceMax * ONE_E18)
-
-    const maxAvailableBalanceUSDC = parseUnits('1000000', 6)
-    const maxAvailableBalanceWETH = parseUnits('400', 18)
-
-    const { actualLt, actualGt } = computeLiquidityFromAmounts(
-      maxAvailableBalanceUSDC,
-      maxAvailableBalanceWETH,
-      sqrtPriceSpot,
-      sqrtPriceMin,
-      sqrtPriceMax,
-    )
+    const info = calculator.computeMaxAllocation({
+      quoteToken: USDC,
+      minPriceRaw: 2000n * 10n ** USDC_DECIMALS,
+      spotPriceRaw: 2500n * 10n ** USDC_DECIMALS,
+      maxPriceRaw: 3000n * 10n ** USDC_DECIMALS,
+    })
 
     const program = AquaXYCAmmStrategy.newConcentrate({
-      sqrtPriceMin,
-      sqrtPriceMax,
+      sqrtPriceMin: info.sqrtPriceMin,
+      sqrtPriceMax: info.sqrtPriceMax,
     }).build()
 
     const order = Order.new({
@@ -244,12 +242,12 @@ describe('SwapVM', () => {
       strategy: order.encode(),
       amountsAndTokens: [
         {
-          amount: actualLt,
-          token: USDC,
+          token: calculator.token0.address,
+          amount: info.token0Reserve,
         },
         {
-          amount: actualGt,
-          token: WETH,
+          token: calculator.token1.address,
+          amount: info.token1Reserve,
         },
       ],
     })
