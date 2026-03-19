@@ -131,7 +131,8 @@ export class ConcentrateLiquidityCalculator {
     const token1 = this.token1
 
     if (scaledPrices.quoteToken.equal(token0.address)) {
-      const numerator = 10n ** token1.decimals * ConcentrateLiquidityCalculator.ONE_E18
+      const numerator =
+        10n ** (token1.decimals + token1.decimals) * ConcentrateLiquidityCalculator.ONE_E18
 
       return {
         minPriceRaw: numerator / scaledPrices.maxPriceRaw,
@@ -141,10 +142,15 @@ export class ConcentrateLiquidityCalculator {
     }
 
     if (scaledPrices.quoteToken.equal(token1.address)) {
+      const denominator = 10n ** (token0.decimals + token0.decimals)
+
       return {
-        minPriceRaw: scaledPrices.minPriceRaw * ConcentrateLiquidityCalculator.ONE_E18,
-        spotPriceRaw: scaledPrices.spotPriceRaw * ConcentrateLiquidityCalculator.ONE_E18,
-        maxPriceRaw: scaledPrices.maxPriceRaw * ConcentrateLiquidityCalculator.ONE_E18,
+        minPriceRaw:
+          (scaledPrices.minPriceRaw * ConcentrateLiquidityCalculator.ONE_E18) / denominator,
+        spotPriceRaw:
+          (scaledPrices.spotPriceRaw * ConcentrateLiquidityCalculator.ONE_E18) / denominator,
+        maxPriceRaw:
+          (scaledPrices.maxPriceRaw * ConcentrateLiquidityCalculator.ONE_E18) / denominator,
       }
     }
 
