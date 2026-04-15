@@ -305,11 +305,11 @@ export class TakerTraits {
     flags = flags.setBit(TakerTraits.SHOULD_UNWRAP_BIT_FLAG, this.shouldUnwrap)
     flags = flags.setBit(
       TakerTraits.HAS_PRE_TRANSFER_IN_CALLBACK_BIT_FLAG,
-      this.preTransferInCallbackEnabled,
+      this.preTransferInCallbackEnabled || !this.preTransferInCallbackData.isEmpty(),
     )
     flags = flags.setBit(
       TakerTraits.HAS_PRE_TRANSFER_OUT_CALLBACK_BIT_FLAG,
-      this.preTransferOutCallbackEnabled,
+      this.preTransferOutCallbackEnabled || !this.preTransferOutCallbackData.isEmpty(),
     )
     flags = flags.setBit(TakerTraits.IS_STRICT_THRESHOLD_BIT_FLAG, this.strictThreshold)
     flags = flags.setBit(
