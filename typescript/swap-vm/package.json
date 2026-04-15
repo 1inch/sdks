@@ -1,6 +1,6 @@
 {
   "name": "@1inch/swap-vm-sdk",
-  "version": "0.1.2-rc.1",
+  "version": "0.1.2-rc.2",
   "description": "1inch Swap VM SDK",
   "author": "@1inch",
   "license": "LicenseRef-Degensoft-SwapVM-1.1",
