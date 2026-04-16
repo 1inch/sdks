@@ -14,16 +14,16 @@ import { Address, NetworkEnum } from '@1inch/sdk-core'
  * @see "../swap-vm/programs/aqua-program-builder"
  */
 export const AQUA_SWAP_VM_CONTRACT_ADDRESSES: Record<NetworkEnum, Address> = {
-  [NetworkEnum.ETHEREUM]: new Address('0x8fdd04dbf6111437b44bbca99c28882434e0958f'),
-  [NetworkEnum.BINANCE]: new Address('0x8fdd04dbf6111437b44bbca99c28882434e0958f'),
-  [NetworkEnum.POLYGON]: new Address('0x8fdd04dbf6111437b44bbca99c28882434e0958f'),
-  [NetworkEnum.ARBITRUM]: new Address('0x8fdd04dbf6111437b44bbca99c28882434e0958f'),
-  [NetworkEnum.AVALANCHE]: new Address('0x8fdd04dbf6111437b44bbca99c28882434e0958f'),
-  [NetworkEnum.GNOSIS]: new Address('0x8fdd04dbf6111437b44bbca99c28882434e0958f'),
-  [NetworkEnum.COINBASE]: new Address('0x8fdd04dbf6111437b44bbca99c28882434e0958f'),
-  [NetworkEnum.OPTIMISM]: new Address('0x8fdd04dbf6111437b44bbca99c28882434e0958f'),
-  [NetworkEnum.ZKSYNC]: new Address('0x8fdd04dbf6111437b44bbca99c28882434e0958f'),
-  [NetworkEnum.LINEA]: new Address('0x8fdd04dbf6111437b44bbca99c28882434e0958f'),
-  [NetworkEnum.UNICHAIN]: new Address('0x8fdd04dbf6111437b44bbca99c28882434e0958f'),
-  [NetworkEnum.SONIC]: new Address('0x8fdd04dbf6111437b44bbca99c28882434e0958f'),
+  [NetworkEnum.ETHEREUM]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
+  [NetworkEnum.BINANCE]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
+  [NetworkEnum.POLYGON]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
+  [NetworkEnum.ARBITRUM]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
+  [NetworkEnum.AVALANCHE]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
+  [NetworkEnum.GNOSIS]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
+  [NetworkEnum.COINBASE]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
+  [NetworkEnum.OPTIMISM]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
+  [NetworkEnum.ZKSYNC]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
+  [NetworkEnum.LINEA]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
+  [NetworkEnum.UNICHAIN]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
+  [NetworkEnum.SONIC]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
 }

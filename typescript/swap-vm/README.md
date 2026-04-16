@@ -523,18 +523,18 @@ The SDK includes pre-configured contract addresses of `AquaSwapVMRouter` for the
 
 | Network | Chain ID | Address |
 |---------|----------|---------|
-| Ethereum | 1 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://etherscan.io/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| BNB Chain | 56 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://bscscan.com/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| Polygon | 137 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://polygonscan.com/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| Arbitrum | 42161 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://arbiscan.io/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| Avalanche | 43114 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](http://snowscan.xyz/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| Gnosis | 100 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://gnosisscan.io/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| Coinbase Base | 8453 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://basescan.org/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| Optimism | 10 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://optimistic.etherscan.io/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| zkSync Era | 324 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://era.zksync.network/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| Linea | 59144 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://lineascan.build/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| Unichain | 1301 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://uniscan.xyz/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| Sonic | 146 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://sonicscan.org/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
+| Ethereum | 1 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://etherscan.io/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| BNB Chain | 56 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://bscscan.com/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Polygon | 137 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://polygonscan.com/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Arbitrum | 42161 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://arbiscan.io/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Avalanche | 43114 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](http://snowscan.xyz/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Gnosis | 100 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://gnosisscan.io/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Coinbase Base | 8453 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://basescan.org/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Optimism | 10 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://optimistic.etherscan.io/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| zkSync Era | 324 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://era.zksync.network/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Linea | 59144 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://lineascan.build/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Unichain | 1301 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://uniscan.xyz/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Sonic | 146 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://sonicscan.org/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
 
 Access addresses using:
 
