@@ -2,8 +2,10 @@
 
 import { describe, expect, it } from 'vitest'
 import { Address } from '@1inch/sdk-core'
+import { formatUnits } from 'viem'
 import { ConcentrateLiquidityCalculator } from './concentrate-liquidity-calculator'
-import type { ConcentrateTokenInfo, ScaledPriceBounds, ScaledPrices } from './types'
+import type { ConcentrateTokenInfo, PriceAllocationRange, PriceBounds } from './types'
+import { Price } from '../price'
 
 const USDC_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
 const WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
@@ -44,17 +46,32 @@ describe('ConcentrateLiquidityCalculator', () => {
   describe('computeMaxAllocation', () => {
     const maxUsdc = 1_000_000n * 10n ** 6n
     const maxWeth = 400n * 10n ** 18n
+    const multUsdcWeth = 10n ** 24n
 
     it('should return sqrt prices and reserves when quote is token0 (USDC)', () => {
+      const usdc = tokenInfo(USDC_ADDRESS, 6, maxUsdc)
+      const weth = tokenInfo(WETH_ADDRESS, 18, maxWeth)
+
       const calc = ConcentrateLiquidityCalculator.new({
-        tokenA: tokenInfo(USDC_ADDRESS, 6, maxUsdc),
-        tokenB: tokenInfo(WETH_ADDRESS, 18, maxWeth),
+        tokenA: usdc,
+        tokenB: weth,
       })
-      const prices: ScaledPrices = {
-        quoteToken: new Address(USDC_ADDRESS),
-        minPriceRaw: 2000n * 10n ** (6n + 18n),
-        spotPriceRaw: 2500n * 10n ** (6n + 18n),
-        maxPriceRaw: 3000n * 10n ** (6n + 18n),
+      const prices: PriceAllocationRange = {
+        minPrice: Price.fromHuman({
+          price: '2000',
+          quoteToken: usdc,
+          baseToken: weth,
+        }),
+        spotPrice: Price.fromHuman({
+          price: '2500',
+          quoteToken: usdc,
+          baseToken: weth,
+        }),
+        maxPrice: Price.fromHuman({
+          price: '3000',
+          quoteToken: usdc,
+          baseToken: weth,
+        }),
       }
 
       const result = calc.computeMaxAllocation(prices)
@@ -67,19 +84,33 @@ describe('ConcentrateLiquidityCalculator', () => {
     })
 
     it('should return same allocation when quote is token1 (WETH)', () => {
+      const usdc = tokenInfo(USDC_ADDRESS, 6, maxUsdc)
+      const weth = tokenInfo(WETH_ADDRESS, 18, maxWeth)
+
       const calc = ConcentrateLiquidityCalculator.new({
-        tokenA: tokenInfo(USDC_ADDRESS, 6, maxUsdc),
-        tokenB: tokenInfo(WETH_ADDRESS, 18, maxWeth),
+        tokenA: usdc,
+        tokenB: weth,
       })
       // 2000/2500/3000 USDC per 1 WETH <=> 1/3000, 1/2500, 1/2000 WETH per 1 USDC (min < spot < max)
-      const pricesToken1: ScaledPrices = {
-        quoteToken: new Address(WETH_ADDRESS),
-        minPriceRaw: 10n ** (18n + 6n) / 3000n,
-        spotPriceRaw: 10n ** (18n + 6n) / 2500n,
-        maxPriceRaw: 10n ** (18n + 6n) / 2000n,
+      const prices: PriceAllocationRange = {
+        minPrice: Price.fromHuman({
+          price: formatUnits(multUsdcWeth / 3000n, 24),
+          quoteToken: weth,
+          baseToken: usdc,
+        }),
+        spotPrice: Price.fromHuman({
+          price: formatUnits(multUsdcWeth / 2500n, 24),
+          quoteToken: weth,
+          baseToken: usdc,
+        }),
+        maxPrice: Price.fromHuman({
+          price: formatUnits(multUsdcWeth / 2000n, 24),
+          quoteToken: weth,
+          baseToken: usdc,
+        }),
       }
 
-      const result = calc.computeMaxAllocation(pricesToken1)
+      const result = calc.computeMaxAllocation(prices)
 
       expect(result.sqrtPriceMin).toBe(18257418583505537115223n)
       expect(result.sqrtPriceSpot).toBe(20000000000000000000000n)
@@ -94,15 +125,29 @@ describe('ConcentrateLiquidityCalculator', () => {
     const maxWeth = 500n * 10n ** 18n
 
     it('should compute reserves when token0 (USDC) amount is fixed', () => {
+      const usdc = tokenInfo(USDC_ADDRESS, 6, maxUsdc)
+      const weth = tokenInfo(WETH_ADDRESS, 18, maxWeth)
+
       const calc = ConcentrateLiquidityCalculator.new({
-        tokenA: tokenInfo(USDC_ADDRESS, 6, maxUsdc),
-        tokenB: tokenInfo(WETH_ADDRESS, 18, maxWeth),
+        tokenA: usdc,
+        tokenB: weth,
       })
-      const prices: ScaledPrices = {
-        quoteToken: new Address(USDC_ADDRESS),
-        minPriceRaw: 2000n * 10n ** (6n + 18n),
-        spotPriceRaw: 2500n * 10n ** (6n + 18n),
-        maxPriceRaw: 3000n * 10n ** (6n + 18n),
+      const prices: PriceAllocationRange = {
+        minPrice: Price.fromHuman({
+          price: '2000',
+          quoteToken: usdc,
+          baseToken: weth,
+        }),
+        spotPrice: Price.fromHuman({
+          price: '2500',
+          quoteToken: usdc,
+          baseToken: weth,
+        }),
+        maxPrice: Price.fromHuman({
+          price: '3000',
+          quoteToken: usdc,
+          baseToken: weth,
+        }),
       }
       const fixedUsdc = 1_000_000n * 10n ** 6n
 
@@ -116,15 +161,29 @@ describe('ConcentrateLiquidityCalculator', () => {
     })
 
     it('should compute reserves when token1 (WETH) amount is fixed', () => {
+      const usdc = tokenInfo(USDC_ADDRESS, 6, maxUsdc)
+      const weth = tokenInfo(WETH_ADDRESS, 18, maxWeth)
+
       const calc = ConcentrateLiquidityCalculator.new({
-        tokenA: tokenInfo(USDC_ADDRESS, 6, maxUsdc),
-        tokenB: tokenInfo(WETH_ADDRESS, 18, maxWeth),
+        tokenA: usdc,
+        tokenB: weth,
       })
-      const prices: ScaledPrices = {
-        quoteToken: new Address(USDC_ADDRESS),
-        minPriceRaw: 2000n * 10n ** (6n + 18n),
-        spotPriceRaw: 2500n * 10n ** (6n + 18n),
-        maxPriceRaw: 3000n * 10n ** (6n + 18n),
+      const prices: PriceAllocationRange = {
+        minPrice: Price.fromHuman({
+          price: '2000',
+          quoteToken: usdc,
+          baseToken: weth,
+        }),
+        spotPrice: Price.fromHuman({
+          price: '2500',
+          quoteToken: usdc,
+          baseToken: weth,
+        }),
+        maxPrice: Price.fromHuman({
+          price: '3000',
+          quoteToken: usdc,
+          baseToken: weth,
+        }),
       }
       const fixedWeth = 100n * 10n ** 18n
 
@@ -154,16 +213,29 @@ describe('ConcentrateLiquidityCalculator', () => {
     })
 
     it('should compute max allocation when quote is token1 (MUSD)', () => {
+      const musd = tokenInfo(MUSD_ADDRESS, decimals, maxMUSD)
+      const weth = tokenInfo(WETH_ADDRESS, decimals, maxWeth)
+
       const calc = ConcentrateLiquidityCalculator.new({
-        tokenA: tokenInfo(MUSD_ADDRESS, decimals, maxMUSD),
-        tokenB: tokenInfo(WETH_ADDRESS, decimals, maxWeth),
+        tokenA: musd,
+        tokenB: weth,
       })
-      // e.g. 2000 / 2500 / 3000 MUSD per 1 WETH
-      const prices: ScaledPrices = {
-        quoteToken: new Address(MUSD_ADDRESS),
-        minPriceRaw: 2000n * multiplier,
-        spotPriceRaw: 2500n * multiplier,
-        maxPriceRaw: 3000n * multiplier,
+      const prices: PriceAllocationRange = {
+        minPrice: Price.fromHuman({
+          price: '2000',
+          quoteToken: musd,
+          baseToken: weth,
+        }),
+        spotPrice: Price.fromHuman({
+          price: '2500',
+          quoteToken: musd,
+          baseToken: weth,
+        }),
+        maxPrice: Price.fromHuman({
+          price: '3000',
+          quoteToken: musd,
+          baseToken: weth,
+        }),
       }
 
       const result = calc.computeMaxAllocation(prices)
@@ -176,16 +248,30 @@ describe('ConcentrateLiquidityCalculator', () => {
     })
 
     it('should compute max allocation when quote is token0 (WETH)', () => {
+      const musd = tokenInfo(MUSD_ADDRESS, decimals, maxMUSD)
+      const weth = tokenInfo(WETH_ADDRESS, decimals, maxWeth)
+
       const calc = ConcentrateLiquidityCalculator.new({
-        tokenA: tokenInfo(MUSD_ADDRESS, decimals, maxMUSD),
-        tokenB: tokenInfo(WETH_ADDRESS, decimals, maxWeth),
+        tokenA: musd,
+        tokenB: weth,
       })
       // 1/3000, 1/2500, 1/2000 WETH per 1 MUSD (same range as above)
-      const prices: ScaledPrices = {
-        quoteToken: new Address(WETH_ADDRESS),
-        minPriceRaw: multiplier / 3000n,
-        spotPriceRaw: multiplier / 2500n,
-        maxPriceRaw: multiplier / 2000n,
+      const prices: PriceAllocationRange = {
+        minPrice: Price.fromHuman({
+          price: formatUnits(multiplier / 3000n, 36),
+          quoteToken: weth,
+          baseToken: musd,
+        }),
+        spotPrice: Price.fromHuman({
+          price: formatUnits(multiplier / 2500n, 36),
+          quoteToken: weth,
+          baseToken: musd,
+        }),
+        maxPrice: Price.fromHuman({
+          price: formatUnits(multiplier / 2000n, 36),
+          quoteToken: weth,
+          baseToken: musd,
+        }),
       }
 
       const result = calc.computeMaxAllocation(prices)
@@ -198,15 +284,29 @@ describe('ConcentrateLiquidityCalculator', () => {
     })
 
     it('should compute fixed allocation when token1 (MUSD) amount is fixed', () => {
+      const musd = tokenInfo(MUSD_ADDRESS, decimals, maxMUSD)
+      const weth = tokenInfo(WETH_ADDRESS, decimals, maxWeth)
+
       const calc = ConcentrateLiquidityCalculator.new({
-        tokenA: tokenInfo(MUSD_ADDRESS, decimals, maxMUSD),
-        tokenB: tokenInfo(WETH_ADDRESS, decimals, maxWeth),
+        tokenA: musd,
+        tokenB: weth,
       })
-      const prices: ScaledPrices = {
-        quoteToken: new Address(MUSD_ADDRESS),
-        minPriceRaw: 2000n * multiplier,
-        spotPriceRaw: 2500n * multiplier,
-        maxPriceRaw: 3000n * multiplier,
+      const prices: PriceAllocationRange = {
+        minPrice: Price.fromHuman({
+          price: '2000',
+          quoteToken: musd,
+          baseToken: weth,
+        }),
+        spotPrice: Price.fromHuman({
+          price: '2500',
+          quoteToken: musd,
+          baseToken: weth,
+        }),
+        maxPrice: Price.fromHuman({
+          price: '3000',
+          quoteToken: musd,
+          baseToken: weth,
+        }),
       }
       const fixedMUSD = 100_000n * 10n ** 18n
 
@@ -220,15 +320,29 @@ describe('ConcentrateLiquidityCalculator', () => {
     })
 
     it('should compute fixed allocation when token0 (WETH) amount is fixed', () => {
+      const musd = tokenInfo(MUSD_ADDRESS, decimals, maxMUSD)
+      const weth = tokenInfo(WETH_ADDRESS, decimals, maxWeth)
+
       const calc = ConcentrateLiquidityCalculator.new({
-        tokenA: tokenInfo(MUSD_ADDRESS, decimals, maxMUSD),
-        tokenB: tokenInfo(WETH_ADDRESS, decimals, maxWeth),
+        tokenA: musd,
+        tokenB: weth,
       })
-      const prices: ScaledPrices = {
-        quoteToken: new Address(MUSD_ADDRESS),
-        minPriceRaw: 2000n * multiplier,
-        spotPriceRaw: 2500n * multiplier,
-        maxPriceRaw: 3000n * multiplier,
+      const prices: PriceAllocationRange = {
+        minPrice: Price.fromHuman({
+          price: '2000',
+          quoteToken: musd,
+          baseToken: weth,
+        }),
+        spotPrice: Price.fromHuman({
+          price: '2500',
+          quoteToken: musd,
+          baseToken: weth,
+        }),
+        maxPrice: Price.fromHuman({
+          price: '3000',
+          quoteToken: musd,
+          baseToken: weth,
+        }),
       }
       const fixedWeth = 10n * 10n ** 18n
 
@@ -245,25 +359,38 @@ describe('ConcentrateLiquidityCalculator', () => {
   describe('computeSpotPrice', () => {
     const maxUsdc = 1_000_000n * 10n ** 6n
     const maxWeth = 400n * 10n ** 18n
-    const multiplier = 10n ** (6n + 18n)
+    const multUsdcWeth = 10n ** 24n
 
     it('should match concentrate-liquidity-math given scaled bounds (quote token0)', () => {
+      const usdc = tokenInfo(USDC_ADDRESS, 6, maxUsdc)
+      const weth = tokenInfo(WETH_ADDRESS, 18, maxWeth)
+
       const calc = ConcentrateLiquidityCalculator.new({
-        tokenA: tokenInfo(USDC_ADDRESS, 6, maxUsdc),
-        tokenB: tokenInfo(WETH_ADDRESS, 18, maxWeth),
+        tokenA: usdc,
+        tokenB: weth,
       })
-      const prices: ScaledPrices = {
-        quoteToken: new Address(USDC_ADDRESS),
-        minPriceRaw: 2000n * multiplier,
-        spotPriceRaw: 2500n * multiplier,
-        maxPriceRaw: 3000n * multiplier,
+      const prices: PriceAllocationRange = {
+        minPrice: Price.fromHuman({
+          price: '2000',
+          quoteToken: usdc,
+          baseToken: weth,
+        }),
+        spotPrice: Price.fromHuman({
+          price: '2500',
+          quoteToken: usdc,
+          baseToken: weth,
+        }),
+        maxPrice: Price.fromHuman({
+          price: '3000',
+          quoteToken: usdc,
+          baseToken: weth,
+        }),
       }
 
       const allocation = calc.computeMaxAllocation(prices)
-      const bounds: ScaledPriceBounds = {
-        quoteToken: prices.quoteToken,
-        minPriceRaw: prices.minPriceRaw,
-        maxPriceRaw: prices.maxPriceRaw,
+      const bounds: PriceBounds = {
+        minPrice: prices.minPrice,
+        maxPrice: prices.maxPrice,
       }
 
       const spot = calc.computeSpotPrice(allocation.token0Reserve, allocation.token1Reserve, bounds)
@@ -272,22 +399,35 @@ describe('ConcentrateLiquidityCalculator', () => {
     })
 
     it('should match concentrate-liquidity-math given scaled bounds (quote token1)', () => {
+      const usdc = tokenInfo(USDC_ADDRESS, 6, maxUsdc)
+      const weth = tokenInfo(WETH_ADDRESS, 18, maxWeth)
+
       const calc = ConcentrateLiquidityCalculator.new({
-        tokenA: tokenInfo(USDC_ADDRESS, 6, maxUsdc),
-        tokenB: tokenInfo(WETH_ADDRESS, 18, maxWeth),
+        tokenA: usdc,
+        tokenB: weth,
       })
-      const prices: ScaledPrices = {
-        quoteToken: new Address(WETH_ADDRESS),
-        minPriceRaw: multiplier / 3000n,
-        spotPriceRaw: multiplier / 2500n,
-        maxPriceRaw: multiplier / 2000n,
+      const prices: PriceAllocationRange = {
+        minPrice: Price.fromHuman({
+          price: formatUnits(multUsdcWeth / 3000n, 24),
+          quoteToken: weth,
+          baseToken: usdc,
+        }),
+        spotPrice: Price.fromHuman({
+          price: formatUnits(multUsdcWeth / 2500n, 24),
+          quoteToken: weth,
+          baseToken: usdc,
+        }),
+        maxPrice: Price.fromHuman({
+          price: formatUnits(multUsdcWeth / 2000n, 24),
+          quoteToken: weth,
+          baseToken: usdc,
+        }),
       }
 
       const allocation = calc.computeMaxAllocation(prices)
-      const bounds: ScaledPriceBounds = {
-        quoteToken: prices.quoteToken,
-        minPriceRaw: prices.minPriceRaw,
-        maxPriceRaw: prices.maxPriceRaw,
+      const bounds: PriceBounds = {
+        minPrice: prices.minPrice,
+        maxPrice: prices.maxPrice,
       }
 
       const spot = calc.computeSpotPrice(allocation.token0Reserve, allocation.token1Reserve, bounds)
@@ -297,14 +437,25 @@ describe('ConcentrateLiquidityCalculator', () => {
 
     it('should throw when quoteToken is neither token', () => {
       const otherAddress = '0x0000000000000000000000000000000000000001'
+      const usdc = tokenInfo(USDC_ADDRESS, 6, 0n)
+      const weth = tokenInfo(WETH_ADDRESS, 18, 0n)
+      const other = tokenInfo(otherAddress, 18, 0n)
+
       const calc = ConcentrateLiquidityCalculator.new({
-        tokenA: tokenInfo(USDC_ADDRESS, 6, 0n),
-        tokenB: tokenInfo(WETH_ADDRESS, 18, 0n),
+        tokenA: usdc,
+        tokenB: weth,
       })
-      const bounds: ScaledPriceBounds = {
-        quoteToken: new Address(otherAddress),
-        minPriceRaw: 2000n * multiplier,
-        maxPriceRaw: 3000n * multiplier,
+      const bounds: PriceBounds = {
+        minPrice: Price.fromHuman({
+          price: '2000',
+          quoteToken: other,
+          baseToken: usdc,
+        }),
+        maxPrice: Price.fromHuman({
+          price: '3000',
+          quoteToken: other,
+          baseToken: usdc,
+        }),
       }
 
       expect(() => calc.computeSpotPrice(1n, 1n, bounds)).toThrow('unknown quote token')
@@ -314,15 +465,30 @@ describe('ConcentrateLiquidityCalculator', () => {
   describe('computeRawPrices (via unknown quote)', () => {
     it('should throw when quoteToken is neither token', () => {
       const otherAddress = '0x0000000000000000000000000000000000000001'
+      const usdc = tokenInfo(USDC_ADDRESS, 6, 0n)
+      const weth = tokenInfo(WETH_ADDRESS, 18, 0n)
+      const other = tokenInfo(otherAddress, 18, 0n)
+
       const calc = ConcentrateLiquidityCalculator.new({
-        tokenA: tokenInfo(USDC_ADDRESS, 6, 0n),
-        tokenB: tokenInfo(WETH_ADDRESS, 18, 0n),
+        tokenA: usdc,
+        tokenB: weth,
       })
-      const prices: ScaledPrices = {
-        quoteToken: new Address(otherAddress),
-        minPriceRaw: 2000n * 10n ** (6n + 18n),
-        spotPriceRaw: 2500n * 10n ** (6n + 18n),
-        maxPriceRaw: 3000n * 10n ** (6n + 18n),
+      const prices: PriceAllocationRange = {
+        minPrice: Price.fromHuman({
+          price: '2000',
+          quoteToken: other,
+          baseToken: usdc,
+        }),
+        spotPrice: Price.fromHuman({
+          price: '2500',
+          quoteToken: other,
+          baseToken: usdc,
+        }),
+        maxPrice: Price.fromHuman({
+          price: '3000',
+          quoteToken: other,
+          baseToken: usdc,
+        }),
       }
 
       expect(() => calc.computeMaxAllocation(prices)).toThrow('unknown quote token')
