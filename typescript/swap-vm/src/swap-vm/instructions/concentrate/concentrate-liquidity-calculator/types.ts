@@ -24,6 +24,12 @@ export type ScaledPrices = {
 }
 
 /**
+ * Price range only (no spot): same scaling and quote convention as {@link ScaledPrices}.
+ * Used when deriving spot from balances and bounds.
+ */
+export type ScaledPriceBounds = Pick<ScaledPrices, 'quoteToken' | 'minPriceRaw' | 'maxPriceRaw'>
+
+/**
  * Result of allocation: sqrt prices and the token0/token1 reserves
  * (raw amounts) to use for the concentrated liquidity position.
  */

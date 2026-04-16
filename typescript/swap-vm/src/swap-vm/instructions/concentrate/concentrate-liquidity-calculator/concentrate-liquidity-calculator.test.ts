@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest'
 import { Address } from '@1inch/sdk-core'
 import { ConcentrateLiquidityCalculator } from './concentrate-liquidity-calculator'
-import type { ConcentrateTokenInfo, ScaledPrices } from './types'
+import type { ConcentrateTokenInfo, ScaledPriceBounds, ScaledPrices } from './types'
 
 const USDC_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
 const WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
@@ -239,6 +239,75 @@ describe('ConcentrateLiquidityCalculator', () => {
       expect(result.sqrtPriceMax).toBe(54772255750516611345n)
       expect(result.token0Reserve).toBe(9999999999999999999n)
       expect(result.token1Reserve).toBe(30292073587145241674914n)
+    })
+  })
+
+  describe('computeSpotPrice', () => {
+    const maxUsdc = 1_000_000n * 10n ** 6n
+    const maxWeth = 400n * 10n ** 18n
+    const multiplier = 10n ** (6n + 18n)
+
+    it('should match concentrate-liquidity-math given scaled bounds (quote token0)', () => {
+      const calc = ConcentrateLiquidityCalculator.new({
+        tokenA: tokenInfo(USDC_ADDRESS, 6, maxUsdc),
+        tokenB: tokenInfo(WETH_ADDRESS, 18, maxWeth),
+      })
+      const prices: ScaledPrices = {
+        quoteToken: new Address(USDC_ADDRESS),
+        minPriceRaw: 2000n * multiplier,
+        spotPriceRaw: 2500n * multiplier,
+        maxPriceRaw: 3000n * multiplier,
+      }
+
+      const allocation = calc.computeMaxAllocation(prices)
+      const bounds: ScaledPriceBounds = {
+        quoteToken: prices.quoteToken,
+        minPriceRaw: prices.minPriceRaw,
+        maxPriceRaw: prices.maxPriceRaw,
+      }
+
+      const spot = calc.computeSpotPrice(allocation.token0Reserve, allocation.token1Reserve, bounds)
+
+      expect(spot).toBe(20000000000001729646634n)
+    })
+
+    it('should match concentrate-liquidity-math given scaled bounds (quote token1)', () => {
+      const calc = ConcentrateLiquidityCalculator.new({
+        tokenA: tokenInfo(USDC_ADDRESS, 6, maxUsdc),
+        tokenB: tokenInfo(WETH_ADDRESS, 18, maxWeth),
+      })
+      const prices: ScaledPrices = {
+        quoteToken: new Address(WETH_ADDRESS),
+        minPriceRaw: multiplier / 3000n,
+        spotPriceRaw: multiplier / 2500n,
+        maxPriceRaw: multiplier / 2000n,
+      }
+
+      const allocation = calc.computeMaxAllocation(prices)
+      const bounds: ScaledPriceBounds = {
+        quoteToken: prices.quoteToken,
+        minPriceRaw: prices.minPriceRaw,
+        maxPriceRaw: prices.maxPriceRaw,
+      }
+
+      const spot = calc.computeSpotPrice(allocation.token0Reserve, allocation.token1Reserve, bounds)
+
+      expect(spot).toBe(20000000000001729646631n)
+    })
+
+    it('should throw when quoteToken is neither token', () => {
+      const otherAddress = '0x0000000000000000000000000000000000000001'
+      const calc = ConcentrateLiquidityCalculator.new({
+        tokenA: tokenInfo(USDC_ADDRESS, 6, 0n),
+        tokenB: tokenInfo(WETH_ADDRESS, 18, 0n),
+      })
+      const bounds: ScaledPriceBounds = {
+        quoteToken: new Address(otherAddress),
+        minPriceRaw: 2000n * multiplier,
+        maxPriceRaw: 3000n * multiplier,
+      }
+
+      expect(() => calc.computeSpotPrice(1n, 1n, bounds)).toThrow('unknown quote token')
     })
   })
 

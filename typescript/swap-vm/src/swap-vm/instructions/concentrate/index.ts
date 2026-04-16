@@ -7,8 +7,11 @@ export {
   computeBalances,
   computeLiquidityAndPrice,
 } from './concentrate-liquidity-math/concentrate-liquidity-math'
+export { ConcentrateLiquidityCalculator } from './concentrate-liquidity-calculator/concentrate-liquidity-calculator'
 export type {
   ConcentrateTokenInfo,
+  ConcentrateLiquidityCalculatorArgs,
+  ScaledPriceBounds,
   ScaledPrices,
   ConcentratedLiquidityInfo,
 } from './concentrate-liquidity-calculator/types'

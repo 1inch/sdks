@@ -6,10 +6,14 @@ import type {
   ConcentratedLiquidityInfo,
   ConcentrateLiquidityCalculatorArgs,
   ConcentrateTokenInfo,
+  ScaledPriceBounds,
   ScaledPrices,
 } from './types'
 import { bigintSqrt } from '../bigint-sqrt'
-import { computeLiquidityFromAmounts } from '../concentrate-liquidity-math/concentrate-liquidity-math'
+import {
+  computeLiquidityAndPrice,
+  computeLiquidityFromAmounts,
+} from '../concentrate-liquidity-math/concentrate-liquidity-math'
 
 /**
  * Calculator for concentrated liquidity: given two tokens and a price range (min, spot, max),
@@ -118,6 +122,30 @@ export class ConcentrateLiquidityCalculator {
   }
 
   /**
+   * Implied spot sqrt price from token0/token1 balances and a scaled price range
+   * (same convention as {@link computeMaxAllocation}). Inverse of the allocation math; wraps
+   * {@link computeLiquidityAndPrice} from concentrate-liquidity-math.
+   *
+   * @returns sqrt(P_spot) in 1e18 fixed-point (same as {@link ConcentratedLiquidityInfo.sqrtPriceSpot}).
+   */
+  computeSpotPrice(
+    token0Balance: bigint,
+    token1Balance: bigint,
+    scaledPriceBounds: ScaledPriceBounds,
+  ): bigint {
+    const { sqrtPriceMin, sqrtPriceMax } = this.computeSqrtPriceBounds(scaledPriceBounds)
+
+    const { sqrtPriceSpot } = computeLiquidityAndPrice(
+      token0Balance,
+      token1Balance,
+      sqrtPriceMin,
+      sqrtPriceMax,
+    )
+
+    return sqrtPriceSpot
+  }
+
+  /**
    * Convert user-facing ScaledPrices (scale 10^(token0Decimals+token1Decimals)) into internal
    * raw prices P = token1/token0 (before sqrt), so that sqrt(P * 1e18) can be
    * passed to the liquidity math. Handles both quote = token0 and quote = token1.
@@ -127,6 +155,8 @@ export class ConcentrateLiquidityCalculator {
     spotPriceRaw: bigint
     maxPriceRaw: bigint
   } {
+    const { minPriceRaw, maxPriceRaw } = this.computeRawPriceBounds(scaledPrices)
+
     const token0 = this.token0
     const token1 = this.token1
 
@@ -135,9 +165,9 @@ export class ConcentrateLiquidityCalculator {
         10n ** (token1.decimals + token1.decimals) * ConcentrateLiquidityCalculator.ONE_E18
 
       return {
-        minPriceRaw: numerator / scaledPrices.maxPriceRaw,
+        minPriceRaw,
         spotPriceRaw: numerator / scaledPrices.spotPriceRaw,
-        maxPriceRaw: numerator / scaledPrices.minPriceRaw,
+        maxPriceRaw,
       }
     }
 
@@ -145,12 +175,56 @@ export class ConcentrateLiquidityCalculator {
       const denominator = 10n ** (token0.decimals + token0.decimals)
 
       return {
-        minPriceRaw:
-          (scaledPrices.minPriceRaw * ConcentrateLiquidityCalculator.ONE_E18) / denominator,
+        minPriceRaw,
         spotPriceRaw:
           (scaledPrices.spotPriceRaw * ConcentrateLiquidityCalculator.ONE_E18) / denominator,
+        maxPriceRaw,
+      }
+    }
+
+    throw new Error('unknown quote token')
+  }
+
+  private computeSqrtPriceBounds(scaledPriceBounds: ScaledPriceBounds): {
+    sqrtPriceMin: bigint
+    sqrtPriceMax: bigint
+  } {
+    const { minPriceRaw, maxPriceRaw } = this.computeRawPriceBounds(scaledPriceBounds)
+
+    return {
+      sqrtPriceMin: bigintSqrt(minPriceRaw * ConcentrateLiquidityCalculator.ONE_E18),
+      sqrtPriceMax: bigintSqrt(maxPriceRaw * ConcentrateLiquidityCalculator.ONE_E18),
+    }
+  }
+
+  /**
+   * Internal P = token1/token0 (1e18) from scaled min/max only (same mapping as {@link computeRawPrices}).
+   */
+  private computeRawPriceBounds(scaledPriceBounds: ScaledPriceBounds): {
+    minPriceRaw: bigint
+    maxPriceRaw: bigint
+  } {
+    const token0 = this.token0
+    const token1 = this.token1
+
+    if (scaledPriceBounds.quoteToken.equal(token0.address)) {
+      const numerator =
+        10n ** (token1.decimals + token1.decimals) * ConcentrateLiquidityCalculator.ONE_E18
+
+      return {
+        minPriceRaw: numerator / scaledPriceBounds.maxPriceRaw,
+        maxPriceRaw: numerator / scaledPriceBounds.minPriceRaw,
+      }
+    }
+
+    if (scaledPriceBounds.quoteToken.equal(token1.address)) {
+      const denominator = 10n ** (token0.decimals + token0.decimals)
+
+      return {
+        minPriceRaw:
+          (scaledPriceBounds.minPriceRaw * ConcentrateLiquidityCalculator.ONE_E18) / denominator,
         maxPriceRaw:
-          (scaledPrices.maxPriceRaw * ConcentrateLiquidityCalculator.ONE_E18) / denominator,
+          (scaledPriceBounds.maxPriceRaw * ConcentrateLiquidityCalculator.ONE_E18) / denominator,
       }
     }
 
