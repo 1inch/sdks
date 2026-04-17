@@ -13,7 +13,6 @@ export { PriceRange } from './price-range'
 export type { PriceRangeJSON } from './price-range'
 export { TokenReserve } from './token-reserve'
 export type { TokenReserveArgs, TokenReserveJSON } from './token-reserve'
-export { ConcentrateLiquidityCalculator } from './concentrate-liquidity-calculator/concentrate-liquidity-calculator'
 export type {
   ConcentrateTokenInfo,
   ConcentrateLiquidityCalculatorArgs,
