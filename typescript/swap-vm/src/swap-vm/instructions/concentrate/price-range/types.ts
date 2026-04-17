@@ -26,3 +26,8 @@ export type PriceRangeJSON = {
   spotPrice: PriceJSON
   maxPrice: PriceJSON
 }
+
+export type SortedReserves = {
+  reserve0: TokenReserve
+  reserve1: TokenReserve
+}
