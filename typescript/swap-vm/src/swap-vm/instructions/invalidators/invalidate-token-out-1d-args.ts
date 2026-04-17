@@ -2,10 +2,11 @@
 
 import type { HexString } from '@1inch/sdk-core'
 import { InvalidateTokenOut1DArgsCoder } from './invalidate-token-out-1d-args-coder'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../types'
 
 export class InvalidateTokenOut1DArgs implements IArgsData {
-  public static readonly CODER = new InvalidateTokenOut1DArgsCoder()
+  public static readonly CODER: IArgsCoder<InvalidateTokenOut1DArgs> =
+    new InvalidateTokenOut1DArgsCoder()
 
   constructor() {}
 

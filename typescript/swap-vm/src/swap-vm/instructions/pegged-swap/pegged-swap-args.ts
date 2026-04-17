@@ -6,7 +6,7 @@ import assert from 'assert'
 import { PeggedSwapArgsCoder } from './pegged-swap-args-coder'
 import type { PeggedTokenInfo } from './types'
 import { resolveRate } from './rate-resolver'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../types'
 
 /**
  * Arguments for PeggedSwap._peggedSwapGrowPriceRange2D.
@@ -14,7 +14,7 @@ import type { IArgsData } from '../types'
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/PeggedSwap.sol
  **/
 export class PeggedSwapArgs implements IArgsData {
-  public static readonly CODER = new PeggedSwapArgsCoder()
+  public static readonly CODER: IArgsCoder<PeggedSwapArgs> = new PeggedSwapArgsCoder()
 
   /**
    * x0 - Initial X reserve (normalization factor) = initial_balance_X * rateLt (or rateGt)

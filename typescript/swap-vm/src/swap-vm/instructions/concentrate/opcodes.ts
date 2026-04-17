@@ -7,7 +7,7 @@ import { Opcode } from '../opcode'
  * Concentrates liquidity within price bounds for two tokens
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/XYCConcentrate.sol#L172
  **/
-export const concentrateGrowLiquidity2D = new Opcode(
+export const concentrateGrowLiquidity2D: Opcode<ConcentrateGrowLiquidity2DArgs> = new Opcode(
   Symbol('XYCConcentrate.concentrateGrowLiquidity2D'),
   ConcentrateGrowLiquidity2DArgs.CODER,
 )

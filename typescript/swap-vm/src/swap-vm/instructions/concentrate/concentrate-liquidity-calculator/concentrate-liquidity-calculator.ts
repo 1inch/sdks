@@ -25,7 +25,7 @@ import {
  * converted internally to P = token1/token0 in 1e18 and then to sqrt(P * 1e18) for the math.
  */
 export class ConcentrateLiquidityCalculator {
-  static readonly ONE_E18 = 10n ** 18n
+  static readonly ONE_E18: bigint = 10n ** 18n
 
   constructor(
     private readonly tokenA: ConcentrateTokenInfo,

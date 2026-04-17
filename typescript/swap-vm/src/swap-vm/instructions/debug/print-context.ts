@@ -19,7 +19,7 @@ class PrintContextArgsCoder implements IArgsCoder<PrintContextArgs> {
  * @see Debug._printContext in Solidity
  */
 export class PrintContextArgs extends DebugArgs {
-  public static readonly CODER = new PrintContextArgsCoder()
+  public static readonly CODER: IArgsCoder<PrintContextArgs> = new PrintContextArgsCoder()
 
   static decode(_data: HexString): PrintContextArgs {
     return PrintContextArgs.CODER.decode(_data)

@@ -5,9 +5,9 @@ import { UINT_256_MAX } from '@1inch/byte-utils'
 import assert from 'assert'
 import { ConcentrateGrowLiquidity2DArgsCoder } from './concentrate-grow-liquidity-2d-args-coder'
 import { bigintSqrt } from './bigint-sqrt'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../types'
 
-export const ONE_E18 = 10n ** 18n
+export const ONE_E18: bigint = 10n ** 18n
 
 /**
  * Arguments for concentrateGrowLiquidity2D instruction
@@ -16,7 +16,8 @@ export const ONE_E18 = 10n ** 18n
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/XYCConcentrate.sol#L172
  **/
 export class ConcentrateGrowLiquidity2DArgs implements IArgsData {
-  public static readonly CODER = new ConcentrateGrowLiquidity2DArgsCoder()
+  public static readonly CODER: IArgsCoder<ConcentrateGrowLiquidity2DArgs> =
+    new ConcentrateGrowLiquidity2DArgsCoder()
 
   constructor(
     public readonly sqrtPriceMin: bigint,

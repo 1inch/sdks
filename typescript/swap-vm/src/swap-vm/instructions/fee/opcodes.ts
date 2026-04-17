@@ -4,18 +4,20 @@ import { FlatFeeArgs } from './flat-fee/flat-fee-args'
 import { ProtocolFeeArgs } from './protocol-fee/protocol-fee-args'
 import { DynamicProtocolFeeArgs } from './dynamic-protocol-fee/dynamic-protocol-fee-args'
 import { Opcode } from '../opcode'
-
 /**
  * Applies fee to amountIn
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L72
  **/
-export const flatFeeAmountInXD = new Opcode(Symbol('Fee.flatFeeAmountInXD'), FlatFeeArgs.CODER)
+export const flatFeeAmountInXD: Opcode<FlatFeeArgs> = new Opcode(
+  Symbol('Fee.flatFeeAmountInXD'),
+  FlatFeeArgs.CODER,
+)
 
 /**
  * Protocol fee on amountIn (feeBps + to). Fee transferred from maker to recipient.
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L101
  **/
-export const protocolFeeAmountInXD = new Opcode(
+export const protocolFeeAmountInXD: Opcode<ProtocolFeeArgs> = new Opcode(
   Symbol('Fee.protocolFeeAmountInXD'),
   ProtocolFeeArgs.CODER,
 )
@@ -24,7 +26,7 @@ export const protocolFeeAmountInXD = new Opcode(
  * Protocol fee on amountIn for Aqua (feeBps + to). Pulls from maker's Aqua balance.
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L121
  **/
-export const aquaProtocolFeeAmountInXD = new Opcode(
+export const aquaProtocolFeeAmountInXD: Opcode<ProtocolFeeArgs> = new Opcode(
   Symbol('Fee.aquaProtocolFeeAmountInXD'),
   ProtocolFeeArgs.CODER,
 )
@@ -33,7 +35,7 @@ export const aquaProtocolFeeAmountInXD = new Opcode(
  * Dynamic protocol fee: args = feeProvider address (20 bytes).
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L148
  **/
-export const dynamicProtocolFeeAmountInXD = new Opcode(
+export const dynamicProtocolFeeAmountInXD: Opcode<DynamicProtocolFeeArgs> = new Opcode(
   Symbol('Fee.dynamicProtocolFeeAmountInXD'),
   DynamicProtocolFeeArgs.CODER,
 )
@@ -42,7 +44,7 @@ export const dynamicProtocolFeeAmountInXD = new Opcode(
  * Dynamic protocol fee for Aqua: args = feeProvider address (20 bytes).
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L197
  **/
-export const aquaDynamicProtocolFeeAmountInXD = new Opcode(
+export const aquaDynamicProtocolFeeAmountInXD: Opcode<DynamicProtocolFeeArgs> = new Opcode(
   Symbol('Fee.aquaDynamicProtocolFeeAmountInXD'),
   DynamicProtocolFeeArgs.CODER,
 )
@@ -53,7 +55,7 @@ export const aquaDynamicProtocolFeeAmountInXD = new Opcode(
  * Applies fee to amountOut
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/FeeExperimental.sol#L40
  **/
-export const flatFeeAmountOutXD = new Opcode(
+export const flatFeeAmountOutXD: Opcode<FlatFeeArgs> = new Opcode(
   Symbol('FeeExperimental.flatFeeAmountOutXD'),
   FlatFeeArgs.CODER,
 )
@@ -62,7 +64,7 @@ export const flatFeeAmountOutXD = new Opcode(
  * Applies progressive fee to amountIn
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/FeeExperimental.sol#L46
  **/
-export const progressiveFeeInXD = new Opcode(
+export const progressiveFeeInXD: Opcode<FlatFeeArgs> = new Opcode(
   Symbol('FeeExperimental.progressiveFeeInXD'),
   FlatFeeArgs.CODER,
 )
@@ -71,7 +73,7 @@ export const progressiveFeeInXD = new Opcode(
  * Applies progressive fee to amountOut
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/FeeExperimental.sol#L74
  **/
-export const progressiveFeeOutXD = new Opcode(
+export const progressiveFeeOutXD: Opcode<FlatFeeArgs> = new Opcode(
   Symbol('FeeExperimental.progressiveFeeOutXD'),
   FlatFeeArgs.CODER,
 )
@@ -80,7 +82,7 @@ export const progressiveFeeOutXD = new Opcode(
  * Protocol fee on amountOut (feeBps + to). Fee transferred from maker to recipient.
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/FeeExperimental.sol#L107
  **/
-export const protocolFeeAmountOutXD = new Opcode(
+export const protocolFeeAmountOutXD: Opcode<ProtocolFeeArgs> = new Opcode(
   Symbol('FeeExperimental.protocolFeeAmountOutXD'),
   ProtocolFeeArgs.CODER,
 )
@@ -89,7 +91,7 @@ export const protocolFeeAmountOutXD = new Opcode(
  * Protocol fee on amountOut (feeBps + to) for Aqua (feeBps + to). Pulls from maker's Aqua balance.
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/FeeExperimental.sol#L122
  **/
-export const aquaProtocolFeeAmountOutXD = new Opcode(
+export const aquaProtocolFeeAmountOutXD: Opcode<ProtocolFeeArgs> = new Opcode(
   Symbol('FeeExperimental.aquaProtocolFeeAmountOutXD'),
   ProtocolFeeArgs.CODER,
 )

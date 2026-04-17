@@ -5,7 +5,7 @@ import { UINT_16_MAX, UINT_40_MAX } from '@1inch/byte-utils'
 import { UINT_64_MAX } from '@1inch/byte-utils/dist/constants'
 import assert from 'assert'
 import { DutchAuctionArgsCoder } from './dutch-auction-args-coder'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../types'
 
 /**
  * @notice Dutch Auction instruction for time-based price decay with deadline
@@ -32,7 +32,7 @@ import type { IArgsData } from '../types'
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/DutchAuction.sol#L66
  */
 export class DutchAuctionArgs implements IArgsData {
-  public static readonly CODER = new DutchAuctionArgsCoder()
+  public static readonly CODER: IArgsCoder<DutchAuctionArgs> = new DutchAuctionArgsCoder()
 
   /**
    * startTime - auction start time (uint40)

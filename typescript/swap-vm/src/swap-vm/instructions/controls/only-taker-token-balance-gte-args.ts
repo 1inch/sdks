@@ -3,14 +3,15 @@
 import type { Address, HexString } from '@1inch/sdk-core'
 import assert from 'assert'
 import { OnlyTakerTokenBalanceGteArgsCoder } from './only-taker-token-balance-gte-args-coder'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../types'
 
 /**
  * Arguments for checking if taker holds at least specified amount of token
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L10
  **/
 export class OnlyTakerTokenBalanceGteArgs implements IArgsData {
-  public static readonly CODER = new OnlyTakerTokenBalanceGteArgsCoder()
+  public static readonly CODER: IArgsCoder<OnlyTakerTokenBalanceGteArgs> =
+    new OnlyTakerTokenBalanceGteArgsCoder()
 
   constructor(
     public readonly token: Address,

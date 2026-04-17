@@ -2,14 +2,15 @@
 
 import type { Address, HexString } from '@1inch/sdk-core'
 import { LimitSwapDirectionArgsCoder } from './limit-swap-direction-args-coder'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../types'
 
 /**
  * Arguments for limit swap instructions (limitSwap1D, limitSwapOnlyFull1D)
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/LimitSwap.sol#L27
  **/
 export class LimitSwapDirectionArgs implements IArgsData {
-  public static readonly CODER = new LimitSwapDirectionArgsCoder()
+  public static readonly CODER: IArgsCoder<LimitSwapDirectionArgs> =
+    new LimitSwapDirectionArgsCoder()
 
   constructor(
     /**

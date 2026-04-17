@@ -2,14 +2,14 @@
 
 import type { HexString } from '@1inch/sdk-core'
 import { XycSwapXDArgsCoder } from './xyc-swap-xd-args-coder'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../types'
 
 /**
  * Arguments for xycSwapXD instruction (no arguments required)
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/XYCSwap.sol#L15
  **/
 export class XycSwapXDArgs implements IArgsData {
-  public static readonly CODER = new XycSwapXDArgsCoder()
+  public static readonly CODER: IArgsCoder<XycSwapXDArgs> = new XycSwapXDArgsCoder()
 
   constructor() {}
 

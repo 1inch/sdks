@@ -4,14 +4,14 @@ import type { Address, HexString } from '@1inch/sdk-core'
 import { UINT_64_MAX } from '@1inch/byte-utils'
 import assert from 'assert'
 import { MinRateArgsCoder } from './min-rate-args-coder'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../types'
 
 /**
  * Arguments for min rate instructions (requireMinRate1D, adjustMinRate1D)
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/MinRate.sol#L36
  **/
 export class MinRateArgs implements IArgsData {
-  public static readonly CODER = new MinRateArgsCoder()
+  public static readonly CODER: IArgsCoder<MinRateArgs> = new MinRateArgsCoder()
 
   /**
    * rateLt - minimum acceptable rate for token with lower address (uint64)

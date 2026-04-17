@@ -8,6 +8,7 @@ import { PrintAmountForSwapArgs } from './print-amount-for-swap'
 import { PrintFreeMemoryPointerArgs } from './print-free-memory-pointer'
 import { PrintGasLeftArgs } from './print-gas-left'
 import { Opcode } from '../opcode'
+
 export {
   DebugEmptyArgs,
   PrintSwapRegistersArgs,
@@ -21,25 +22,34 @@ export {
 /**
  * Debug empty opcode - placeholder
  */
-export const debugEmpty = new Opcode(Symbol('Debug.Empty'), DebugEmptyArgs.CODER)
+export const debugEmpty: Opcode<DebugEmptyArgs> = new Opcode(Symbol('Debug.Empty'), DebugEmptyArgs.CODER)
 
-export const printSwapRegisters = new Opcode(
+export const printSwapRegisters: Opcode<PrintSwapRegistersArgs> = new Opcode(
   Symbol('Debug.printSwapRegisters'),
   PrintSwapRegistersArgs.CODER,
 )
 
-export const printSwapQuery = new Opcode(Symbol('Debug.printSwapQuery'), PrintSwapQueryArgs.CODER)
+export const printSwapQuery: Opcode<PrintSwapQueryArgs> = new Opcode(
+  Symbol('Debug.printSwapQuery'),
+  PrintSwapQueryArgs.CODER,
+)
 
-export const printContext = new Opcode(Symbol('Debug.printContext'), PrintContextArgs.CODER)
+export const printContext: Opcode<PrintContextArgs> = new Opcode(
+  Symbol('Debug.printContext'),
+  PrintContextArgs.CODER,
+)
 
-export const printAmountForSwap = new Opcode(
+export const printAmountForSwap: Opcode<PrintAmountForSwapArgs> = new Opcode(
   Symbol('debug.printAmountForSwap'),
   PrintAmountForSwapArgs.CODER,
 )
 
-export const printFreeMemoryPointer = new Opcode(
+export const printFreeMemoryPointer: Opcode<PrintFreeMemoryPointerArgs> = new Opcode(
   Symbol('Debug.printFreeMemoryPointer'),
   PrintFreeMemoryPointerArgs.CODER,
 )
 
-export const printGasLeft = new Opcode(Symbol('Debug.printGasLeft'), PrintGasLeftArgs.CODER)
+export const printGasLeft: Opcode<PrintGasLeftArgs> = new Opcode(
+  Symbol('Debug.printGasLeft'),
+  PrintGasLeftArgs.CODER,
+)

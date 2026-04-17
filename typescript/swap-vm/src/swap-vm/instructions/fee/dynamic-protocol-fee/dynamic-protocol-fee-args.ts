@@ -3,14 +3,15 @@
 import type { Address, HexString } from '@1inch/sdk-core'
 import assert from 'assert'
 import { DynamicProtocolFeeArgsCoder } from './dynamic-protocol-fee-args-coder'
-import type { IArgsData } from '../../types'
+import type { IArgsCoder, IArgsData } from '../../types'
 
 /**
  * Arguments for dynamic protocol fee instructions (dynamicProtocolFeeAmountInXD, aquaDynamicProtocolFeeAmountInXD).
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol
  **/
 export class DynamicProtocolFeeArgs implements IArgsData {
-  public static readonly CODER = new DynamicProtocolFeeArgsCoder()
+  public static readonly CODER: IArgsCoder<DynamicProtocolFeeArgs> =
+    new DynamicProtocolFeeArgsCoder()
 
   constructor(public readonly feeProvider: Address) {
     assert(!feeProvider.isZero(), 'Invalid feeProvider. Must be non zero address')
