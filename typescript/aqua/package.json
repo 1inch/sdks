@@ -1,6 +1,6 @@
 {
   "name": "@1inch/aqua-sdk",
-  "version": "0.1.0",
+  "version": "0.1.1-rc.0",
   "description": "1inch Aqua Protocol SDK",
   "author": "@1inch",
   "license": "LicenseRef-Degensoft-Aqua-Source-1.1",
