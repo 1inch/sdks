@@ -1488,7 +1488,14 @@ function concentratedLiquidityMax(
   pair: PricePair,
   human: { min: string; spot: string; max: string },
   capByAddress: Map<string, bigint>,
-) {
+): {
+  sqrtPriceMin: bigint
+  sqrtPriceMax: bigint
+  token0Reserve: bigint
+  token1Reserve: bigint
+  token1Address: Address
+  token0Address: Address
+} {
   const range = PriceRange.new({
     minPrice: Price.fromHuman(human.min, pair),
     spotPrice: Price.fromHuman(human.spot, pair),

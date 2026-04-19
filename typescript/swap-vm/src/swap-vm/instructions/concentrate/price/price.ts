@@ -76,7 +76,10 @@ export class Price {
       address: new Address(input.token1.address),
       decimals: BigInt(input.token1.decimals),
     }
-    assert(token0.address.lt(token1.address), 'token0 address must be less than token1 (canonical order)')
+    assert(
+      token0.address.lt(token1.address),
+      'token0 address must be less than token1 (canonical order)',
+    )
 
     return new Price(BigInt(input.sqrtP), token0, token1)
   }
