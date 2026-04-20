@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import type { Address } from '@1inch/sdk-core'
+import type { Price } from '../price'
 
 /**
  * Per-token input for the calculator: address, decimals, and the maximum amount
@@ -12,31 +13,18 @@ export type ConcentrateTokenInfo = {
   maxAvailableLiquidity: bigint
 }
 
-/**
- * Price range in "raw" form: each price is quote token per 1 unit of the other token,
- * scaled by 10^(token0Decimals + token1Decimals). minPrice < spotPrice < maxPrice.
- */
-export type ScaledPrices = {
-  quoteToken: Address
-  minPriceRaw: bigint
-  spotPriceRaw: bigint
-  maxPriceRaw: bigint
+export type PriceAllocationRange = {
+  minPrice: Price
+  spotPrice: Price
+  maxPrice: Price
 }
 
-/**
- * Price range only (no spot): same scaling and quote convention as {@link ScaledPrices}.
- * Used when deriving spot from balances and bounds.
- */
-export type ScaledPriceBounds = Pick<ScaledPrices, 'quoteToken' | 'minPriceRaw' | 'maxPriceRaw'>
+export type PriceBounds = {
+  minPrice: Price
+  maxPrice: Price
+}
 
-/**
- * Result of allocation: sqrt prices and the token0/token1 reserves
- * (raw amounts) to use for the concentrated liquidity position.
- */
 export type ConcentratedLiquidityInfo = {
-  sqrtPriceMin: bigint
-  sqrtPriceSpot: bigint
-  sqrtPriceMax: bigint
   token0Reserve: bigint
   token1Reserve: bigint
 }

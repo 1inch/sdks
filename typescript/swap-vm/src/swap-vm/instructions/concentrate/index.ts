@@ -7,12 +7,17 @@ export {
   computeBalances,
   computeLiquidityAndPrice,
 } from './concentrate-liquidity-math/concentrate-liquidity-math'
-export { ConcentrateLiquidityCalculator } from './concentrate-liquidity-calculator/concentrate-liquidity-calculator'
+export { Price } from './price'
+export type { PriceJSON, PricePair, PriceToken } from './price'
+export { PriceRange } from './price-range'
+export type { PriceRangeJSON } from './price-range'
+export { TokenReserve } from './token-reserve'
+export type { TokenReserveArgs, TokenReserveJSON } from './token-reserve'
 export type {
   ConcentrateTokenInfo,
   ConcentrateLiquidityCalculatorArgs,
-  ScaledPriceBounds,
-  ScaledPrices,
+  PriceAllocationRange,
+  PriceBounds,
   ConcentratedLiquidityInfo,
 } from './concentrate-liquidity-calculator/types'
 export * from './bigint-sqrt'

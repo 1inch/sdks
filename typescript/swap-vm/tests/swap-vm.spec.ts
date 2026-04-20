@@ -23,7 +23,8 @@ import {
 import { SWAP_VM_ABI } from '../src/abi/SwapVM.abi.js'
 import { Opcode } from '../src/swap-vm/instructions/opcode.js'
 
-import { ConcentrateLiquidityCalculator } from '../src/swap-vm/instructions/concentrate/concentrate-liquidity-calculator/concentrate-liquidity-calculator'
+import type { PricePair } from '../src/swap-vm/instructions/concentrate'
+import { Price, PriceRange, TokenReserve } from '../src/swap-vm/instructions/concentrate'
 
 describe('SwapVM', () => {
   let forkNode: ReadyEvmFork
@@ -226,25 +227,19 @@ describe('SwapVM', () => {
     const USDC_DECIMALS = 6n
     const WETH_DECIMALS = 18n
 
-    const calculator = ConcentrateLiquidityCalculator.new({
-      tokenA: {
-        address: WETH,
-        decimals: WETH_DECIMALS,
-        maxAvailableLiquidity: 400n * 10n ** WETH_DECIMALS,
-      },
-      tokenB: {
-        address: USDC,
-        decimals: USDC_DECIMALS,
-        maxAvailableLiquidity: 1_000_000n * 10n ** USDC_DECIMALS,
-      },
-    })
+    const pairUsdcWeth: PricePair = {
+      quoteToken: { address: USDC, decimals: USDC_DECIMALS },
+      baseToken: { address: WETH, decimals: WETH_DECIMALS },
+    }
 
-    const info = calculator.computeMaxAllocation({
-      quoteToken: USDC,
-      minPriceRaw: 2000n * 10n ** (USDC_DECIMALS + WETH_DECIMALS),
-      spotPriceRaw: 2500n * 10n ** (USDC_DECIMALS + WETH_DECIMALS),
-      maxPriceRaw: 3000n * 10n ** (USDC_DECIMALS + WETH_DECIMALS),
-    })
+    const info = concentratedLiquidityMax(
+      pairUsdcWeth,
+      { min: '2000', spot: '2500', max: '3000' },
+      new Map([
+        [USDC.toString().toLowerCase(), 1_000_000n * 10n ** USDC_DECIMALS],
+        [WETH.toString().toLowerCase(), 400n * 10n ** WETH_DECIMALS],
+      ]),
+    )
 
     const program = AquaXYCAmmStrategy.newConcentrate({
       sqrtPriceMin: info.sqrtPriceMin,
@@ -271,11 +266,11 @@ describe('SwapVM', () => {
       strategy: order.encode(),
       amountsAndTokens: [
         {
-          token: calculator.token0.address,
+          token: info.token0Address,
           amount: info.token0Reserve,
         },
         {
-          token: calculator.token1.address,
+          token: info.token1Address,
           amount: info.token1Reserve,
         },
       ],
@@ -339,25 +334,23 @@ describe('SwapVM', () => {
     const USDC_DECIMALS = 6n
     const WETH_DECIMALS = 18n
 
-    const calculator = ConcentrateLiquidityCalculator.new({
-      tokenA: {
-        address: WETH,
-        decimals: WETH_DECIMALS,
-        maxAvailableLiquidity: 400n * 10n ** WETH_DECIMALS,
-      },
-      tokenB: {
-        address: USDC,
-        decimals: USDC_DECIMALS,
-        maxAvailableLiquidity: 1_000_000n * 10n ** USDC_DECIMALS,
-      },
-    })
+    const pairWethUsdc: PricePair = {
+      quoteToken: { address: WETH, decimals: WETH_DECIMALS },
+      baseToken: { address: USDC, decimals: USDC_DECIMALS },
+    }
 
-    const info = calculator.computeMaxAllocation({
-      quoteToken: WETH,
-      minPriceRaw: parseUnits('0.0003333333333', Number(USDC_DECIMALS + WETH_DECIMALS)),
-      spotPriceRaw: parseUnits('0.0004', Number(USDC_DECIMALS + WETH_DECIMALS)),
-      maxPriceRaw: parseUnits('0.0005', Number(USDC_DECIMALS + WETH_DECIMALS)),
-    })
+    const info = concentratedLiquidityMax(
+      pairWethUsdc,
+      {
+        min: '0.000333333333333333',
+        spot: '0.0004',
+        max: '0.0005',
+      },
+      new Map([
+        [USDC.toString().toLowerCase(), 1_000_000n * 10n ** USDC_DECIMALS],
+        [WETH.toString().toLowerCase(), 400n * 10n ** WETH_DECIMALS],
+      ]),
+    )
 
     const program = AquaXYCAmmStrategy.newConcentrate({
       sqrtPriceMin: info.sqrtPriceMin,
@@ -386,11 +379,11 @@ describe('SwapVM', () => {
       strategy: order.encode(),
       amountsAndTokens: [
         {
-          token: calculator.token0.address,
+          token: info.token0Address,
           amount: info.token0Reserve,
         },
         {
-          token: calculator.token1.address,
+          token: info.token1Address,
           amount: info.token1Reserve,
         },
       ],
@@ -454,25 +447,23 @@ describe('SwapVM', () => {
     const USDT_DECIMALS = 6n
     const WETH_DECIMALS = 18n
 
-    const calculator = ConcentrateLiquidityCalculator.new({
-      tokenA: {
-        address: WETH,
-        decimals: WETH_DECIMALS,
-        maxAvailableLiquidity: 400n * 10n ** WETH_DECIMALS,
-      },
-      tokenB: {
-        address: USDT,
-        decimals: USDT_DECIMALS,
-        maxAvailableLiquidity: 1_000_000n * 10n ** USDT_DECIMALS,
-      },
-    })
+    const pairWethUsdt: PricePair = {
+      quoteToken: { address: WETH, decimals: WETH_DECIMALS },
+      baseToken: { address: USDT, decimals: USDT_DECIMALS },
+    }
 
-    const info = calculator.computeMaxAllocation({
-      quoteToken: WETH,
-      minPriceRaw: parseUnits('0.0003333333333', Number(USDT_DECIMALS + WETH_DECIMALS)),
-      spotPriceRaw: parseUnits('0.0004', Number(USDT_DECIMALS + WETH_DECIMALS)),
-      maxPriceRaw: parseUnits('0.0005', Number(USDT_DECIMALS + WETH_DECIMALS)),
-    })
+    const info = concentratedLiquidityMax(
+      pairWethUsdt,
+      {
+        min: '0.000333333333333333',
+        spot: '0.0004',
+        max: '0.0005',
+      },
+      new Map([
+        [USDT.toString().toLowerCase(), 1_000_000n * 10n ** USDT_DECIMALS],
+        [WETH.toString().toLowerCase(), 400n * 10n ** WETH_DECIMALS],
+      ]),
+    )
 
     const program = AquaXYCAmmStrategy.newConcentrate({
       sqrtPriceMin: info.sqrtPriceMin,
@@ -501,11 +492,11 @@ describe('SwapVM', () => {
       strategy: order.encode(),
       amountsAndTokens: [
         {
-          token: calculator.token0.address,
+          token: info.token0Address,
           amount: info.token0Reserve,
         },
         {
-          token: calculator.token1.address,
+          token: info.token1Address,
           amount: info.token1Reserve,
         },
       ],
@@ -569,25 +560,19 @@ describe('SwapVM', () => {
     const USDT_DECIMALS = 6n
     const WETH_DECIMALS = 18n
 
-    const calculator = ConcentrateLiquidityCalculator.new({
-      tokenA: {
-        address: WETH,
-        decimals: WETH_DECIMALS,
-        maxAvailableLiquidity: 400n * 10n ** WETH_DECIMALS,
-      },
-      tokenB: {
-        address: USDT,
-        decimals: USDT_DECIMALS,
-        maxAvailableLiquidity: 1_000_000n * 10n ** USDT_DECIMALS,
-      },
-    })
+    const pairUsdtWeth: PricePair = {
+      quoteToken: { address: USDT, decimals: USDT_DECIMALS },
+      baseToken: { address: WETH, decimals: WETH_DECIMALS },
+    }
 
-    const info = calculator.computeMaxAllocation({
-      quoteToken: USDT,
-      minPriceRaw: 2000n * 10n ** (USDT_DECIMALS + WETH_DECIMALS),
-      spotPriceRaw: 2500n * 10n ** (USDT_DECIMALS + WETH_DECIMALS),
-      maxPriceRaw: 3000n * 10n ** (USDT_DECIMALS + WETH_DECIMALS),
-    })
+    const info = concentratedLiquidityMax(
+      pairUsdtWeth,
+      { min: '2000', spot: '2500', max: '3000' },
+      new Map([
+        [USDT.toString().toLowerCase(), 1_000_000n * 10n ** USDT_DECIMALS],
+        [WETH.toString().toLowerCase(), 400n * 10n ** WETH_DECIMALS],
+      ]),
+    )
 
     const program = AquaXYCAmmStrategy.newConcentrate({
       sqrtPriceMin: info.sqrtPriceMin,
@@ -614,11 +599,11 @@ describe('SwapVM', () => {
       strategy: order.encode(),
       amountsAndTokens: [
         {
-          token: calculator.token0.address,
+          token: info.token0Address,
           amount: info.token0Reserve,
         },
         {
-          token: calculator.token1.address,
+          token: info.token1Address,
           amount: info.token1Reserve,
         },
       ],
@@ -682,25 +667,19 @@ describe('SwapVM', () => {
     const USDT_DECIMALS = 6n
     const WBTC_DECIMALS = 8n
 
-    const calculator = ConcentrateLiquidityCalculator.new({
-      tokenA: {
-        address: WBTC,
-        decimals: WBTC_DECIMALS,
-        maxAvailableLiquidity: 50n * 10n ** WBTC_DECIMALS,
-      },
-      tokenB: {
-        address: USDT,
-        decimals: USDT_DECIMALS,
-        maxAvailableLiquidity: 1_000_000n * 10n ** USDT_DECIMALS,
-      },
-    })
+    const pairUsdtWbtc: PricePair = {
+      quoteToken: { address: USDT, decimals: USDT_DECIMALS },
+      baseToken: { address: WBTC, decimals: WBTC_DECIMALS },
+    }
 
-    const info = calculator.computeMaxAllocation({
-      quoteToken: USDT,
-      minPriceRaw: 55_000n * 10n ** (USDT_DECIMALS + WBTC_DECIMALS),
-      spotPriceRaw: 60_000n * 10n ** (USDT_DECIMALS + WBTC_DECIMALS),
-      maxPriceRaw: 65_000n * 10n ** (USDT_DECIMALS + WBTC_DECIMALS),
-    })
+    const info = concentratedLiquidityMax(
+      pairUsdtWbtc,
+      { min: '55000', spot: '60000', max: '65000' },
+      new Map([
+        [USDT.toString().toLowerCase(), 1_000_000n * 10n ** USDT_DECIMALS],
+        [WBTC.toString().toLowerCase(), 50n * 10n ** WBTC_DECIMALS],
+      ]),
+    )
 
     const program = AquaXYCAmmStrategy.newConcentrate({
       sqrtPriceMin: info.sqrtPriceMin,
@@ -727,11 +706,11 @@ describe('SwapVM', () => {
       strategy: order.encode(),
       amountsAndTokens: [
         {
-          token: calculator.token0.address,
+          token: info.token0Address,
           amount: info.token0Reserve,
         },
         {
-          token: calculator.token1.address,
+          token: info.token1Address,
           amount: info.token1Reserve,
         },
       ],
@@ -796,25 +775,23 @@ describe('SwapVM', () => {
     const USDT_DECIMALS = 6n
     const WBTC_DECIMALS = 8n
 
-    const calculator = ConcentrateLiquidityCalculator.new({
-      tokenA: {
-        address: WBTC,
-        decimals: WBTC_DECIMALS,
-        maxAvailableLiquidity: 50n * 10n ** WBTC_DECIMALS,
-      },
-      tokenB: {
-        address: USDT,
-        decimals: USDT_DECIMALS,
-        maxAvailableLiquidity: 1_000_000n * 10n ** USDT_DECIMALS,
-      },
-    })
+    const pairWbtcUsdt: PricePair = {
+      quoteToken: { address: WBTC, decimals: WBTC_DECIMALS },
+      baseToken: { address: USDT, decimals: USDT_DECIMALS },
+    }
 
-    const info = calculator.computeMaxAllocation({
-      quoteToken: WBTC,
-      minPriceRaw: parseUnits('0.00001538461538', Number(USDT_DECIMALS + WBTC_DECIMALS)),
-      spotPriceRaw: parseUnits('0.00001666666667', Number(USDT_DECIMALS + WBTC_DECIMALS)),
-      maxPriceRaw: parseUnits('0.00001818181818', Number(USDT_DECIMALS + WBTC_DECIMALS)),
-    })
+    const info = concentratedLiquidityMax(
+      pairWbtcUsdt,
+      {
+        min: '0.00001538461538',
+        spot: '0.00001666666667',
+        max: '0.00001818181818',
+      },
+      new Map([
+        [USDT.toString().toLowerCase(), 1_000_000n * 10n ** USDT_DECIMALS],
+        [WBTC.toString().toLowerCase(), 50n * 10n ** WBTC_DECIMALS],
+      ]),
+    )
 
     const program = AquaXYCAmmStrategy.newConcentrate({
       sqrtPriceMin: info.sqrtPriceMin,
@@ -843,11 +820,11 @@ describe('SwapVM', () => {
       strategy: order.encode(),
       amountsAndTokens: [
         {
-          token: calculator.token0.address,
+          token: info.token0Address,
           amount: info.token0Reserve,
         },
         {
-          token: calculator.token1.address,
+          token: info.token1Address,
           amount: info.token1Reserve,
         },
       ],
@@ -1505,3 +1482,38 @@ describe('SwapVM', () => {
     }
   })
 })
+
+/** Human quote-per-base min/spot/max; `capByAddress` is lowercased `Address.toString()` -> max reserve for that token. */
+function concentratedLiquidityMax(
+  pair: PricePair,
+  human: { min: string; spot: string; max: string },
+  capByAddress: Map<string, bigint>,
+): {
+  sqrtPriceMin: bigint
+  sqrtPriceMax: bigint
+  token0Reserve: bigint
+  token1Reserve: bigint
+  token1Address: Address
+  token0Address: Address
+} {
+  const range = PriceRange.new({
+    minPrice: Price.fromHuman(human.min, pair),
+    spotPrice: Price.fromHuman(human.spot, pair),
+    maxPrice: Price.fromHuman(human.max, pair),
+  })
+  const k0 = range.token0.address.toString().toLowerCase()
+  const k1 = range.token1.address.toString().toLowerCase()
+  const allocation = range.computeMaxAllocation({
+    reserveA: TokenReserve.new({ token: range.token0.address, reserve: capByAddress.get(k0)! }),
+    reserveB: TokenReserve.new({ token: range.token1.address, reserve: capByAddress.get(k1)! }),
+  })
+
+  return {
+    sqrtPriceMin: range.minPrice.toSqrt(),
+    sqrtPriceMax: range.maxPrice.toSqrt(),
+    token0Reserve: allocation.reserve0.reserve,
+    token1Reserve: allocation.reserve1.reserve,
+    token0Address: range.token0.address,
+    token1Address: range.token1.address,
+  }
+}

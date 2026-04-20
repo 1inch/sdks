@@ -22,7 +22,10 @@ export {
 /**
  * Debug empty opcode - placeholder
  */
-export const debugEmpty: Opcode<DebugEmptyArgs> = new Opcode(Symbol('Debug.Empty'), DebugEmptyArgs.CODER)
+export const debugEmpty: Opcode<DebugEmptyArgs> = new Opcode(
+  Symbol('Debug.Empty'),
+  DebugEmptyArgs.CODER,
+)
 
 export const printSwapRegisters: Opcode<PrintSwapRegistersArgs> = new Opcode(
   Symbol('Debug.printSwapRegisters'),
