@@ -6,9 +6,7 @@ import { ConcentrateGrowLiquidityXDArgs } from './concentrate-grow-liquidity-xd-
 import type { TokenDelta } from './types'
 import type { IArgsCoder } from '../types'
 
-export class ConcentrateGrowLiquidityXDArgsCoder
-  implements IArgsCoder<ConcentrateGrowLiquidityXDArgs>
-{
+export class ConcentrateGrowLiquidityXDArgsCoder implements IArgsCoder<ConcentrateGrowLiquidityXDArgs> {
   encode(args: ConcentrateGrowLiquidityXDArgs): HexString {
     const builder = new BytesBuilder()
 
