@@ -25,13 +25,13 @@ importers:
     devDependencies:
       '@1inch/aqua':
         specifier: github:1inch/aqua
-        version: https://codeload.github.com/1inch/aqua/tar.gz/81c26e4619ce21556ab02b3284ee2685de21fb18(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.17)(typescript@5.9.3))(typescript@5.9.3)
+        version: https://codeload.github.com/1inch/aqua/tar.gz/ec7e8cf8cb2ba1131b670848d4757cd528014e80(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.17)(typescript@5.9.3))(typescript@5.9.3)
       '@1inch/eslint-config':
         specifier: ^5.0.1
         version: 5.0.1(@eslint/js@10.0.1(eslint@10.2.1(jiti@2.6.1)))(@stylistic/eslint-plugin@5.10.0(eslint@10.2.1(jiti@2.6.1)))(eslint-config-prettier@10.1.8(eslint@10.2.1(jiti@2.6.1)))(eslint-import-resolver-typescript@4.4.4)(eslint-plugin-import-x@4.16.2(@typescript-eslint/utils@8.59.1(eslint@10.2.1(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@10.2.1(jiti@2.6.1)))(eslint-plugin-prettier@5.5.5(eslint-config-prettier@10.1.8(eslint@10.2.1(jiti@2.6.1)))(eslint@10.2.1(jiti@2.6.1))(prettier@3.8.3))(eslint-plugin-unused-imports@4.4.1(@typescript-eslint/eslint-plugin@8.59.1(@typescript-eslint/parser@8.59.1(eslint@10.2.1(jiti@2.6.1))(typescript@5.9.3))(eslint@10.2.1(jiti@2.6.1))(typescript@5.9.3))(eslint@10.2.1(jiti@2.6.1)))(eslint@10.2.1(jiti@2.6.1))(globals@17.5.0)(prettier@3.8.3)(typescript-eslint@8.59.1(eslint@10.2.1(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
       '@1inch/swap-vm':
         specifier: github:1inch/swap-vm
-        version: https://codeload.github.com/1inch/swap-vm/tar.gz/ac06e1bac021cd1983dc7c44d1f69b4b8861a945(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.17)(typescript@5.9.3))(typescript@5.9.3)
+        version: https://codeload.github.com/1inch/swap-vm/tar.gz/1d82046cc309cf66ba688aee9e600a6b293ce6cf(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.17)(typescript@5.9.3))(typescript@5.9.3)
       '@1inch/tsconfig':
         specifier: ^1.0.12
         version: 1.0.12
@@ -215,13 +215,9 @@ importers:
 
 packages:
 
-  '@1inch/aqua@https://codeload.github.com/1inch/aqua/tar.gz/81c26e4619ce21556ab02b3284ee2685de21fb18':
-    resolution: {tarball: https://codeload.github.com/1inch/aqua/tar.gz/81c26e4619ce21556ab02b3284ee2685de21fb18}
-    version: 0.1.0
-
-  '@1inch/aqua@https://codeload.github.com/1inch/aqua/tar.gz/b51f3b6e3c02fa5208e1429f0f14706b025d9dd6':
-    resolution: {tarball: https://codeload.github.com/1inch/aqua/tar.gz/b51f3b6e3c02fa5208e1429f0f14706b025d9dd6}
-    version: 0.1.0
+  '@1inch/aqua@https://codeload.github.com/1inch/aqua/tar.gz/ec7e8cf8cb2ba1131b670848d4757cd528014e80':
+    resolution: {tarball: https://codeload.github.com/1inch/aqua/tar.gz/ec7e8cf8cb2ba1131b670848d4757cd528014e80}
+    version: 0.0.6
 
   '@1inch/byte-utils@3.0.0':
     resolution: {integrity: sha512-CuX4E0z/pzo9hKGzFsMi3vPVgHRRh14ZwNEZ5TY1svnKF8PjxWx3t0CjXCW4dyqKGe6TKAzgYqzzxrMrWPDy5Q==}
@@ -263,9 +259,9 @@ packages:
   '@1inch/solidity-utils@6.9.7':
     resolution: {integrity: sha512-2vKx7+EGw+IS/UoyHW3+9d0TPb+F+018KEJ9sQVqMy9Xd3Q3VxypdSYklUgYF9YmrjNxRtCPTRll28sFEeqNiQ==}
 
-  '@1inch/swap-vm@https://codeload.github.com/1inch/swap-vm/tar.gz/ac06e1bac021cd1983dc7c44d1f69b4b8861a945':
-    resolution: {tarball: https://codeload.github.com/1inch/swap-vm/tar.gz/ac06e1bac021cd1983dc7c44d1f69b4b8861a945}
-    version: 0.0.6
+  '@1inch/swap-vm@https://codeload.github.com/1inch/swap-vm/tar.gz/1d82046cc309cf66ba688aee9e600a6b293ce6cf':
+    resolution: {tarball: https://codeload.github.com/1inch/swap-vm/tar.gz/1d82046cc309cf66ba688aee9e600a6b293ce6cf}
+    version: 0.0.2
 
   '@1inch/tsconfig@1.0.12':
     resolution: {integrity: sha512-yhYczGGHbBUyS5PrXrZXRLB3L+AkXSvr1xbSr04FQtyfJgCoHALvgh8kVijjvPkcFpjLHWrfZ/SB7CArK2e2yg==}
@@ -5960,22 +5956,9 @@ packages:
 
 snapshots:
 
-  '@1inch/aqua@https://codeload.github.com/1inch/aqua/tar.gz/81c26e4619ce21556ab02b3284ee2685de21fb18(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.17)(typescript@5.9.3))(typescript@5.9.3)':
+  '@1inch/aqua@https://codeload.github.com/1inch/aqua/tar.gz/ec7e8cf8cb2ba1131b670848d4757cd528014e80(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.17)(typescript@5.9.3))(typescript@5.9.3)':
     dependencies:
       '@1inch/solidity-utils': 6.9.7(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.17)(typescript@5.9.3))(typescript@5.9.3)
-      '@openzeppelin/contracts': 5.4.0
-      forge-std: https://codeload.github.com/foundry-rs/forge-std/tar.gz/8e40513d678f392f398620b3ef2b418648b33e89
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - supports-color
-      - ts-node
-      - typescript
-      - utf-8-validate
-
-  '@1inch/aqua@https://codeload.github.com/1inch/aqua/tar.gz/b51f3b6e3c02fa5208e1429f0f14706b025d9dd6(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.17)(typescript@5.9.3))(typescript@5.9.3)':
-    dependencies:
-      '@1inch/solidity-utils': 6.9.5(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.17)(typescript@5.9.3))(typescript@5.9.3)
       '@openzeppelin/contracts': 5.4.0
       forge-std: https://codeload.github.com/foundry-rs/forge-std/tar.gz/8e40513d678f392f398620b3ef2b418648b33e89
     transitivePeerDependencies:
@@ -6058,9 +6041,9 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@1inch/swap-vm@https://codeload.github.com/1inch/swap-vm/tar.gz/ac06e1bac021cd1983dc7c44d1f69b4b8861a945(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.17)(typescript@5.9.3))(typescript@5.9.3)':
+  '@1inch/swap-vm@https://codeload.github.com/1inch/swap-vm/tar.gz/1d82046cc309cf66ba688aee9e600a6b293ce6cf(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.17)(typescript@5.9.3))(typescript@5.9.3)':
     dependencies:
-      '@1inch/aqua': https://codeload.github.com/1inch/aqua/tar.gz/b51f3b6e3c02fa5208e1429f0f14706b025d9dd6(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.17)(typescript@5.9.3))(typescript@5.9.3)
+      '@1inch/aqua': https://codeload.github.com/1inch/aqua/tar.gz/ec7e8cf8cb2ba1131b670848d4757cd528014e80(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.17)(typescript@5.9.3))(typescript@5.9.3)
       '@1inch/solidity-utils': 6.9.7(ts-node@10.9.2(@swc/core@1.15.3)(@types/node@22.19.17)(typescript@5.9.3))(typescript@5.9.3)
       '@openzeppelin/contracts': 5.4.0
       forge-std: https://codeload.github.com/foundry-rs/forge-std/tar.gz/8e40513d678f392f398620b3ef2b418648b33e89
