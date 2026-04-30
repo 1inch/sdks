@@ -5,9 +5,7 @@ import { HexString } from '@1inch/sdk-core'
 import { ConcentrateGrowLiquidity2DArgs } from './concentrate-grow-liquidity-2d-args'
 import type { IArgsCoder } from '../types'
 
-export class ConcentrateGrowLiquidity2DArgsCoder
-  implements IArgsCoder<ConcentrateGrowLiquidity2DArgs>
-{
+export class ConcentrateGrowLiquidity2DArgsCoder implements IArgsCoder<ConcentrateGrowLiquidity2DArgs> {
   encode(args: ConcentrateGrowLiquidity2DArgs): HexString {
     const builder = new BytesBuilder()
 

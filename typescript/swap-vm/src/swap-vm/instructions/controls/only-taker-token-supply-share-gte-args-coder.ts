@@ -5,9 +5,7 @@ import { Address, HexString } from '@1inch/sdk-core'
 import { OnlyTakerTokenSupplyShareGteArgs } from './only-taker-token-supply-share-gte-args'
 import type { IArgsCoder } from '../types'
 
-export class OnlyTakerTokenSupplyShareGteArgsCoder
-  implements IArgsCoder<OnlyTakerTokenSupplyShareGteArgs>
-{
+export class OnlyTakerTokenSupplyShareGteArgsCoder implements IArgsCoder<OnlyTakerTokenSupplyShareGteArgs> {
   encode(args: OnlyTakerTokenSupplyShareGteArgs): HexString {
     const builder = new BytesBuilder()
 
