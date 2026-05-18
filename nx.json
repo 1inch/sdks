@@ -4,16 +4,27 @@
     "default": {
       "runner": "nx/tasks-runners/default",
       "options": {
-        "cacheableOperations": ["build", "lint", "test", "e2e"],
+        "cacheableOperations": [
+          "build",
+          "lint",
+          "test",
+          "e2e"
+        ],
         "parallel": 3
       }
     }
   },
   "targetDefaults": {
     "build": {
-      "dependsOn": ["^build"],
-      "inputs": ["production"],
-      "outputs": ["{projectRoot}/dist"]
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "production"
+      ],
+      "outputs": [
+        "{projectRoot}/dist"
+      ]
     },
     "test": {
       "inputs": [
@@ -24,16 +35,29 @@
       ]
     },
     "lint": {
-      "inputs": ["default", "{workspaceRoot}/typescript/eslint.config.mjs"]
+      "inputs": [
+        "default",
+        "{workspaceRoot}/typescript/eslint.config.mjs"
+      ]
     },
     "test:e2e": {
-      "inputs": ["default", "production"],
-      "dependsOn": ["^build"]
+      "inputs": [
+        "default",
+        "production"
+      ],
+      "dependsOn": [
+        "^build"
+      ]
     }
   },
   "namedInputs": {
-    "sharedGlobals": ["{workspaceRoot}/.github/workflows/*"],
-    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "sharedGlobals": [
+      "{workspaceRoot}/.github/workflows/*"
+    ],
+    "default": [
+      "{projectRoot}/**/*",
+      "sharedGlobals"
+    ],
     "production": [
       "default",
       "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
@@ -94,7 +118,9 @@
     },
     "groups": {
       "typescript": {
-        "projects": ["typescript/*"],
+        "projects": [
+          "typescript/*"
+        ],
         "projectsRelationship": "independent"
       }
     },
