@@ -12,7 +12,6 @@ import type * as decay from '../instructions/decay'
 import type * as limitSwap from '../instructions/limit-swap'
 import type * as minRate from '../instructions/min-rate'
 import type * as dutchAuction from '../instructions/dutch-auction'
-import type * as oraclePriceAdjuster from '../instructions/oracle-price-adjuster'
 import type * as baseFeeAdjuster from '../instructions/base-fee-adjuster'
 import type * as twapSwap from '../instructions/twap-swap'
 import type * as fee from '../instructions/fee'
@@ -295,15 +294,9 @@ describe('ProgramBuilder', () => {
         ],
       })
       .xycSwapXD()
-      .concentrateGrowLiquidityXD({
-        tokenDeltas: [
-          { tokenHalf: USDC_HALF, delta: 100n * 10n ** 18n },
-          { tokenHalf: WETH_HALF, delta: 50n * 10n ** 18n },
-        ],
-      })
       .concentrateGrowLiquidity2D({
-        deltaLt: 1000n * 10n ** 18n,
-        deltaGt: 500n * 10n ** 18n,
+        sqrtPriceMax: 1000n * 10n ** 18n,
+        sqrtPriceMin: 500n * 10n ** 18n,
       })
       .decayXD({ decayPeriod: 3600n })
       .build()
@@ -313,7 +306,7 @@ describe('ProgramBuilder', () => {
     expect(decodedProgram.toString()).toBe(program.toString())
 
     const ixs = decodedBuilder.getInstructions()
-    expect(ixs).toHaveLength(5)
+    expect(ixs).toHaveLength(4)
 
     expect(ixs[0].opcode.id.toString()).toContain('staticBalancesXD')
     const setBalances = ixs[0].args as balances.BalancesArgs
@@ -322,19 +315,13 @@ describe('ProgramBuilder', () => {
     expect(ixs[1].opcode.id.toString()).toContain('xycSwapXD')
     expect(ixs[1].args).toBeInstanceOf(xycSwap.XycSwapXDArgs)
 
-    expect(ixs[2].opcode.id.toString()).toContain('concentrateGrowLiquidityXD')
-    const concentrateXD = ixs[2].args as concentrate.ConcentrateGrowLiquidityXDArgs
-    expect(concentrateXD.tokenDeltas).toHaveLength(2)
-    expect(concentrateXD.tokenDeltas[0].tokenHalf.toString()).toBe(USDC_HALF.toString())
-    expect(concentrateXD.tokenDeltas[0].delta).toBe(100n * 10n ** 18n)
+    expect(ixs[2].opcode.id.toString()).toContain('concentrateGrowLiquidity2D')
+    const concentrate2D = ixs[2].args as concentrate.ConcentrateGrowLiquidity2DArgs
+    expect(concentrate2D.sqrtPriceMax).toBe(1000n * 10n ** 18n)
+    expect(concentrate2D.sqrtPriceMin).toBe(500n * 10n ** 18n)
 
-    expect(ixs[3].opcode.id.toString()).toContain('concentrateGrowLiquidity2D')
-    const concentrate2D = ixs[3].args as concentrate.ConcentrateGrowLiquidity2DArgs
-    expect(concentrate2D.deltaLt).toBe(1000n * 10n ** 18n)
-    expect(concentrate2D.deltaGt).toBe(500n * 10n ** 18n)
-
-    expect(ixs[4].opcode.id.toString()).toContain('decayXD')
-    const decayArgs = ixs[4].args as decay.DecayXDArgs
+    expect(ixs[3].opcode.id.toString()).toContain('decayXD')
+    const decayArgs = ixs[3].args as decay.DecayXDArgs
     expect(decayArgs.decayPeriod).toBe(3600n)
   })
 
@@ -351,20 +338,14 @@ describe('ProgramBuilder', () => {
           { tokenHalf: LINK_HALF, value: 1000n * 10n ** 18n },
         ],
       })
-      .concentrateGrowLiquidityXD({
-        tokenDeltas: [
-          { tokenHalf: USDC_HALF, delta: 1000n * 10n ** 18n },
-          { tokenHalf: WETH_HALF, delta: 5n * 10n ** 18n },
-        ],
-      })
       .jumpIfTokenIn({ tokenTail: AddressHalf.fromAddress(WETH), nextPC: 10n })
       .decayXD({ decayPeriod: 43200n }) // 12 hours (must be <= 65535)
       .xycSwapXD()
       .invalidateTokenIn1D()
       .invalidateTokenOut1D()
       .concentrateGrowLiquidity2D({
-        deltaLt: 2000n * 10n ** 18n,
-        deltaGt: 1000n * 10n ** 18n,
+        sqrtPriceMax: 2000n * 10n ** 18n,
+        sqrtPriceMin: 1000n * 10n ** 18n,
       })
       .jump({ nextPC: 50n })
       .build()
@@ -374,7 +355,7 @@ describe('ProgramBuilder', () => {
     expect(decodedProgram.toString()).toBe(program.toString())
 
     const ixs = decodedBuilder.getInstructions()
-    expect(ixs).toHaveLength(11)
+    expect(ixs).toHaveLength(10)
 
     expect(ixs[0].opcode.id.toString()).toContain('salt')
     expect((ixs[0].args as controls.SaltArgs).salt).toBe(777n)
@@ -384,32 +365,28 @@ describe('ProgramBuilder', () => {
 
     expect(ixs[2].opcode.id.toString()).toContain('staticBalancesXD')
 
-    expect(ixs[3].opcode.id.toString()).toContain('concentrateGrowLiquidityXD')
-    const concentrateXD = ixs[3].args as concentrate.ConcentrateGrowLiquidityXDArgs
-    expect(concentrateXD.tokenDeltas).toHaveLength(2)
-
-    expect(ixs[4].opcode.id.toString()).toContain('jumpIfTokenIn')
-    expect((ixs[4].args as controls.JumpIfTokenArgs).nextPC).toBe(10n)
-    expect((ixs[4].args as controls.JumpIfTokenArgs).tokenTail.toString()).toBe(
+    expect(ixs[3].opcode.id.toString()).toContain('jumpIfTokenIn')
+    expect((ixs[3].args as controls.JumpIfTokenArgs).nextPC).toBe(10n)
+    expect((ixs[3].args as controls.JumpIfTokenArgs).tokenTail.toString()).toBe(
       AddressHalf.fromAddress(WETH).toString(),
     )
 
-    expect(ixs[5].opcode.id.toString()).toContain('decayXD')
-    expect((ixs[5].args as decay.DecayXDArgs).decayPeriod).toBe(43200n)
+    expect(ixs[4].opcode.id.toString()).toContain('decayXD')
+    expect((ixs[4].args as decay.DecayXDArgs).decayPeriod).toBe(43200n)
 
-    expect(ixs[6].opcode.id.toString()).toContain('xycSwapXD')
+    expect(ixs[5].opcode.id.toString()).toContain('xycSwapXD')
 
-    expect(ixs[7].opcode.id.toString()).toContain('invalidateTokenIn1D')
+    expect(ixs[6].opcode.id.toString()).toContain('invalidateTokenIn1D')
 
-    expect(ixs[8].opcode.id.toString()).toContain('invalidateTokenOut1D')
+    expect(ixs[7].opcode.id.toString()).toContain('invalidateTokenOut1D')
 
-    expect(ixs[9].opcode.id.toString()).toContain('concentrateGrowLiquidity2D')
-    const concentrate2D = ixs[9].args as concentrate.ConcentrateGrowLiquidity2DArgs
-    expect(concentrate2D.deltaLt).toBe(2000n * 10n ** 18n)
-    expect(concentrate2D.deltaGt).toBe(1000n * 10n ** 18n)
+    expect(ixs[8].opcode.id.toString()).toContain('concentrateGrowLiquidity2D')
+    const concentrate2D = ixs[8].args as concentrate.ConcentrateGrowLiquidity2DArgs
+    expect(concentrate2D.sqrtPriceMax).toBe(2000n * 10n ** 18n)
+    expect(concentrate2D.sqrtPriceMin).toBe(1000n * 10n ** 18n)
 
-    expect(ixs[10].opcode.id.toString()).toContain('jump')
-    expect((ixs[10].args as controls.JumpArgs).nextPC).toBe(50n)
+    expect(ixs[9].opcode.id.toString()).toContain('jump')
+    expect((ixs[9].args as controls.JumpArgs).nextPC).toBe(50n)
   })
 
   it('should handle limit swap and min rate instructions', () => {
@@ -496,18 +473,11 @@ describe('ProgramBuilder', () => {
     expect(dutchOut.decayFactor).toBe(995000000n)
   })
 
-  it('should handle oracle and base fee adjusters', () => {
+  it('should handle base fee adjusters', () => {
     const originalBuilder = new RegularProgramBuilder()
-    const oracle = new Address('0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419')
 
     const program = originalBuilder
       .limitSwap1D({ makerDirectionLt: true })
-      .oraclePriceAdjuster1D({
-        maxPriceDecay: 950000000000000000n,
-        maxStaleness: 3600n,
-        oracleDecimals: 8n,
-        oracleAddress: oracle,
-      })
       .baseFeeAdjuster1D({
         baseGasPrice: 20000000000n,
         ethToToken1Price: 3000n * 10n ** 18n,
@@ -521,17 +491,10 @@ describe('ProgramBuilder', () => {
     expect(decodedProgram.toString()).toBe(program.toString())
 
     const ixs = decodedBuilder.getInstructions()
-    expect(ixs).toHaveLength(3)
+    expect(ixs).toHaveLength(2)
 
-    expect(ixs[1].opcode.id.toString()).toContain('oraclePriceAdjuster1D')
-    const oracleArgs = ixs[1].args as oraclePriceAdjuster.OraclePriceAdjusterArgs
-    expect(oracleArgs.maxPriceDecay).toBe(950000000000000000n)
-    expect(oracleArgs.maxStaleness).toBe(3600n)
-    expect(oracleArgs.oracleDecimals).toBe(8n)
-    expect(oracleArgs.oracleAddress.toString()).toBe(oracle.toString())
-
-    expect(ixs[2].opcode.id.toString()).toContain('baseFeeAdjuster1D')
-    const baseFeeArgs = ixs[2].args as baseFeeAdjuster.BaseFeeAdjusterArgs
+    expect(ixs[1].opcode.id.toString()).toContain('baseFeeAdjuster1D')
+    const baseFeeArgs = ixs[1].args as baseFeeAdjuster.BaseFeeAdjusterArgs
     expect(baseFeeArgs.baseGasPrice).toBe(20000000000n)
     expect(baseFeeArgs.ethToToken1Price).toBe(3000n * 10n ** 18n)
     expect(baseFeeArgs.gasAmount).toBe(150000n)
@@ -598,20 +561,36 @@ describe('ProgramBuilder', () => {
   it('should handle all fee instructions', () => {
     const originalBuilder = new RegularProgramBuilder()
     const feeRecipient = new Address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45')
+    const externalContract = Address.fromBigInt(1234567n)
+    const externalContract1 = Address.fromBigInt(51234567n)
 
     const program = originalBuilder
       .flatFeeAmountInXD({ fee: 25000000n })
-      .flatFeeAmountOutXD({ fee: 20000000n })
-      .progressiveFeeInXD({ fee: 15000000n })
-      .progressiveFeeOutXD({ fee: 12000000n })
-      .protocolFeeAmountOutXD({
+      .protocolFeeAmountInXD({
         fee: 10000000n,
         to: feeRecipient,
       })
-      .aquaProtocolFeeAmountOutXD({
+      .protocolFeeAmountOutXD({
+        fee: 20000000n,
+        to: feeRecipient,
+      })
+      .aquaProtocolFeeAmountInXD({
         fee: 5000000n,
         to: feeRecipient,
       })
+      .aquaProtocolFeeAmountOutXD({
+        fee: 6000000n,
+        to: feeRecipient,
+      })
+      .aquaDynamicProtocolFeeAmountInXD({
+        feeProvider: externalContract,
+      })
+      .dynamicProtocolFeeAmountInXD({
+        feeProvider: externalContract1,
+      })
+      .flatFeeAmountOutXD({ fee: 35000000n })
+      .progressiveFeeInXD({ fee: 45000000n })
+      .progressiveFeeOutXD({ fee: 55000000n })
       .build()
 
     const decodedBuilder = RegularProgramBuilder.decode(program)
@@ -619,34 +598,51 @@ describe('ProgramBuilder', () => {
     expect(decodedProgram.toString()).toBe(program.toString())
 
     const ixs = decodedBuilder.getInstructions()
-    expect(ixs).toHaveLength(6)
+    expect(ixs).toHaveLength(10)
 
     expect(ixs[0].opcode.id.toString()).toContain('flatFeeAmountInXD')
     expect((ixs[0].args as fee.FlatFeeArgs).fee).toBe(25000000n)
 
-    expect(ixs[1].opcode.id.toString()).toContain('flatFeeAmountOutXD')
-    expect((ixs[1].args as fee.FlatFeeArgs).fee).toBe(20000000n)
-
-    expect(ixs[2].opcode.id.toString()).toContain('progressiveFeeInXD')
-    expect((ixs[2].args as fee.FlatFeeArgs).fee).toBe(15000000n)
-
-    expect(ixs[3].opcode.id.toString()).toContain('progressiveFeeOutXD')
-    expect((ixs[3].args as fee.FlatFeeArgs).fee).toBe(12000000n)
-
-    expect(ixs[4].opcode.id.toString()).toContain('protocolFeeAmountOutXD')
-    const protocolFee = ixs[4].args as fee.ProtocolFeeArgs
+    expect(ixs[1].opcode.id.toString()).toContain('protocolFeeAmountInXD')
+    const protocolFee = ixs[1].args as fee.ProtocolFeeArgs
     expect(protocolFee.fee).toBe(10000000n)
     expect(protocolFee.to.toString()).toBe(feeRecipient.toString())
 
-    expect(ixs[5].opcode.id.toString()).toContain('aquaProtocolFeeAmountOutXD')
-    const aquaFee = ixs[5].args as fee.ProtocolFeeArgs
+    expect(ixs[2].opcode.id.toString()).toContain('protocolFeeAmountOutXD')
+    const protocolFeeOut = ixs[2].args as fee.ProtocolFeeArgs
+    expect(protocolFeeOut.fee).toBe(20000000n)
+    expect(protocolFeeOut.to.toString()).toBe(feeRecipient.toString())
+
+    expect(ixs[3].opcode.id.toString()).toContain('aquaProtocolFeeAmountInXD')
+    const aquaFee = ixs[3].args as fee.ProtocolFeeArgs
     expect(aquaFee.fee).toBe(5000000n)
     expect(aquaFee.to.toString()).toBe(feeRecipient.toString())
+
+    expect(ixs[4].opcode.id.toString()).toContain('aquaProtocolFeeAmountOutXD')
+    const aquaFeeOut = ixs[4].args as fee.ProtocolFeeArgs
+    expect(aquaFeeOut.fee).toBe(6000000n)
+    expect(aquaFeeOut.to.toString()).toBe(feeRecipient.toString())
+
+    expect(ixs[5].opcode.id.toString()).toContain('aquaDynamicProtocolFeeAmountInXD')
+    const feeProvider = ixs[5].args as fee.DynamicProtocolFeeArgs
+    expect(feeProvider.feeProvider.toString()).toBe(externalContract.toString())
+
+    expect(ixs[6].opcode.id.toString()).toContain('dynamicProtocolFeeAmountInXD')
+    const feeProvider2 = ixs[6].args as fee.DynamicProtocolFeeArgs
+    expect(feeProvider2.feeProvider.toString()).toBe(externalContract1.toString())
+
+    expect(ixs[7].opcode.id.toString()).toContain('flatFeeAmountOutXD')
+    expect((ixs[7].args as fee.FlatFeeArgs).fee).toBe(35000000n)
+
+    expect(ixs[8].opcode.id.toString()).toContain('progressiveFeeInXD')
+    expect((ixs[8].args as fee.FlatFeeArgs).fee).toBe(45000000n)
+
+    expect(ixs[9].opcode.id.toString()).toContain('progressiveFeeOutXD')
+    expect((ixs[9].args as fee.FlatFeeArgs).fee).toBe(55000000n)
   })
 
   it('should handle complex program with new instructions', () => {
     const originalBuilder = new RegularProgramBuilder()
-    const oracle = new Address('0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419')
     const feeRecipient = new Address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45')
 
     const program = originalBuilder
@@ -658,15 +654,8 @@ describe('ProgramBuilder', () => {
         ],
       })
       .limitSwap1D({ makerDirectionLt: true })
-      .progressiveFeeInXD({ fee: 3000000n })
-      .oraclePriceAdjuster1D({
-        maxPriceDecay: 950000000000000000n,
-        maxStaleness: 3600n,
-        oracleDecimals: 8n,
-        oracleAddress: oracle,
-      })
       .requireMinRate1D({ rateLt: 3000n, rateGt: 1n })
-      .protocolFeeAmountOutXD({
+      .protocolFeeAmountInXD({
         fee: 1000000n,
         to: feeRecipient,
       })
@@ -678,15 +667,13 @@ describe('ProgramBuilder', () => {
     expect(decodedProgram.toString()).toBe(program.toString())
 
     const ixs = decodedBuilder.getInstructions()
-    expect(ixs).toHaveLength(8)
+    expect(ixs).toHaveLength(6)
 
     expect(ixs[0].opcode.id.toString()).toContain('salt')
     expect(ixs[1].opcode.id.toString()).toContain('staticBalancesXD')
     expect(ixs[2].opcode.id.toString()).toContain('limitSwap1D')
-    expect(ixs[3].opcode.id.toString()).toContain('progressiveFeeInXD')
-    expect(ixs[4].opcode.id.toString()).toContain('oraclePriceAdjuster1D')
-    expect(ixs[5].opcode.id.toString()).toContain('requireMinRate1D')
-    expect(ixs[6].opcode.id.toString()).toContain('protocolFeeAmountOutXD')
-    expect(ixs[7].opcode.id.toString()).toContain('invalidateBit1D')
+    expect(ixs[3].opcode.id.toString()).toContain('requireMinRate1D')
+    expect(ixs[4].opcode.id.toString()).toContain('protocolFeeAmountInXD')
+    expect(ixs[5].opcode.id.toString()).toContain('invalidateBit1D')
   })
 })

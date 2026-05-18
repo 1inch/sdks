@@ -4,7 +4,7 @@ import type { Address, HexString } from '@1inch/sdk-core'
 import { UINT_8_MAX, UINT_16_MAX, UINT_64_MAX } from '@1inch/byte-utils'
 import assert from 'assert'
 import { OraclePriceAdjusterArgsCoder } from './oracle-price-adjuster-args-coder'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../types'
 
 /**
  * @notice Oracle Price Adjuster instruction for dynamic price adjustment based on Chainlink price feeds
@@ -27,7 +27,8 @@ import type { IArgsData } from '../types'
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/OraclePriceAdjuster.sol#L84
  */
 export class OraclePriceAdjusterArgs implements IArgsData {
-  public static readonly CODER = new OraclePriceAdjusterArgsCoder()
+  public static readonly CODER: IArgsCoder<OraclePriceAdjusterArgs> =
+    new OraclePriceAdjusterArgsCoder()
 
   /**
    * maxPriceDecay - maximum price decay coefficient (uint64)

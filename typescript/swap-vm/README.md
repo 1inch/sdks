@@ -28,7 +28,8 @@ import {
   NetworkEnum,
   Order,
   MakerTraits,
-  AquaAMMStrategy
+  AquaXYCAmmStrategy,
+  instructions
 } from '@1inch/swap-vm-sdk'
 import { AquaProtocolContract, AQUA_CONTRACT_ADDRESSES } from '@1inch/aqua-sdk'
 
@@ -40,9 +41,11 @@ const maker = '0xmaker_address'
 const USDC = new Address('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')
 const WETH = new Address('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')
 
-const program = AquaAMMStrategy.new({
-  tokenA: USDC,
-  tokenB: WETH
+// Price range as P = tokenGt/tokenLt (1e18). E.g. 1500–3000 USDC per WETH → rawPriceMin = 1e18/3000, rawPriceMax = 1e18/1500
+const { ONE_E18 } = instructions.concentrate
+const program = AquaXYCAmmStrategy.newConcentrate({
+  rawPriceMin: ONE_E18 / 3000n,
+  rawPriceMax: ONE_E18 / 1500n
 }).build()
 
 const order = Order.new({
@@ -235,8 +238,7 @@ Available instruction categories in the full Swap VM instruction set include:
 
 ### Trading instructions
 - `XYC_SWAP_XD` - XYC swap for multi-dimensional pools
-- `CONCENTRATE_GROW_LIQUIDITY_XD` - Concentrate liquidity in multi-dimensional pools
-- `CONCENTRATE_GROW_LIQUIDITY_2D` - Concentrate liquidity in 2 tokens pools
+- `CONCENTRATE_GROW_LIQUIDITY_2D` - Concentrate liquidity in 2-token pools (sqrtPriceMin/sqrtPriceMax, P = tokenGt/tokenLt, 1e18)
 - `DECAY_XD` - Apply decay calculation
 - `LIMIT_SWAP_1D` - Execute limit order swap
 - `LIMIT_SWAP_ONLY_FULL_1D` - Execute limit order only if fully fillable
@@ -338,14 +340,14 @@ const { concentrate, fee } = instructions
 
 /**
  * Minimal strategy:
- * - concentrates liquidity for a 2-token pool
+ * - concentrates liquidity for a 2-token pool (price range in raw P = tokenGt/tokenLt, 1e18)
  * - optionally charges a taker fee on input
  * - always finishes with a simple XYC swap
  */
 export class SimpleAmmStrategy {
-  private liquidityA?: bigint
+  private rawPriceMin?: bigint
 
-  private liquidityB?: bigint
+  private rawPriceMax?: bigint
 
   private feeBpsIn?: number
 
@@ -355,11 +357,12 @@ export class SimpleAmmStrategy {
   ) {}
 
   /**
-   * Sets initial virtual liquidity for the pair.
+   * Sets the concentrated liquidity price range.
+   * Prices are P = tokenGt/tokenLt in 1e18 fixed-point (e.g. WETH per USDC when USDC < WETH).
    */
-  public withLiquidity(a: bigint, b: bigint): this {
-    this.liquidityA = a
-    this.liquidityB = b
+  public withPriceRange(rawPriceMin: bigint, rawPriceMax: bigint): this {
+    this.rawPriceMin = rawPriceMin
+    this.rawPriceMax = rawPriceMax
 
     return this
   }
@@ -381,12 +384,10 @@ export class SimpleAmmStrategy {
   public build(): SwapVmProgram {
     const builder = new AquaProgramBuilder()
 
-    if (this.liquidityA !== undefined && this.liquidityB !== undefined) {
-      const data = concentrate.ConcentrateGrowLiquidity2DArgs.fromTokenDeltas(
-        this.tokenA,
-        this.tokenB,
-        this.liquidityA,
-        this.liquidityB,
+    if (this.rawPriceMin !== undefined && this.rawPriceMax !== undefined) {
+      const data = concentrate.ConcentrateGrowLiquidity2DArgs.fromRawPrices(
+        this.rawPriceMin,
+        this.rawPriceMax,
       )
       builder.add(concentrate.concentrateGrowLiquidity2D.createIx(data))
     }
@@ -403,13 +404,12 @@ export class SimpleAmmStrategy {
   }
 }
 
-// Example usage:
+// Example usage (price range: e.g. 1500–3000 USDC per WETH → P = WETH per USDC = 1/3000 .. 1/1500 in 1e18):
+
+const { ONE_E18 } = concentrate
 
 const strategy = new SimpleAmmStrategy(USDC, WETH)
-  .withLiquidity(
-    10_000n * 10n ** 6n, // 10k USDC
-    5n * 10n ** 18n, // 5 WETH
-  )
+  .withPriceRange(ONE_E18 / 3000n, ONE_E18 / 1500n) // 1500–3000 USDC per WETH
   .withFeeTokenIn(5) // 5 bps taker fee on input (optional)
 
 const program = strategy.build()
@@ -523,18 +523,18 @@ The SDK includes pre-configured contract addresses of `AquaSwapVMRouter` for the
 
 | Network | Chain ID | Address |
 |---------|----------|---------|
-| Ethereum | 1 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://etherscan.io/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| BNB Chain | 56 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://bscscan.com/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| Polygon | 137 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://polygonscan.com/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| Arbitrum | 42161 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://arbiscan.io/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| Avalanche | 43114 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](http://snowscan.xyz/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| Gnosis | 100 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://gnosisscan.io/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| Coinbase Base | 8453 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://basescan.org/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| Optimism | 10 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://optimistic.etherscan.io/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| zkSync Era | 324 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://era.zksync.network/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| Linea | 59144 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://lineascan.build/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| Unichain | 1301 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://uniscan.xyz/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
-| Sonic | 146 | [0x8fdd04dbf6111437b44bbca99c28882434e0958f](https://sonicscan.org/address/0x8fdd04dbf6111437b44bbca99c28882434e0958f) |
+| Ethereum | 1 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://etherscan.io/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| BNB Chain | 56 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://bscscan.com/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Polygon | 137 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://polygonscan.com/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Arbitrum | 42161 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://arbiscan.io/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Avalanche | 43114 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](http://snowscan.xyz/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Gnosis | 100 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://gnosisscan.io/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Coinbase Base | 8453 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://basescan.org/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Optimism | 10 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://optimistic.etherscan.io/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| zkSync Era | 324 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://era.zksync.network/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Linea | 59144 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://lineascan.build/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Unichain | 1301 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://uniscan.xyz/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Sonic | 146 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://sonicscan.org/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
 
 Access addresses using:
 
@@ -558,12 +558,13 @@ The SDK exports:
 - **[`MakerTraits`](./src/swap-vm/maker-traits.ts)** - Maker-side configuration and flags
 - **[`TakerTraits`](./src/swap-vm/taker-traits.ts)** - Taker-side configuration and flags
 - **[`ABI`](./src/abi/)** - Contract ABI exports
+- **Strategies** - [`AquaAMMStrategy`](./src/swap-vm/strategies/aqua-amm-strategy.ts) (base), [`AquaXYCAmmStrategy`](./src/swap-vm/strategies/aqua-xyc-amm-strategy.ts) (use `new()` or `newConcentrate({ rawPriceMin, rawPriceMax })` / `{ sqrtPriceMin, sqrtPriceMax }`), [`AquaPeggedAmmStrategy`](./src/swap-vm/strategies/aqua-pegged-amm-strategy.ts)
 - **[Instructions](./src/swap-vm/instructions/)** - Comprehensive instruction system:
   - `controls` - Flow control instructions
   - `balances` - Balance manipulation instructions
   - `invalidators` - Invalidation instructions
   - `xycSwap` - XYC swap instructions
-  - `concentrate` - Liquidity concentration instructions
+  - `concentrate` - Liquidity concentration (e.g. `ConcentrateGrowLiquidity2DArgs.fromSqrtPrices` / `fromRawPrices`; P = tokenGt/tokenLt in 1e18)
   - `decay` - Decay calculation instructions
   - `limitSwap` - Limit order instructions
   - `minRate` - Minimum rate guard instructions

@@ -4,14 +4,14 @@ import type { HexString } from '@1inch/sdk-core'
 import { UINT_16_MAX } from '@1inch/byte-utils'
 import assert from 'assert'
 import { DecayXDArgsCoder } from './decay-xd-args-coder'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../types'
 
 /**
  * Arguments for decayXD instruction with decay period
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Decay.sol#L79
  **/
 export class DecayXDArgs implements IArgsData {
-  public static readonly CODER = new DecayXDArgsCoder()
+  public static readonly CODER: IArgsCoder<DecayXDArgs> = new DecayXDArgsCoder()
 
   constructor(public readonly decayPeriod: bigint) {
     assert(

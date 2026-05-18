@@ -58,7 +58,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.14.0
           cache: pnpm
           registry-url: https://registry.npmjs.org
 
@@ -138,12 +138,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.14.0
           cache: pnpm
           registry-url: https://registry.npmjs.org
           always-auth: true
 
-      # Updating npm to 11 since it's minimal version supporting "npm publish" with OIDC token
+      # npm 11+ supports OIDC provenance; pnpm publish delegates attestation to npm for npmjs
       - name: Install npm@11
         run: npm install -g npm@11
 
@@ -154,14 +154,13 @@ jobs:
         run: pnpm --filter "${{ needs.release.outputs.package_name }}" build
 
       - name: Publish to npmjs
-        working-directory: ${{ needs.release.outputs.sdk_path }}
         run: |
           TAG_ARG=""
           if [ "${{ github.event.inputs.bump }}" = "prerelease" ]; then
             TAG_ARG="--tag next"
           fi
 
-          npm publish --access public --provenance $TAG_ARG
+          pnpm --filter "${{ needs.release.outputs.package_name }}" publish --access public --provenance --no-git-checks $TAG_ARG
 
   publish-github-packages:
     runs-on: ubuntu-latest
@@ -183,7 +182,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.14.0
           cache: pnpm
 
       - name: Install dependencies
@@ -195,9 +194,8 @@ jobs:
       - name: Publish to GitHub Packages
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
-        working-directory: ${{ needs.release.outputs.sdk_path }}
         run: |
           npm config set @1inch:registry https://npm.pkg.github.com
           npm config set //npm.pkg.github.com/:_authToken "${NODE_AUTH_TOKEN}"
 
-          npm publish --access public
+          pnpm --filter "${{ needs.release.outputs.package_name }}" publish --access public --no-git-checks

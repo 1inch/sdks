@@ -3,7 +3,7 @@
 import type { HexString } from '@1inch/sdk-core'
 import assert from 'assert'
 import { JumpArgsCoder } from './jump-args-coder'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../types'
 
 const UINT_16_MAX = 0xffffn
 
@@ -12,7 +12,7 @@ const UINT_16_MAX = 0xffffn
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L10
  **/
 export class JumpArgs implements IArgsData {
-  public static readonly CODER = new JumpArgsCoder()
+  public static readonly CODER: IArgsCoder<JumpArgs> = new JumpArgsCoder()
 
   constructor(public readonly nextPC: bigint) {
     assert(

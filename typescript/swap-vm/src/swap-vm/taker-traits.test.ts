@@ -179,8 +179,23 @@ describe('TakerTraits', () => {
       expect(decoded.preTransferInCallbackEnabled).toBe(true)
       expect(decoded.preTransferInCallbackData.toString()).toBe('0xdeadbeef')
       expect(!decoded.threshold || decoded.threshold === 0n).toBe(true)
+      expect(!decoded.deadline || decoded.deadline === 0n).toBe(true)
       expect(!decoded.customReceiver || decoded.customReceiver.isZero()).toBe(true)
       expect(decoded.customReceiver?.isZero()).toBe(true)
+    })
+
+    it('should encode and decode traits with deadline (main-branch format)', () => {
+      const deadline = 1735689600n
+      const originalTraits = TakerTraits.new({
+        exactIn: true,
+        deadline,
+      })
+
+      const encoded = originalTraits.encode()
+      const decoded = TakerTraits.decode(encoded)
+
+      expect(decoded.deadline).toBe(deadline)
+      expect(decoded.exactIn).toBe(true)
     })
   })
 

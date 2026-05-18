@@ -4,16 +4,16 @@ import type { Address, HexString } from '@1inch/sdk-core'
 import { UINT_32_MAX } from '@1inch/byte-utils'
 import assert from 'assert'
 import { ProtocolFeeArgsCoder } from './protocol-fee-args-coder'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../../types'
 
 const FEE_100_PERCENT = 1e9 // 1e9 = 100%
 
 /**
- * Arguments for protocol fee instructions (protocolFeeAmountOutXD, aquaProtocolFeeAmountOutXD)
- * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L102
+ * Arguments for protocol fee instructions (protocolFeeAmountInXD, aquaProtocolFeeAmountInXD)
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L101
  **/
 export class ProtocolFeeArgs implements IArgsData {
-  public static readonly CODER = new ProtocolFeeArgsCoder()
+  public static readonly CODER: IArgsCoder<ProtocolFeeArgs> = new ProtocolFeeArgsCoder()
 
   /**
    * fee - 1e9 = 100% (uint32)

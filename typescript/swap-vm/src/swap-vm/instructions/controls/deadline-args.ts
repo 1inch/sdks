@@ -2,10 +2,10 @@
 
 import type { HexString } from '@1inch/sdk-core'
 import { DeadlineArgsCoder } from './deadline-args-coder'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../types'
 
 export class DeadlineArgs implements IArgsData {
-  public static readonly CODER = new DeadlineArgsCoder()
+  public static readonly CODER: IArgsCoder<DeadlineArgs> = new DeadlineArgsCoder()
 
   constructor(public readonly deadline: bigint) {}
 

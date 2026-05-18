@@ -18,7 +18,7 @@ class DebugEmptyArgsCoder implements IArgsCoder<DebugEmptyArgs> {
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Debug.sol
  **/
 export class DebugEmptyArgs implements IArgsData {
-  public static readonly CODER = new DebugEmptyArgsCoder()
+  public static readonly CODER: IArgsCoder<DebugEmptyArgs> = new DebugEmptyArgsCoder()
 
   /**
    * Decodes hex data into DebugEmptyArgs instance

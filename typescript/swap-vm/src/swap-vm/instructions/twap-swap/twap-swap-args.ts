@@ -4,7 +4,7 @@ import type { HexString } from '@1inch/sdk-core'
 import { UINT_256_MAX } from '@1inch/byte-utils'
 import assert from 'assert'
 import { TWAPSwapArgsCoder } from './twap-swap-args-coder'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../types'
 
 /**
  * @notice TWAP Hook with exponential dutch auction and illiquidity handling
@@ -53,7 +53,7 @@ import type { IArgsData } from '../types'
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/TWAPSwap.sol#L104
  */
 export class TWAPSwapArgs implements IArgsData {
-  public static readonly CODER = new TWAPSwapArgsCoder()
+  public static readonly CODER: IArgsCoder<TWAPSwapArgs> = new TWAPSwapArgsCoder()
 
   /**
    * balanceIn - expected amount of token1 for initial price (uint256)

@@ -19,7 +19,8 @@ class PrintFreeMemoryPointerArgsCoder implements IArgsCoder<PrintFreeMemoryPoint
  * @see Debug._printFreeMemoryPointer in Solidity
  */
 export class PrintFreeMemoryPointerArgs extends DebugArgs {
-  public static readonly CODER = new PrintFreeMemoryPointerArgsCoder()
+  public static readonly CODER: IArgsCoder<PrintFreeMemoryPointerArgs> =
+    new PrintFreeMemoryPointerArgsCoder()
 
   static decode(_data: HexString): PrintFreeMemoryPointerArgs {
     return PrintFreeMemoryPointerArgs.CODER.decode(_data)

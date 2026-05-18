@@ -60,9 +60,13 @@ describe('AquaProtocolContract', () => {
         ],
       }
 
+      const aqua = new AquaProtocolContract(mockContractAddress)
+      const tx0 = aqua.ship(args)
+
       const tx = AquaProtocolContract.buildShipTx(mockContractAddress, args)
 
       expect(tx).toBeDefined()
+      expect(tx).toStrictEqual(tx0)
       expect(tx.to).toBe(mockContractAddress.toString())
       expect(tx.data.startsWith('0x')).toBe(true)
       expect(tx.value).toBe(0n)
@@ -77,9 +81,13 @@ describe('AquaProtocolContract', () => {
         tokens: mockTokens,
       }
 
+      const aqua = new AquaProtocolContract(mockContractAddress)
+      const tx0 = aqua.dock(args)
+
       const tx = AquaProtocolContract.buildDockTx(mockContractAddress, args)
 
       expect(tx).toBeDefined()
+      expect(tx0).toStrictEqual(tx)
       expect(tx.to).toBe(mockContractAddress.toString())
       expect(tx.data.startsWith('0x')).toBe(true)
       expect(tx.value).toBe(0n)

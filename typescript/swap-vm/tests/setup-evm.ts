@@ -93,6 +93,7 @@ export class ReadyEvmFork {
       [this.addresses.swapVMAquaRouter, 'swapVMAquaRouter'],
       [this.addresses.customSwapVM, 'customSwapVM'],
       [ADDRESSES.USDC, 'USDC'],
+      [ADDRESSES.DAI, 'DAI'],
       [ADDRESSES.WETH, 'WETH'],
       [await this.liqProvider.getAddress(), 'liqProvider'],
       [await this.swapper.getAddress(), 'swapper'],
@@ -196,12 +197,22 @@ async function deployContracts(transport: Transport, chain: Chain): Promise<Test
 
   const nonce = await deployer.getTransactionCount({ address: account.address })
   const [swapVMAquaRouter, customSwapVM, makerHooks, testTrader] = await Promise.all([
-    deploy(TestAquaSwapVMRouter as ContractParams, [aqua], deployer, nonce),
-    deploy(TestCustomSwapVM as ContractParams, [aqua], deployer, nonce + 1),
+    deploy(
+      TestAquaSwapVMRouter as ContractParams,
+      [aqua, ADDRESSES.WETH, account.address],
+      deployer,
+      nonce,
+    ),
+    deploy(
+      TestCustomSwapVM as ContractParams,
+      [aqua, ADDRESSES.WETH, account.address],
+      deployer,
+      nonce + 1,
+    ),
     deploy(TestMakerHooks as ContractParams, [], deployer, nonce + 2),
     deploy(
       TestTrader as ContractParams,
-      [aqua, [ADDRESSES.WETH, ADDRESSES.USDC]],
+      [aqua, [ADDRESSES.WETH, ADDRESSES.USDC, ADDRESSES.DAI]],
       deployer,
       nonce + 3,
     ),
@@ -223,29 +234,69 @@ async function setupBalances(
   chain: Chain,
   addresses: TestAddresses,
 ): Promise<void> {
-  const usdcDonor = await TestWallet.fromAddress(ADDRESSES.USDC_DONOR, transport, chain)
-
-  // liqProvider have WETH and USDC
+  // liqProvider have WETH, USDC, DAI
   await liqProvider.transfer(ADDRESSES.WETH, parseEther('100'))
+  await swapper.transfer(ADDRESSES.WETH, parseEther('100'))
+  await liqProvider.transfer(ADDRESSES.DAI_DONOR, parseEther('1')) // it has low eth
   await liqProvider.unlimitedApprove(ADDRESSES.WETH, addresses.aqua)
+
+  const usdcDonor = await TestWallet.fromAddress(ADDRESSES.USDC_DONOR, transport, chain)
   await liqProvider.unlimitedApprove(ADDRESSES.USDC, addresses.aqua)
   await usdcDonor.transferToken(
     ADDRESSES.USDC,
     await liqProvider.getAddress(),
-    parseUnits('100000', 6),
+    parseUnits('1000000', 6),
   )
-
   // swapper have USDC
-  await usdcDonor.transferToken(ADDRESSES.USDC, await swapper.getAddress(), parseUnits('10000', 6))
+  await usdcDonor.transferToken(ADDRESSES.USDC, await swapper.getAddress(), parseUnits('100000', 6))
   await swapper.unlimitedApprove(ADDRESSES.USDC, addresses.swapVMAquaRouter)
+  await swapper.unlimitedApprove(ADDRESSES.WETH, addresses.swapVMAquaRouter)
+
+  const daiDonor = await TestWallet.fromAddress(ADDRESSES.DAI_DONOR, transport, chain)
+  await liqProvider.unlimitedApprove(ADDRESSES.DAI, addresses.aqua)
+  await swapper.unlimitedApprove(ADDRESSES.DAI, addresses.swapVMAquaRouter)
+  await daiDonor.transferToken(
+    ADDRESSES.DAI,
+    await liqProvider.getAddress(),
+    parseUnits('1000000', 18),
+  )
+  await daiDonor.transferToken(ADDRESSES.DAI, await swapper.getAddress(), parseUnits('100000', 18))
+
+  const usdtDonor = await TestWallet.fromAddress(ADDRESSES.USDT_DONOR, transport, chain)
+  await liqProvider.unlimitedApprove(ADDRESSES.USDT, addresses.aqua)
+  await usdtDonor.transferToken(
+    ADDRESSES.USDT,
+    await liqProvider.getAddress(),
+    parseUnits('1000000', 6),
+  )
+  // swapper have USDT
+  await usdtDonor.transferToken(ADDRESSES.USDT, await swapper.getAddress(), parseUnits('100000', 6))
+  await swapper.unlimitedApprove(ADDRESSES.USDT, addresses.swapVMAquaRouter)
+
+  const wbtcDonor = await TestWallet.fromAddress(ADDRESSES.WBTC_DONOR, transport, chain)
+  await liqProvider.unlimitedApprove(ADDRESSES.WBTC, addresses.aqua)
+  await wbtcDonor.transferToken(
+    ADDRESSES.WBTC,
+    await liqProvider.getAddress(),
+    parseUnits('100', 8),
+  )
+  // swapper have WBTC
+  await wbtcDonor.transferToken(ADDRESSES.WBTC, await swapper.getAddress(), parseUnits('10', 8))
+  await swapper.unlimitedApprove(ADDRESSES.WBTC, addresses.swapVMAquaRouter)
 
   console.log('swapper address is', await swapper.getAddress())
   console.log('swapper USDC balance is', await swapper.tokenBalance(ADDRESSES.USDC))
+  console.log('swapper DAI balance is', await swapper.tokenBalance(ADDRESSES.DAI))
   console.log('swapper WETH balance is', await swapper.tokenBalance(ADDRESSES.WETH))
+  console.log('swapper USDT balance is', await swapper.tokenBalance(ADDRESSES.USDT))
+  console.log('swapper WBTC balance is', await swapper.tokenBalance(ADDRESSES.WBTC))
 
   console.log('liquidity provider address is', await liqProvider.getAddress())
   console.log('liquidity provider USDC balance is', await liqProvider.tokenBalance(ADDRESSES.USDC))
+  console.log('liquidity provider DAI balance is', await liqProvider.tokenBalance(ADDRESSES.DAI))
   console.log('liquidity provider WETH balance is', await liqProvider.tokenBalance(ADDRESSES.WETH))
+  console.log('liquidity provider USDT balance is', await liqProvider.tokenBalance(ADDRESSES.USDT))
+  console.log('liquidity provider WBTC balance is', await liqProvider.tokenBalance(ADDRESSES.WBTC))
 }
 
 /**

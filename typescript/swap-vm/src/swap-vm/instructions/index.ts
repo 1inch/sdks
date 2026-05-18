@@ -10,7 +10,6 @@ import * as decay from './decay'
 import * as limitSwap from './limit-swap'
 import * as minRate from './min-rate'
 import * as dutchAuction from './dutch-auction'
-import * as oraclePriceAdjuster from './oracle-price-adjuster'
 import * as baseFeeAdjuster from './base-fee-adjuster'
 import * as twapSwap from './twap-swap'
 // import * as stableSwap from './stable-swap' // Not in production
@@ -18,6 +17,7 @@ import * as fee from './fee'
 import * as extruction from './extruction'
 import type { Opcode } from './opcode'
 import type { IArgsData } from './types'
+import * as peggedSwap from './pegged-swap'
 
 export * from './types'
 export { EMPTY_OPCODE } from './empty'
@@ -33,9 +33,10 @@ export * as dutchAuction from './dutch-auction'
 export * as oraclePriceAdjuster from './oracle-price-adjuster'
 export * as baseFeeAdjuster from './base-fee-adjuster'
 export * as twapSwap from './twap-swap'
-export * as stableSwap from './stable-swap'
+export * as stableSwap from './pegged-swap'
 export * as fee from './fee'
 export * as extruction from './extruction'
+export * as peggedSwap from './pegged-swap'
 
 /**
  * Regular opcodes array - matching SwapVM contract exactly (44 opcodes)
@@ -59,52 +60,54 @@ export const _allInstructions: Opcode<IArgsData>[] = [
   /**
    * Controls (11-17)
    */
-  controls.jump, // 11 - JUMP
-  controls.jumpIfTokenIn, // 12 - JUMP_IF_TOKEN_IN
-  controls.jumpIfTokenOut, // 13 - JUMP_IF_TOKEN_OUT
-  controls.deadline, // 14 - DEADLINE
-  controls.onlyTakerTokenBalanceNonZero, // 15 - ONLY_TAKER_TOKEN_BALANCE_NON_ZERO
-  controls.onlyTakerTokenBalanceGte, // 16 - ONLY_TAKER_TOKEN_BALANCE_GTE
-  controls.onlyTakerTokenSupplyShareGte, // 17 - ONLY_TAKER_TOKEN_SUPPLY_SHARE_GTE
+  controls.jump, // 11
+  controls.jumpIfTokenIn, // 12
+  controls.jumpIfTokenOut, // 13
+  controls.deadline, // 14
+  controls.onlyTakerTokenBalanceNonZero, // 15
+  controls.onlyTakerTokenBalanceGte, // 16
+  controls.onlyTakerTokenSupplyShareGte, // 17
 
   /**
    * Balances (18-19)
    */
-  balances.staticBalancesXD, // 18 - STATIC_BALANCES_XD
-  balances.dynamicBalancesXD, // 19 - DYNAMIC_BALANCES_XD
+  balances.staticBalancesXD, // 18
+  balances.dynamicBalancesXD, // 19
 
   /**
    * Invalidators (20-22)
    */
-  invalidators.invalidateBit1D, // 20 - INVALIDATE_BIT_1D
-  invalidators.invalidateTokenIn1D, // 21 - INVALIDATE_TOKEN_IN_1D
-  invalidators.invalidateTokenOut1D, // 22 - INVALIDATE_TOKEN_OUT_1D
+  invalidators.invalidateBit1D, // 20
+  invalidators.invalidateTokenIn1D, // 21
+  invalidators.invalidateTokenOut1D, // 22
 
   /**
    * Trading instructions (23+)
    */
-  xycSwap.xycSwapXD, // 23 - XYC_SWAP_XD
-  concentrate.concentrateGrowLiquidityXD, // 24 - CONCENTRATE_GROW_LIQUIDITY_XD
-  concentrate.concentrateGrowLiquidity2D, // 25 - CONCENTRATE_GROW_LIQUIDITY_2D
-  decay.decayXD, // 26 - DECAY_XD
-  limitSwap.limitSwap1D, // 27 - LIMIT_SWAP_1D
-  limitSwap.limitSwapOnlyFull1D, // 28 - LIMIT_SWAP_ONLY_FULL_1D
-  minRate.requireMinRate1D, // 29 - REQUIRE_MIN_RATE_1D
-  minRate.adjustMinRate1D, // 30 - ADJUST_MIN_RATE_1D
-  dutchAuction.dutchAuctionBalanceIn1D, // 31 - DUTCH_AUCTION_BALANCE_IN_1D
-  dutchAuction.dutchAuctionBalanceOut1D, // 32 - DUTCH_AUCTION_BALANCE_OUT_1D
-  oraclePriceAdjuster.oraclePriceAdjuster1D, // 33 - ORACLE_PRICE_ADJUSTER_1D
-  baseFeeAdjuster.baseFeeAdjuster1D, // 34 - BASE_FEE_ADJUSTER_1D
-  twapSwap.twap, // 35 - TWAP
-  extruction.extruction, // 36 - EXTRUCTION
-  controls.salt, // 37 - SALT
-  fee.flatFeeAmountInXD, // 38 - FLAT_FEE_AMOUNT_IN_XD
-  fee.flatFeeAmountOutXD, // 39 - FLAT_FEE_AMOUNT_OUT_XD
-  fee.progressiveFeeInXD, // 40 - PROGRESSIVE_FEE_IN_XD
-  fee.progressiveFeeOutXD, // 41 - PROGRESSIVE_FEE_OUT_XD
-  fee.protocolFeeAmountOutXD, // 42 - PROTOCOL_FEE_AMOUNT_OUT_XD
-  fee.aquaProtocolFeeAmountOutXD, // 43 - AQUA_PROTOCOL_FEE_AMOUNT_OUT_XD
-  // stableSwap.stableSwap2D, // STABLE_SWAP_2D - not in production
+  xycSwap.xycSwapXD, // 23
+  concentrate.concentrateGrowLiquidity2D, // 24
+  decay.decayXD, // 25
+  limitSwap.limitSwap1D, // 26
+  limitSwap.limitSwapOnlyFull1D, // 27
+  minRate.requireMinRate1D, // 28
+  minRate.adjustMinRate1D, // 29
+  dutchAuction.dutchAuctionBalanceIn1D, // 30
+  dutchAuction.dutchAuctionBalanceOut1D, // 31
+  baseFeeAdjuster.baseFeeAdjuster1D, // 32
+  twapSwap.twap, // 33
+  extruction.extruction, // 34
+  controls.salt, // 35
+  fee.flatFeeAmountInXD, // 36
+  fee.flatFeeAmountOutXD, // 37
+  fee.progressiveFeeInXD, // 38
+  fee.progressiveFeeOutXD, // 39
+  fee.protocolFeeAmountOutXD, // 40
+  fee.aquaProtocolFeeAmountOutXD, // 41
+  peggedSwap.peggedSwapGrowPriceRange2D, // 42
+  fee.protocolFeeAmountInXD, // 43
+  fee.aquaProtocolFeeAmountInXD, // 44
+  fee.dynamicProtocolFeeAmountInXD, // 45
+  fee.aquaDynamicProtocolFeeAmountInXD, // 46
 ] as const
 
 /**
@@ -129,26 +132,31 @@ export const aquaInstructions: Opcode<IArgsData>[] = [
   /**
    * Controls (11-17)
    */
-  controls.jump, // 11 - JUMP
-  controls.jumpIfTokenIn, // 12 - JUMP_IF_TOKEN_IN
-  controls.jumpIfTokenOut, // 13 - JUMP_IF_TOKEN_OUT
-  controls.deadline, // 14 - DEADLINE
-  controls.onlyTakerTokenBalanceNonZero, // 15 - ONLY_TAKER_TOKEN_BALANCE_NON_ZERO
-  controls.onlyTakerTokenBalanceGte, // 16 - ONLY_TAKER_TOKEN_BALANCE_GTE
-  controls.onlyTakerTokenSupplyShareGte, // 17 - ONLY_TAKER_TOKEN_SUPPLY_SHARE_GTE
+  controls.jump, // 11
+  controls.jumpIfTokenIn, // 12
+  controls.jumpIfTokenOut, // 13
+  controls.deadline, // 14
+  controls.onlyTakerTokenBalanceNonZero, // 15
+  controls.onlyTakerTokenBalanceGte, // 16
+  controls.onlyTakerTokenSupplyShareGte, // 17
 
   /**
    * Trading instructions (18+)
    */
-  xycSwap.xycSwapXD, // 18 - XYC_SWAP_XD
-  concentrate.concentrateGrowLiquidityXD, // 19 - CONCENTRATE_GROW_LIQUIDITY_XD
-  concentrate.concentrateGrowLiquidity2D, // 20 - CONCENTRATE_GROW_LIQUIDITY_2D
-  decay.decayXD, // 21 - DECAY_XD
-  controls.salt, // 22 - SALT
-  fee.flatFeeAmountInXD, // 23 - FLAT_FEE_AMOUNT_IN_XD
-  fee.flatFeeAmountOutXD, // 24 - FLAT_FEE_AMOUNT_OUT_XD
-  fee.progressiveFeeInXD, // 25 - PROGRESSIVE_FEE_IN_XD
-  fee.progressiveFeeOutXD, // 26 - PROGRESSIVE_FEE_OUT_XD
-  fee.protocolFeeAmountOutXD, // 27 - PROTOCOL_FEE_AMOUNT_OUT_XD
-  fee.aquaProtocolFeeAmountOutXD, // 28 - AQUA_PROTOCOL_FEE_AMOUNT_OUT_XD
+  xycSwap.xycSwapXD, // 18
+  concentrate.concentrateGrowLiquidity2D, // 19
+  decay.decayXD, // 20
+  controls.salt, // 21
+  fee.flatFeeAmountInXD, // 22
+  EMPTY_OPCODE, // 23
+  EMPTY_OPCODE, // 24
+  EMPTY_OPCODE, // 25
+  EMPTY_OPCODE, // 26
+  EMPTY_OPCODE, // 27
+  fee.protocolFeeAmountInXD, // 28
+  fee.aquaProtocolFeeAmountInXD, // 29
+  fee.dynamicProtocolFeeAmountInXD, // 30
+  fee.aquaDynamicProtocolFeeAmountInXD, // 31
+  peggedSwap.peggedSwapGrowPriceRange2D, // 32
+  extruction.extruction, // 33
 ] as const

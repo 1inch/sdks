@@ -7,13 +7,16 @@ import { Opcode } from '../opcode'
  * Limit order swap with proportional execution
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/LimitSwap.sol#L27
  **/
-export const limitSwap1D = new Opcode(Symbol('LimitSwap.limitSwap1D'), LimitSwapDirectionArgs.CODER)
+export const limitSwap1D: Opcode<LimitSwapDirectionArgs> = new Opcode(
+  Symbol('LimitSwap.limitSwap1D'),
+  LimitSwapDirectionArgs.CODER,
+)
 
 /**
  * Limit order swap requiring full amount execution
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/LimitSwap.sol#L44
  **/
-export const limitSwapOnlyFull1D = new Opcode(
+export const limitSwapOnlyFull1D: Opcode<LimitSwapDirectionArgs> = new Opcode(
   Symbol('LimitSwap.limitSwapOnlyFull1D'),
   LimitSwapDirectionArgs.CODER,
 )

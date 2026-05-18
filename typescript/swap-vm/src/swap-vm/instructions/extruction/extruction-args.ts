@@ -2,14 +2,14 @@
 
 import type { Address, HexString } from '@1inch/sdk-core'
 import { ExtructionArgsCoder } from './extruction-args-coder'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../types'
 
 /**
  * Arguments for extruction instruction to call external contract logic
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Extruction.sol#L33
  **/
 export class ExtructionArgs implements IArgsData {
-  public static readonly CODER = new ExtructionArgsCoder()
+  public static readonly CODER: IArgsCoder<ExtructionArgs> = new ExtructionArgsCoder()
 
   /**
    * target - External contract address (20 bytes)

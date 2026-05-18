@@ -4,16 +4,16 @@ import type { HexString } from '@1inch/sdk-core'
 import { UINT_32_MAX } from '@1inch/byte-utils'
 import assert from 'assert'
 import { FlatFeeArgsCoder } from './flat-fee-args-coder'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../../types'
 
 const FEE_100_PERCENT = 1e9 // 1e9 = 100%
 
 /**
- * Arguments for flat fee instructions (flatFeeXD, flatFeeAmountInXD, flatFeeAmountOutXD, progressiveFeeXD)
+ * Arguments for flat fee instructions (flatFeeAmountInXD)
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L66
  **/
 export class FlatFeeArgs implements IArgsData {
-  public static readonly CODER = new FlatFeeArgsCoder()
+  public static readonly CODER: IArgsCoder<FlatFeeArgs> = new FlatFeeArgsCoder()
 
   constructor(public readonly fee: bigint) {
     assert(fee >= 0n && fee <= UINT_32_MAX, `Invalid fee: ${fee}. Must be a valid uint32`)

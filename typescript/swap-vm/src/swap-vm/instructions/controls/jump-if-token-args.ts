@@ -2,10 +2,10 @@
 
 import type { HexString, AddressHalf } from '@1inch/sdk-core'
 import { JumpIfTokenArgsCoder } from './jump-if-token-args-coder'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../types'
 
 export class JumpIfTokenArgs implements IArgsData {
-  public static readonly CODER = new JumpIfTokenArgsCoder()
+  public static readonly CODER: IArgsCoder<JumpIfTokenArgs> = new JumpIfTokenArgsCoder()
 
   constructor(
     public readonly tokenTail: AddressHalf,

@@ -9,11 +9,11 @@ import * as controls from '../instructions/controls'
 import * as invalidators from '../instructions/invalidators'
 import * as xycSwap from '../instructions/xyc-swap'
 import * as concentrate from '../instructions/concentrate'
+import * as peggedSwap from '../instructions/pegged-swap'
 import * as decay from '../instructions/decay'
 import * as limitSwap from '../instructions/limit-swap'
 import * as minRate from '../instructions/min-rate'
 import * as dutchAuction from '../instructions/dutch-auction'
-import * as oraclePriceAdjuster from '../instructions/oracle-price-adjuster'
 import * as baseFeeAdjuster from '../instructions/base-fee-adjuster'
 import * as twapSwap from '../instructions/twap-swap'
 import * as fee from '../instructions/fee'
@@ -196,21 +196,6 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Concentrates liquidity within price bounds for multiple tokens
-   **/
-  public concentrateGrowLiquidityXD(
-    data: DataFor<concentrate.ConcentrateGrowLiquidityXDArgs>,
-  ): this {
-    super.add(
-      concentrate.concentrateGrowLiquidityXD.createIx(
-        new concentrate.ConcentrateGrowLiquidityXDArgs(data.tokenDeltas),
-      ),
-    )
-
-    return this
-  }
-
-  /**
    * Concentrates liquidity within price bounds for two tokens
    **/
   public concentrateGrowLiquidity2D(
@@ -218,7 +203,20 @@ export class RegularProgramBuilder extends ProgramBuilder {
   ): this {
     super.add(
       concentrate.concentrateGrowLiquidity2D.createIx(
-        new concentrate.ConcentrateGrowLiquidity2DArgs(data.deltaLt, data.deltaGt),
+        new concentrate.ConcentrateGrowLiquidity2DArgs(data.sqrtPriceMin, data.sqrtPriceMax),
+      ),
+    )
+
+    return this
+  }
+
+  /**
+   * Square-root linear swap curve for pegged assets
+   **/
+  public peggedSwapGrowPriceRange2D(data: DataFor<peggedSwap.PeggedSwapArgs>): this {
+    super.add(
+      peggedSwap.peggedSwapGrowPriceRange2D.createIx(
+        new peggedSwap.PeggedSwapArgs(data.x0, data.y0, data.linearWidth, data.rateLt, data.rateGt),
       ),
     )
 
@@ -296,24 +294,6 @@ export class RegularProgramBuilder extends ProgramBuilder {
     super.add(
       dutchAuction.dutchAuctionBalanceOut1D.createIx(
         new dutchAuction.DutchAuctionArgs(data.startTime, data.duration, data.decayFactor),
-      ),
-    )
-
-    return this
-  }
-
-  /**
-   * Adjusts swap prices based on Chainlink oracle feeds
-   **/
-  public oraclePriceAdjuster1D(data: DataFor<oraclePriceAdjuster.OraclePriceAdjusterArgs>): this {
-    super.add(
-      oraclePriceAdjuster.oraclePriceAdjuster1D.createIx(
-        new oraclePriceAdjuster.OraclePriceAdjusterArgs(
-          data.maxPriceDecay,
-          data.maxStaleness,
-          data.oracleDecimals,
-          data.oracleAddress,
-        ),
       ),
     )
 
@@ -408,6 +388,15 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
+   * Applies protocol fee to amountIn with direct transfer
+   **/
+  public protocolFeeAmountInXD(data: DataFor<fee.ProtocolFeeArgs>): this {
+    super.add(fee.protocolFeeAmountInXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
+
+    return this
+  }
+
+  /**
    * Applies protocol fee to amountOut with direct transfer
    **/
   public protocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
@@ -417,10 +406,43 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
+   * Applies protocol fee to amountIn through Aqua protocol
+   **/
+  public aquaProtocolFeeAmountInXD(data: DataFor<fee.ProtocolFeeArgs>): this {
+    super.add(fee.aquaProtocolFeeAmountInXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
+
+    return this
+  }
+
+  /**
    * Applies protocol fee to amountOut through Aqua protocol
    **/
   public aquaProtocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
     super.add(fee.aquaProtocolFeeAmountOutXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
+
+    return this
+  }
+
+  /**
+   * Applies protocol fee, fetched from external contract, to amountIn with direct transfer
+   **/
+  public dynamicProtocolFeeAmountInXD(data: DataFor<fee.DynamicProtocolFeeArgs>): this {
+    super.add(
+      fee.dynamicProtocolFeeAmountInXD.createIx(new fee.DynamicProtocolFeeArgs(data.feeProvider)),
+    )
+
+    return this
+  }
+
+  /**
+   * Applies protocol fee, fetched from external contract, to amountIn through Aqua protocol
+   **/
+  public aquaDynamicProtocolFeeAmountInXD(data: DataFor<fee.DynamicProtocolFeeArgs>): this {
+    super.add(
+      fee.aquaDynamicProtocolFeeAmountInXD.createIx(
+        new fee.DynamicProtocolFeeArgs(data.feeProvider),
+      ),
+    )
 
     return this
   }

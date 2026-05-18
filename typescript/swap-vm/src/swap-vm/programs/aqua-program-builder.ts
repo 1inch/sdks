@@ -10,6 +10,7 @@ import * as concentrate from '../instructions/concentrate'
 import * as decay from '../instructions/decay'
 import * as fee from '../instructions/fee'
 import * as debug from '../instructions/debug/opcodes'
+import * as peggedSwap from '../instructions/pegged-swap'
 
 export class AquaProgramBuilder extends ProgramBuilder {
   constructor() {
@@ -137,21 +138,6 @@ export class AquaProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Concentrates liquidity within price bounds for multiple tokens
-   **/
-  public concentrateGrowLiquidityXD(
-    data: DataFor<concentrate.ConcentrateGrowLiquidityXDArgs>,
-  ): this {
-    super.add(
-      concentrate.concentrateGrowLiquidityXD.createIx(
-        new concentrate.ConcentrateGrowLiquidityXDArgs(data.tokenDeltas),
-      ),
-    )
-
-    return this
-  }
-
-  /**
    * Concentrates liquidity within price bounds for two tokens
    **/
   public concentrateGrowLiquidity2D(
@@ -159,7 +145,20 @@ export class AquaProgramBuilder extends ProgramBuilder {
   ): this {
     super.add(
       concentrate.concentrateGrowLiquidity2D.createIx(
-        new concentrate.ConcentrateGrowLiquidity2DArgs(data.deltaLt, data.deltaGt),
+        new concentrate.ConcentrateGrowLiquidity2DArgs(data.sqrtPriceMin, data.sqrtPriceMax),
+      ),
+    )
+
+    return this
+  }
+
+  /**
+   * Square-root linear swap curve for pegged assets
+   **/
+  public peggedSwapGrowPriceRange2D(data: DataFor<peggedSwap.PeggedSwapArgs>): this {
+    super.add(
+      peggedSwap.peggedSwapGrowPriceRange2D.createIx(
+        new peggedSwap.PeggedSwapArgs(data.x0, data.y0, data.linearWidth, data.rateLt, data.rateGt),
       ),
     )
 
@@ -185,46 +184,43 @@ export class AquaProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Applies fee to amountOut
+   * Applies protocol fee to amountIn with direct transfer
    **/
-  public flatFeeAmountOutXD(data: DataFor<fee.FlatFeeArgs>): this {
-    super.add(fee.flatFeeAmountOutXD.createIx(new fee.FlatFeeArgs(data.fee)))
+  public protocolFeeAmountInXD(data: DataFor<fee.ProtocolFeeArgs>): this {
+    super.add(fee.protocolFeeAmountInXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
 
     return this
   }
 
   /**
-   * Applies progressive fee to amountIn
+   * Applies protocol fee to amountIn through Aqua protocol
    **/
-  public progressiveFeeInXD(data: DataFor<fee.FlatFeeArgs>): this {
-    super.add(fee.progressiveFeeInXD.createIx(new fee.FlatFeeArgs(data.fee)))
+  public aquaProtocolFeeAmountInXD(data: DataFor<fee.ProtocolFeeArgs>): this {
+    super.add(fee.aquaProtocolFeeAmountInXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
 
     return this
   }
 
   /**
-   * Applies progressive fee to amountOut
+   * Applies protocol fee, fetched from external contract, to amountIn with direct transfer
    **/
-  public progressiveFeeOutXD(data: DataFor<fee.FlatFeeArgs>): this {
-    super.add(fee.progressiveFeeOutXD.createIx(new fee.FlatFeeArgs(data.fee)))
+  public dynamicProtocolFeeAmountInXD(data: DataFor<fee.DynamicProtocolFeeArgs>): this {
+    super.add(
+      fee.dynamicProtocolFeeAmountInXD.createIx(new fee.DynamicProtocolFeeArgs(data.feeProvider)),
+    )
 
     return this
   }
 
   /**
-   * Applies protocol fee to amountOut with direct transfer
+   * Applies protocol fee, fetched from external contract, to amountIn through Aqua protocol
    **/
-  public protocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
-    super.add(fee.protocolFeeAmountOutXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
-
-    return this
-  }
-
-  /**
-   * Applies protocol fee to amountOut through Aqua protocol
-   **/
-  public aquaProtocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
-    super.add(fee.aquaProtocolFeeAmountOutXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
+  public aquaDynamicProtocolFeeAmountInXD(data: DataFor<fee.DynamicProtocolFeeArgs>): this {
+    super.add(
+      fee.aquaDynamicProtocolFeeAmountInXD.createIx(
+        new fee.DynamicProtocolFeeArgs(data.feeProvider),
+      ),
+    )
 
     return this
   }

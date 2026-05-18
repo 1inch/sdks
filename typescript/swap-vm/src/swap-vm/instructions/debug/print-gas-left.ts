@@ -19,7 +19,7 @@ class PrintGasLeftArgsCoder implements IArgsCoder<PrintGasLeftArgs> {
  * @see Debug._printGasLeft in Solidity
  */
 export class PrintGasLeftArgs extends DebugArgs {
-  public static readonly CODER = new PrintGasLeftArgsCoder()
+  public static readonly CODER: IArgsCoder<PrintGasLeftArgs> = new PrintGasLeftArgsCoder()
 
   static decode(_data: HexString): PrintGasLeftArgs {
     return PrintGasLeftArgs.CODER.decode(_data)
