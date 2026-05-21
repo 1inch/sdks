@@ -4,7 +4,7 @@ import assert from 'assert'
 import { bigintSqrt } from '../../utils'
 
 /** Matches `PeggedSwapMath.ONE` in swap-vm. */
-export const PEGGED_SWAP_ONE = 10n ** 27n
+export const PEGGED_SWAP_ONE: bigint = 10n ** 27n
 
 const MARGINAL_PRICE_ONE = 10n ** 18n
 
