@@ -13,8 +13,8 @@ const ONE_E18 = 10n ** 18n
 export class PeggedPrice {
   private constructor(
     private readonly gtPerLtRaw: bigint,
-    private readonly tokenLt: PeggedTokenRef,
-    private readonly tokenGt: PeggedTokenRef,
+    public readonly tokenLt: PeggedTokenRef,
+    public readonly tokenGt: PeggedTokenRef,
   ) {
     assert(gtPerLtRaw > 0n, 'price must be positive')
     assert(tokenLt.address.lt(tokenGt.address), 'internal pair order violated')
@@ -112,6 +112,13 @@ export class PeggedPrice {
     const gtPerLtRaw = (marginalGtPerLtE18 * 10n ** scale) / ONE_E18
 
     return new PeggedPrice(gtPerLtRaw, tokenLt, tokenGt)
+  }
+
+  matchesTokens(tokenA: Address, tokenB: Address): boolean {
+    return (
+      (tokenA.equal(this.tokenLt.address) && tokenB.equal(this.tokenGt.address)) ||
+      (tokenA.equal(this.tokenGt.address) && tokenB.equal(this.tokenLt.address))
+    )
   }
 
   equals(other: PeggedPrice): boolean {
