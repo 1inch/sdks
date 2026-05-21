@@ -11,26 +11,26 @@ const LINEAR_WIDTH = 8n * 10n ** 26n
 
 const reserveA: PeggedTokenReserve = {
   address: TOKEN_A,
-  decimals: 18n,
+  decimals: 18,
   initialReserve: 1000n * 10n ** 18n,
   currentReserve: 1000n * 10n ** 18n,
 }
 
 const reserveB: PeggedTokenReserve = {
   address: TOKEN_B,
-  decimals: 18n,
+  decimals: 18,
   initialReserve: 999n * 10n ** 18n - 1n,
   currentReserve: 999n * 10n ** 18n - 1n,
 }
 
 const pairGtQuoteLtBase: PeggedPricePair = {
-  quoteToken: { address: TOKEN_B, decimals: 18n },
-  baseToken: { address: TOKEN_A, decimals: 18n },
+  quoteToken: { address: TOKEN_B, decimals: 18 },
+  baseToken: { address: TOKEN_A, decimals: 18 },
 }
 
 const pairLtQuoteGtBase: PeggedPricePair = {
-  quoteToken: { address: TOKEN_A, decimals: 18n },
-  baseToken: { address: TOKEN_B, decimals: 18n },
+  quoteToken: { address: TOKEN_A, decimals: 18 },
+  baseToken: { address: TOKEN_B, decimals: 18 },
 }
 
 describe('PeggedPrice', () => {
@@ -57,6 +57,34 @@ describe('PeggedPrice', () => {
     expect(reversed.equals(forward)).toBe(true)
   })
 
+  it('toJSON should yield bigint-safe JSON', () => {
+    const price = PeggedPrice.fromHuman('1.5', pairGtQuoteLtBase)
+    const json = price.toJSON()
+
+    expect(json.gtPerLtRaw).toBe('1500000000000000000000000000000000000')
+    expect(json.tokenLt.decimals).toBe('18')
+    expect(json.tokenGt.decimals).toBe('18')
+    expect(JSON.stringify(price)).toBe(JSON.stringify(json))
+  })
+
+  it('fromJSON should round-trip toJSON', () => {
+    const price = PeggedPrice.fromHuman('1.5', pairGtQuoteLtBase)
+
+    expect(PeggedPrice.fromJSON(price.toJSON()).equals(price)).toBe(true)
+  })
+
+  it('fromJSON should require canonical tokenLt < tokenGt order', () => {
+    const price = PeggedPrice.fromHuman('1.5', pairGtQuoteLtBase)
+    const json = price.toJSON()
+    const bad = {
+      ...json,
+      tokenLt: json.tokenGt,
+      tokenGt: json.tokenLt,
+    }
+
+    expect(() => PeggedPrice.fromJSON(bad)).toThrow('tokenLt address must be less than tokenGt')
+  })
+
   it('fromHuman round-trips gt quote', () => {
     const price = PeggedPrice.fromHuman('1.5', pairGtQuoteLtBase)
     expect(price.toHuman(TOKEN_B)).toBe('1.5')
@@ -69,25 +97,25 @@ describe('PeggedPrice', () => {
 
   describe('mixed decimals (lt 6, gt 18)', () => {
     const pairGtQuoteLtBase: PeggedPricePair = {
-      quoteToken: { address: TOKEN_B, decimals: 18n },
-      baseToken: { address: TOKEN_A, decimals: 6n },
+      quoteToken: { address: TOKEN_B, decimals: 18 },
+      baseToken: { address: TOKEN_A, decimals: 6 },
     }
 
     const pairLtQuoteGtBase: PeggedPricePair = {
-      quoteToken: { address: TOKEN_A, decimals: 6n },
-      baseToken: { address: TOKEN_B, decimals: 18n },
+      quoteToken: { address: TOKEN_A, decimals: 6 },
+      baseToken: { address: TOKEN_B, decimals: 18 },
     }
 
     const reserveLt = {
       address: TOKEN_A,
-      decimals: 6n,
+      decimals: 6,
       initialReserve: 1000n * 10n ** 6n,
       currentReserve: 1000n * 10n ** 6n,
     }
 
     const reserveGt = {
       address: TOKEN_B,
-      decimals: 18n,
+      decimals: 18,
       initialReserve: 999n * 10n ** 18n - 1n,
       currentReserve: 999n * 10n ** 18n - 1n,
     }
@@ -114,25 +142,25 @@ describe('PeggedPrice', () => {
 
   describe('mixed decimals (lt 18, gt 6)', () => {
     const pairGtQuoteLtBase: PeggedPricePair = {
-      quoteToken: { address: TOKEN_B, decimals: 6n },
-      baseToken: { address: TOKEN_A, decimals: 18n },
+      quoteToken: { address: TOKEN_B, decimals: 6 },
+      baseToken: { address: TOKEN_A, decimals: 18 },
     }
 
     const pairLtQuoteGtBase: PeggedPricePair = {
-      quoteToken: { address: TOKEN_A, decimals: 18n },
-      baseToken: { address: TOKEN_B, decimals: 6n },
+      quoteToken: { address: TOKEN_A, decimals: 18 },
+      baseToken: { address: TOKEN_B, decimals: 6 },
     }
 
     const reserveLt = {
       address: TOKEN_A,
-      decimals: 18n,
+      decimals: 18,
       initialReserve: 1000n * 10n ** 18n,
       currentReserve: 1000n * 10n ** 18n,
     }
 
     const reserveGt = {
       address: TOKEN_B,
-      decimals: 6n,
+      decimals: 6,
       initialReserve: 999n * 10n ** 6n - 1n,
       currentReserve: 999n * 10n ** 6n - 1n,
     }
@@ -162,13 +190,13 @@ describe('PeggedPrice', () => {
       const initial = 10n ** 18n
       const reserveAOff = {
         address: TOKEN_A,
-        decimals: 18n,
+        decimals: 18,
         initialReserve: initial,
         currentReserve: 993_000_000_000_000_000n,
       }
       const reserveBOff = {
         address: TOKEN_B,
-        decimals: 18n,
+        decimals: 18,
         initialReserve: initial,
         currentReserve: 999_360_128_962_949_073n,
       }
@@ -184,13 +212,13 @@ describe('PeggedPrice', () => {
     it('lt 6 / gt 18 decimals', () => {
       const reserveAOff = {
         address: TOKEN_A,
-        decimals: 6n,
+        decimals: 6,
         initialReserve: 1_000_000n,
         currentReserve: 993_000n,
       }
       const reserveBOff = {
         address: TOKEN_B,
-        decimals: 18n,
+        decimals: 18,
         initialReserve: 10n ** 18n,
         currentReserve: 999_360_128_962_949_073n,
       }
@@ -206,13 +234,13 @@ describe('PeggedPrice', () => {
     it('lt 18 / gt 6 decimals', () => {
       const reserveAOff = {
         address: TOKEN_A,
-        decimals: 18n,
+        decimals: 18,
         initialReserve: 10n ** 18n,
         currentReserve: 993_000_000_000_000_000n,
       }
       const reserveBOff = {
         address: TOKEN_B,
-        decimals: 6n,
+        decimals: 6,
         initialReserve: 1_000_000n,
         currentReserve: 999_360n,
       }

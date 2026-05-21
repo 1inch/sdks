@@ -22,3 +22,10 @@ export type PeggedReservesInput = {
   reserveB: PeggedTokenReserve
   linearWidth: bigint
 }
+
+/** Snapshot from `PeggedPrice.prototype.toJSON` (bigints as decimal strings). */
+export type PeggedPriceJSON = {
+  gtPerLtRaw: string
+  tokenLt: { address: string; decimals: string }
+  tokenGt: { address: string; decimals: string }
+}

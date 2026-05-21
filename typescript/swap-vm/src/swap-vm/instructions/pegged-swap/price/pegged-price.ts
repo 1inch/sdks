@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-import type { Address } from '@1inch/sdk-core'
+import { Address } from '@1inch/sdk-core'
 import { formatUnits, parseUnits } from 'viem'
 import assert from 'assert'
-import type { PeggedPricePair, PeggedReservesInput, PeggedTokenRef } from './types'
+import type { PeggedPriceJSON, PeggedPricePair, PeggedReservesInput, PeggedTokenRef } from './types'
 import { peggedSwapMarginalGtPerLtE18 } from '../pegged-swap-math/pegged-swap-math'
 import { truncateHumanDecimalString } from '../../utils'
 import { resolveRate } from '../rate-resolver'
@@ -84,6 +84,23 @@ export class PeggedPrice {
     return PeggedPrice.fromGtPerLtE18(marginalE18, tokenLt, tokenGt)
   }
 
+  static fromJSON(input: PeggedPriceJSON): PeggedPrice {
+    const tokenLt: PeggedTokenRef = {
+      address: new Address(input.tokenLt.address),
+      decimals: Number(input.tokenLt.decimals),
+    }
+    const tokenGt: PeggedTokenRef = {
+      address: new Address(input.tokenGt.address),
+      decimals: Number(input.tokenGt.decimals),
+    }
+    assert(
+      tokenLt.address.lt(tokenGt.address),
+      'tokenLt address must be less than tokenGt (canonical order)',
+    )
+
+    return new PeggedPrice(BigInt(input.gtPerLtRaw), tokenLt, tokenGt)
+  }
+
   private static fromGtPerLtE18(
     marginalGtPerLtE18: bigint,
     tokenLt: PeggedTokenRef,
@@ -102,8 +119,8 @@ export class PeggedPrice {
       this.gtPerLtRaw === other.gtPerLtRaw &&
       this.tokenLt.address.equal(other.tokenLt.address) &&
       this.tokenGt.address.equal(other.tokenGt.address) &&
-      this.tokenLt.decimals === other.tokenLt.decimals &&
-      this.tokenGt.decimals === other.tokenGt.decimals
+      BigInt(this.tokenLt.decimals) === BigInt(other.tokenLt.decimals) &&
+      BigInt(this.tokenGt.decimals) === BigInt(other.tokenGt.decimals)
     )
   }
 
@@ -137,5 +154,19 @@ export class PeggedPrice {
     const scale = BigInt(this.tokenLt.decimals + this.tokenGt.decimals)
 
     return (this.gtPerLtRaw * ONE_E18) / 10n ** scale
+  }
+
+  toJSON(): PeggedPriceJSON {
+    return {
+      gtPerLtRaw: this.gtPerLtRaw.toString(),
+      tokenLt: {
+        address: this.tokenLt.address.toString(),
+        decimals: String(this.tokenLt.decimals),
+      },
+      tokenGt: {
+        address: this.tokenGt.address.toString(),
+        decimals: String(this.tokenGt.decimals),
+      },
+    }
   }
 }

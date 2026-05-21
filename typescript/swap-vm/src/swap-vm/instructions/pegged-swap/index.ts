@@ -5,6 +5,7 @@ export { PeggedSwapArgs } from './pegged-swap-args'
 export type { PeggedTokenInfo } from './types'
 export { PeggedPrice } from './price'
 export type {
+  PeggedPriceJSON,
   PeggedPricePair,
   PeggedReservesInput,
   PeggedTokenRef,
