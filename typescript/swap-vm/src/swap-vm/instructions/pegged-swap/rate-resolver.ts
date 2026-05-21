@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-export function resolveRate(tokenADecimals: bigint, tokenBDecimals: bigint): bigint {
+export function resolveRate(tokenADecimals: number, tokenBDecimals: number): bigint {
   if (tokenADecimals === tokenBDecimals) {
     return 1n
   }
@@ -9,5 +9,5 @@ export function resolveRate(tokenADecimals: bigint, tokenBDecimals: bigint): big
     return 1n
   }
 
-  return 10n ** (tokenBDecimals - tokenADecimals)
+  return 10n ** BigInt(tokenBDecimals - tokenADecimals)
 }

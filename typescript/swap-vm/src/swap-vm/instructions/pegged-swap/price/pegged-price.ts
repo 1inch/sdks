@@ -74,8 +74,8 @@ export class PeggedPrice {
 
     const parsed = parseUnits(price.trim(), Number(pair.quoteToken.decimals))
 
-    const ltDecimals = tokenLt.decimals
-    const gtDecimals = tokenGt.decimals
+    const ltDecimals = BigInt(tokenLt.decimals)
+    const gtDecimals = BigInt(tokenGt.decimals)
 
     const marginalE18 = quoteToBase
       ? 10n ** (gtDecimals + 18n + ltDecimals) / (parsed * 10n ** gtDecimals)
@@ -91,7 +91,7 @@ export class PeggedPrice {
   ): PeggedPrice {
     assert(marginalGtPerLtE18 > 0n, 'marginal rate must be positive')
 
-    const scale = tokenLt.decimals + tokenGt.decimals
+    const scale = BigInt(tokenLt.decimals + tokenGt.decimals)
     const gtPerLtRaw = (marginalGtPerLtE18 * 10n ** scale) / ONE_E18
 
     return new PeggedPrice(gtPerLtRaw, tokenLt, tokenGt)
@@ -119,8 +119,8 @@ export class PeggedPrice {
     const isQuoteLt = quoteToken.equal(this.tokenLt.address)
 
     const quoteDecimals = isQuoteLt ? this.tokenLt.decimals : this.tokenGt.decimals
-    const ltDecimals = this.tokenLt.decimals
-    const gtDecimals = this.tokenGt.decimals
+    const ltDecimals = BigInt(this.tokenLt.decimals)
+    const gtDecimals = BigInt(this.tokenGt.decimals)
     const marginalE18 = this.toGtPerLtE18()
 
     const scaled = quoteToken.equal(this.tokenGt.address)
@@ -134,7 +134,7 @@ export class PeggedPrice {
 
   /** Marginal gt-per-lt rate in 1e18 fixed-point. */
   toGtPerLtE18(): bigint {
-    const scale = this.tokenLt.decimals + this.tokenGt.decimals
+    const scale = BigInt(this.tokenLt.decimals + this.tokenGt.decimals)
 
     return (this.gtPerLtRaw * ONE_E18) / 10n ** scale
   }

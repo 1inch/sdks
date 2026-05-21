@@ -4,7 +4,7 @@ import type { Address } from '@1inch/sdk-core'
 
 export type PeggedTokenRef = {
   address: Address
-  decimals: bigint
+  decimals: number
 }
 
 export type PeggedPricePair = {
