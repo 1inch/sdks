@@ -4,7 +4,7 @@ import type { HexString } from '@1inch/sdk-core'
 import { UINT_256_MAX } from '@1inch/byte-utils'
 import assert from 'assert'
 import { ConcentrateGrowLiquidity2DArgsCoder } from './concentrate-grow-liquidity-2d-args-coder'
-import { bigintSqrt } from './bigint-sqrt'
+import { bigintSqrt } from '../utils/bigint-sqrt'
 import type { IArgsCoder, IArgsData } from '../types'
 
 export const ONE_E18: bigint = 10n ** 18n

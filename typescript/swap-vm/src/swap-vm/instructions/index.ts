@@ -20,6 +20,7 @@ import type { IArgsData } from './types'
 import * as peggedSwap from './pegged-swap'
 
 export * from './types'
+export { bigintSqrt, truncateHumanDecimalString } from './utils'
 export { EMPTY_OPCODE } from './empty'
 export * as balances from './balances'
 export * as controls from './controls'
