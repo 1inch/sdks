@@ -1,4 +1,4 @@
-name: Release typescript/${{ inputs.project }} with ${{ inputs.bump }} version
+name: Release typescript
 
 on:
   workflow_dispatch:
