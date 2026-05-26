@@ -20,4 +20,4 @@ export type {
   PriceBounds,
   ConcentratedLiquidityInfo,
 } from './concentrate-liquidity-calculator/types'
-export * from './bigint-sqrt'
+export { bigintSqrt } from '../utils/bigint-sqrt'

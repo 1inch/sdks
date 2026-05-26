@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { UINT_256_MAX } from '@1inch/byte-utils'
+import { describe, expect, it } from 'vitest'
 import { bigintSqrt } from './bigint-sqrt'
 
 describe('bigintSqrt', () => {

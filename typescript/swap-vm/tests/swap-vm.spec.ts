@@ -25,6 +25,7 @@ import { Opcode } from '../src/swap-vm/instructions/opcode.js'
 
 import type { PricePair } from '../src/swap-vm/instructions/concentrate'
 import { Price, PriceRange, TokenReserve } from '../src/swap-vm/instructions/concentrate'
+import { PeggedPrice, PeggedSwapCalculator } from '../src/swap-vm/instructions/pegged-swap'
 
 describe('SwapVM', () => {
   let forkNode: ReadyEvmFork
@@ -978,30 +979,47 @@ describe('SwapVM', () => {
 
     const USDC = new Address(ADDRESSES.USDC)
     const DAI = new Address(ADDRESSES.DAI)
+    const LINEAR_WIDTH = 8n * 10n ** 26n
+
+    const peggedCalculator = PeggedSwapCalculator.new({
+      tokenA: { address: DAI, decimals: 18 },
+      tokenB: { address: USDC, decimals: 6 },
+    })
+
+    const spot = PeggedPrice.fromHuman('1', {
+      quoteToken: { address: USDC, decimals: 6 },
+      baseToken: { address: DAI, decimals: 18 },
+    })
+
+    const initialBalances = peggedCalculator.computeFixedAllocation(
+      spot,
+      DAI,
+      parseUnits('100000', 18),
+    )
 
     const amountsAndTokens = [
       {
-        amount: parseUnits('100000', 6),
+        amount: initialBalances.reserveGt,
         token: USDC,
       },
       {
-        amount: parseUnits('100000', 18),
+        amount: initialBalances.reserveLt,
         token: DAI,
       },
     ]
 
     const program = AquaPeggedAmmStrategy.new({
       tokenA: {
-        address: amountsAndTokens[0].token,
+        address: USDC,
         decimals: 6,
-        reserve: amountsAndTokens[0].amount,
+        reserve: initialBalances.reserveGt,
       },
       tokenB: {
-        address: amountsAndTokens[1].token,
+        address: DAI,
         decimals: 18,
-        reserve: amountsAndTokens[1].amount,
+        reserve: initialBalances.reserveLt,
       },
-      linearWidth: 8n * 10n ** 26n,
+      linearWidth: LINEAR_WIDTH,
     })
       .withFeeTokenIn(1)
       .build()

@@ -9,7 +9,7 @@ import {
   computeLiquidityFromAmounts,
 } from './concentrate-liquidity-math'
 import { ONE_E18 } from '../concentrate-grow-liquidity-2d-args'
-import { bigintSqrt } from '../bigint-sqrt'
+import { bigintSqrt } from '../../utils/bigint-sqrt'
 
 describe('concentrate-liquidity-math', () => {
   describe('computeLiquidityAndPrice', () => {
