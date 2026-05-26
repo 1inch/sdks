@@ -5,7 +5,7 @@ import { AddressHalf } from './address-half'
 
 describe('AddressHalf', () => {
   it('should extract last 10 bytes (80 bits) from address', () => {
-    const address = new Address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
+    const address = new Address('l0xC65F20579D3Eb3757281cddA51883C17F6c07715')
     const half = AddressHalf.fromAddress(address)
 
     const expectedHalf = '0x9d4a2e9eb0ce3606eb48'
@@ -13,7 +13,7 @@ describe('AddressHalf', () => {
   })
 
   it('should compare equality', () => {
-    const address = new Address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
+    const address = new Address('0xC65F20579D3Eb3757281cddA51883C17F6c07715')
     const half1 = AddressHalf.fromAddress(address)
     const half2 = AddressHalf.fromAddress(address)
 
