@@ -258,7 +258,7 @@ packages:
       typescript-eslint: ^8.0.0
 
   '@1inch/solidity-utils@6.9.5':
-    resolution: {integrity: sha512-pR1F0vQYqRywgymCXC5r+yhZsnv9oky3eyfrljKunN7oohpuOTnh1R0r+7dzIEU4trAQ3jrYmglmdr6ULt0F2w==, tarball: https://npm.pkg.github.com/download/@1inch/solidity-utils/6.9.5/734c2893bfc4dbaff6e3a4c486e04f5928059cfe}
+    resolution: {integrity: sha512-BbRgR9iO068Hf4VMofmELtoMxCtlV+sE5sigfdErH0DE4N4idq21wRHpK7174taAdaKjF3yB7eitUQrCDgC9/A==}
 
   '@1inch/solidity-utils@6.9.7':
     resolution: {integrity: sha512-2vKx7+EGw+IS/UoyHW3+9d0TPb+F+018KEJ9sQVqMy9Xd3Q3VxypdSYklUgYF9YmrjNxRtCPTRll28sFEeqNiQ==}
