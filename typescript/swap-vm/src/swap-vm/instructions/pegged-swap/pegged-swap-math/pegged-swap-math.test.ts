@@ -2,6 +2,8 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  linearWidthFromSymmetricRangePercent,
+  MAX_LINEAR_WIDTH,
   normalizeReserve,
   peggedSwapMarginalGtPerLtE18,
   peggedSwapMarginalWeight,
@@ -10,6 +12,31 @@ import {
 import { bigintSqrt } from '../../utils'
 
 const LINEAR_WIDTH = 8n * 10n ** 26n
+
+describe('linearWidthFromSymmetricRangePercent', () => {
+  it('computes linearWidth = (1 - X) / (2X) · ONE via mulDiv', () => {
+    const linearWidth = linearWidthFromSymmetricRangePercent(25)
+    expect(linearWidth).toBe(15n * 10n ** 26n)
+  })
+
+  it('supports fractional percents', () => {
+    const linearWidth = linearWidthFromSymmetricRangePercent(25.5)
+    expect(linearWidth).toBe(1460784313725490196078431372n)
+  })
+
+  it('allows linearWidth at the on-chain maximum (20% symmetric range)', () => {
+    expect(linearWidthFromSymmetricRangePercent(20)).toBe(MAX_LINEAR_WIDTH)
+  })
+
+  it('rejects zero and 100% symmetric range', () => {
+    expect(() => linearWidthFromSymmetricRangePercent(0)).toThrow(/must be positive/)
+    expect(() => linearWidthFromSymmetricRangePercent(100)).toThrow(/less than 100%/)
+  })
+
+  it('rejects narrow peg bands whose A exceeds 2', () => {
+    expect(() => linearWidthFromSymmetricRangePercent(0.2)).toThrow(/exceeds maximum/)
+  })
+})
 
 describe('peggedSwapMath', () => {
   it('normalizeReserve is ONE when current equals initial', () => {

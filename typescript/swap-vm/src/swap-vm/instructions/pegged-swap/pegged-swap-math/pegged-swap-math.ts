@@ -6,7 +6,41 @@ import { bigintSqrt } from '../../utils'
 /** Matches `PeggedSwapMath.ONE` in swap-vm. */
 export const PEGGED_SWAP_ONE: bigint = 10n ** 27n
 
+/** Maximum on-chain `linearWidth` (`A` ≤ 2). */
+export const MAX_LINEAR_WIDTH: bigint = 2n * PEGGED_SWAP_ONE
+
 const MARGINAL_PRICE_ONE = 10n ** 18n
+
+/**
+ * On-chain `linearWidth` from symmetric peg-band half-width as a human percent.
+ *
+ * @param symmetricRangePercent - Half-width in percent (e.g. `0.2` for ±0.20%, `25.5` for ±25.5%).
+ *
+ * A = (1 − X) / (2X),  X = percent / 100,  `linearWidth` = A · `PEGGED_SWAP_ONE`.
+ */
+export function linearWidthFromSymmetricRangePercent(symmetricRangePercent: number): bigint {
+  assert(
+    Number.isFinite(symmetricRangePercent),
+    'PeggedSwapMath: symmetric range percent must be a finite number',
+  )
+  assert(symmetricRangePercent > 0, 'PeggedSwapMath: symmetric range percent must be positive')
+  assert(
+    symmetricRangePercent < 100,
+    'PeggedSwapMath: symmetric range percent must be less than 100%',
+  )
+
+  const x = symmetricRangePercentToScaledFraction(symmetricRangePercent)
+
+  const linearWidth = mulDiv(PEGGED_SWAP_ONE - x, PEGGED_SWAP_ONE, 2n * x)
+
+  assert(linearWidth >= 0n, 'PeggedSwapMath: linearWidth must be non-negative')
+  assert(
+    linearWidth <= MAX_LINEAR_WIDTH,
+    `PeggedSwapMath: linearWidth exceeds maximum (${MAX_LINEAR_WIDTH})`,
+  )
+
+  return linearWidth
+}
 
 /**
  * Spot price tokenGt per tokenLt (raw) in 1e18 fixed-point.
@@ -47,6 +81,10 @@ export function normalizeReserve(currentReserve: bigint, initialReserve: bigint)
  */
 export function peggedSwapMarginalWeight(sqrtCoord: bigint, linearWidth: bigint): bigint {
   return mulDiv(PEGGED_SWAP_ONE, PEGGED_SWAP_ONE, 2n * sqrtCoord) + linearWidth
+}
+
+function symmetricRangePercentToScaledFraction(percent: number): bigint {
+  return (BigInt(Math.round(percent * 1e9)) * PEGGED_SWAP_ONE) / (100n * 10n ** 9n)
 }
 
 function mulDiv(a: bigint, b: bigint, c: bigint): bigint {
