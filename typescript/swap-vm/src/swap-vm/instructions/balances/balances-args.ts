@@ -3,14 +3,14 @@
 import type { HexString } from '@1inch/sdk-core'
 import type { TokenBalance } from './types'
 import { BalancesArgsCoder } from './balances-args-coder'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../types'
 
 /**
  * Arguments for setBalances and balances instructions containing token-amount pairs
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Balances.sol#L10
  **/
 export class BalancesArgs implements IArgsData {
-  public static readonly CODER = new BalancesArgsCoder()
+  public static readonly CODER: IArgsCoder<BalancesArgs> = new BalancesArgsCoder()
 
   constructor(public readonly tokenBalances: TokenBalance[]) {}
 

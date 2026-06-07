@@ -19,7 +19,8 @@ class PrintSwapRegistersArgsCoder implements IArgsCoder<PrintSwapRegistersArgs> 
  * @see Debug._printSwapRegisters in Solidity
  */
 export class PrintSwapRegistersArgs extends DebugArgs {
-  public static readonly CODER = new PrintSwapRegistersArgsCoder()
+  public static readonly CODER: IArgsCoder<PrintSwapRegistersArgs> =
+    new PrintSwapRegistersArgsCoder()
 
   static decode(_data: HexString): PrintSwapRegistersArgs {
     return PrintSwapRegistersArgs.CODER.decode(_data)

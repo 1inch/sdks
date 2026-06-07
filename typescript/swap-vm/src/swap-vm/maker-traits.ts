@@ -146,7 +146,7 @@ export class MakerTraits {
    * Both arguments are typically obtained from contract storage / ABI and must
    * follow the bit layout described in the class-level documentation.
    */
-  static decode(traits: bigint, hooksData = HexString.EMPTY): MakerTraits {
+  static decode(traits: bigint, hooksData: HexString = HexString.EMPTY): MakerTraits {
     const traitsBN = new BN(traits)
     const shouldUnwrap = traitsBN.getBit(MakerTraits.SHOULD_UNWRAP_BIT_FLAG)
     const useAquaInsteadOfSignature = traitsBN.getBit(

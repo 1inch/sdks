@@ -19,7 +19,7 @@ class PrintSwapQueryArgsCoder implements IArgsCoder<PrintSwapQueryArgs> {
  * @see Debug._printSwapQuery in Solidity
  */
 export class PrintSwapQueryArgs extends DebugArgs {
-  public static readonly CODER = new PrintSwapQueryArgsCoder()
+  public static readonly CODER: IArgsCoder<PrintSwapQueryArgs> = new PrintSwapQueryArgsCoder()
 
   static decode(_data: HexString): PrintSwapQueryArgs {
     return PrintSwapQueryArgs.CODER.decode(_data)

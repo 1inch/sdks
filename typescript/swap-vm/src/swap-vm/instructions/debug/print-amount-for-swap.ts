@@ -19,7 +19,8 @@ class PrintAmountForSwapArgsCoder implements IArgsCoder<PrintAmountForSwapArgs> 
  * @see Debug._printAmountForSwap in Solidity
  */
 export class PrintAmountForSwapArgs extends DebugArgs {
-  public static readonly CODER = new PrintAmountForSwapArgsCoder()
+  public static readonly CODER: IArgsCoder<PrintAmountForSwapArgs> =
+    new PrintAmountForSwapArgsCoder()
 
   static decode(_data: HexString): PrintAmountForSwapArgs {
     return PrintAmountForSwapArgs.CODER.decode(_data)

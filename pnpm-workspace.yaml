@@ -18,3 +18,14 @@ onlyBuiltDependencies:
   - protobufjs
   - secp256k1
   - unrs-resolver
+
+overrides:
+  axios@<=0.31.0: '>=0.31.1'
+  axios@>=1.0.0 <1.15.2: '>=1.15.2'
+  brace-expansion@>=4.0.0 <5.0.5: '>=5.0.5'
+  cookie@<0.7.0: '>=0.7.0'
+  follow-redirects@<=1.15.11: '>=1.16.0'
+  serialize-javascript@<7.0.5: '>=7.0.5'
+  tmp@<=0.2.3: '>=0.2.4'
+  undici@<6.24.0: '>=6.24.0'
+  yaml@>=2.0.0 <2.8.3: '>=2.8.3'

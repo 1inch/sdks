@@ -7,7 +7,7 @@ import { Opcode } from '../opcode'
  * Adjusts swap prices based on network gas costs
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/BaseFeeAdjuster.sol#L75
  **/
-export const baseFeeAdjuster1D = new Opcode(
+export const baseFeeAdjuster1D: Opcode<BaseFeeAdjusterArgs> = new Opcode(
   Symbol('BaseFeeAdjuster.baseFeeAdjuster1D'),
   BaseFeeAdjusterArgs.CODER,
 )

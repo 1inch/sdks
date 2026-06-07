@@ -5,6 +5,8 @@ import {AquaSwapVMRouterDebug} from "@1inch/swap-vm/routers/AquaSwapVMRouterDebu
 
 contract TestAquaSwapVMRouter is AquaSwapVMRouterDebug {
     constructor(
-        address aqua
-    ) AquaSwapVMRouterDebug(aqua, "TestAquaSwapVMRouter", "1.0") {}
+        address aqua,
+        address weth,
+        address owner
+    ) AquaSwapVMRouterDebug(aqua, weth, owner, "TestAquaSwapVMRouter", "1.0") {}
 }

@@ -4,7 +4,7 @@ import type { HexString } from '@1inch/sdk-core'
 import { UINT_24_MAX, UINT_64_MAX, UINT_96_MAX } from '@1inch/byte-utils'
 import assert from 'assert'
 import { BaseFeeAdjusterArgsCoder } from './base-fee-adjuster-args-coder'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../types'
 
 /**
  * @notice Base Fee Gas Price Adjuster instruction for dynamic price adjustment based on network gas costs
@@ -26,7 +26,7 @@ import type { IArgsData } from '../types'
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/BaseFeeAdjuster.sol#L75
  */
 export class BaseFeeAdjusterArgs implements IArgsData {
-  public static readonly CODER = new BaseFeeAdjusterArgsCoder()
+  public static readonly CODER: IArgsCoder<BaseFeeAdjusterArgs> = new BaseFeeAdjusterArgsCoder()
 
   /**
    * baseGasPrice - base gas price for comparison (uint64)

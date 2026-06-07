@@ -5,9 +5,7 @@ import { Address, HexString } from '@1inch/sdk-core'
 import { OnlyTakerTokenBalanceNonZeroArgs } from './only-taker-token-balance-non-zero-args'
 import type { IArgsCoder } from '../types'
 
-export class OnlyTakerTokenBalanceNonZeroArgsCoder
-  implements IArgsCoder<OnlyTakerTokenBalanceNonZeroArgs>
-{
+export class OnlyTakerTokenBalanceNonZeroArgsCoder implements IArgsCoder<OnlyTakerTokenBalanceNonZeroArgs> {
   encode(args: OnlyTakerTokenBalanceNonZeroArgs): HexString {
     const builder = new BytesBuilder()
     builder.addAddress(args.token.toString())

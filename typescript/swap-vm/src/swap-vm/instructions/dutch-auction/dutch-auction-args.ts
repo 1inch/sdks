@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import type { HexString } from '@1inch/sdk-core'
-import { UINT_16_MAX, UINT_32_MAX, UINT_40_MAX } from '@1inch/byte-utils'
+import { UINT_16_MAX, UINT_40_MAX } from '@1inch/byte-utils'
+import { UINT_64_MAX } from '@1inch/byte-utils/dist/constants'
 import assert from 'assert'
 import { DutchAuctionArgsCoder } from './dutch-auction-args-coder'
-import type { IArgsData } from '../types'
+import type { IArgsCoder, IArgsData } from '../types'
 
 /**
  * @notice Dutch Auction instruction for time-based price decay with deadline
@@ -17,7 +18,6 @@ import type { IArgsData } from '../types'
  * - Only works for 1=>0 swaps (token1 to token0)
  *
  * The decay factor determines the price reduction rate:
- * - 1.0e18 = no decay (constant price)
  * - 0.999e18 = 0.1% decay per second
  * - 0.99e18 = 1% decay per second
  * - 0.9e18 = 10% decay per second
@@ -32,12 +32,12 @@ import type { IArgsData } from '../types'
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/DutchAuction.sol#L66
  */
 export class DutchAuctionArgs implements IArgsData {
-  public static readonly CODER = new DutchAuctionArgsCoder()
+  public static readonly CODER: IArgsCoder<DutchAuctionArgs> = new DutchAuctionArgsCoder()
 
   /**
    * startTime - auction start time (uint40)
    * duration - auction duration in seconds (uint16)
-   * decayFactor - price decay per second, 1e18 = no decay (uint32)
+   * decayFactor - price decay per second, 1e18 = no decay (uint64)
    **/
   constructor(
     public readonly startTime: bigint,
@@ -53,8 +53,8 @@ export class DutchAuctionArgs implements IArgsData {
       `Invalid duration: ${duration}. Must be a valid uint16`,
     )
     assert(
-      decayFactor >= 0n && decayFactor <= UINT_32_MAX,
-      `Invalid decayFactor: ${decayFactor}. Must be a valid uint32`,
+      decayFactor >= 0n && decayFactor <= UINT_64_MAX,
+      `Invalid decayFactor: ${decayFactor}. Must be a valid uint64`,
     )
     assert(decayFactor < 1e18, `Decay factor should be less than 1e18: ${decayFactor}`)
   }

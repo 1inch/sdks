@@ -35,6 +35,14 @@ export class Address {
     return this.val === other.val
   }
 
+  public lt(other: Address): boolean {
+    return BigInt(this.val) < BigInt(other.val)
+  }
+
+  public gt(other: Address): boolean {
+    return BigInt(this.val) > BigInt(other.val)
+  }
+
   public isNative(): boolean {
     return this.equal(Address.NATIVE_CURRENCY)
   }
