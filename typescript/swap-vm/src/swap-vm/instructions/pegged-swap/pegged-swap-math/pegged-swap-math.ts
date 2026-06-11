@@ -11,6 +11,9 @@ export const MAX_LINEAR_WIDTH: bigint = 2n * PEGGED_SWAP_ONE
 
 const MARGINAL_PRICE_ONE = 10n ** 18n
 
+const PERCENT_PRECISION = 10n ** 13n
+const PERCENT_PRECISION_NUMBER = 1e13
+
 /**
  * On-chain `linearWidth` from symmetric peg-band half-width as a human percent.
  *
@@ -40,6 +43,27 @@ export function linearWidthFromSymmetricRangePercent(symmetricRangePercent: numb
   )
 
   return linearWidth
+}
+
+/**
+ * Symmetric peg-band half-width as a human percent from on-chain `linearWidth`.
+ *
+ * Inverse of {@link linearWidthFromSymmetricRangePercent}.
+ *
+ * @param linearWidth - On-chain `linearWidth` = A · `PEGGED_SWAP_ONE`.
+ *
+ * X = 1 / (2A + 1),  A = `linearWidth` / `PEGGED_SWAP_ONE`,  percent = X · 100.
+ */
+export function symmetricRangePercentFromLinearWidth(linearWidth: bigint): number {
+  assert(linearWidth >= 0n, 'PeggedSwapMath: linearWidth must be non-negative')
+  assert(
+    linearWidth <= MAX_LINEAR_WIDTH,
+    `PeggedSwapMath: linearWidth exceeds maximum (${MAX_LINEAR_WIDTH})`,
+  )
+
+  const x = mulDiv(PEGGED_SWAP_ONE, PEGGED_SWAP_ONE, 2n * linearWidth + PEGGED_SWAP_ONE)
+
+  return scaledFractionToSymmetricRangePercent(x)
 }
 
 /**
@@ -84,7 +108,17 @@ export function peggedSwapMarginalWeight(sqrtCoord: bigint, linearWidth: bigint)
 }
 
 function symmetricRangePercentToScaledFraction(percent: number): bigint {
-  return (BigInt(Math.round(percent * 1e9)) * PEGGED_SWAP_ONE) / (100n * 10n ** 9n)
+  return (
+    (BigInt(Math.round(percent * PERCENT_PRECISION_NUMBER)) * PEGGED_SWAP_ONE) /
+    (100n * PERCENT_PRECISION)
+  )
+}
+
+function scaledFractionToSymmetricRangePercent(scaledFraction: bigint): number {
+  return (
+    Number(mulDiv(scaledFraction, 100n * PERCENT_PRECISION, PEGGED_SWAP_ONE)) /
+    PERCENT_PRECISION_NUMBER
+  )
 }
 
 function mulDiv(a: bigint, b: bigint, c: bigint): bigint {

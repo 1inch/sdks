@@ -8,6 +8,7 @@ import {
   peggedSwapMarginalGtPerLtE18,
   peggedSwapMarginalWeight,
   PEGGED_SWAP_ONE,
+  symmetricRangePercentFromLinearWidth,
 } from './pegged-swap-math'
 import { bigintSqrt } from '../../utils'
 
@@ -35,6 +36,60 @@ describe('linearWidthFromSymmetricRangePercent', () => {
 
   it('rejects narrow peg bands whose A exceeds 2', () => {
     expect(() => linearWidthFromSymmetricRangePercent(0.2)).toThrow(/exceeds maximum/)
+  })
+})
+
+describe('symmetricRangePercentFromLinearWidth', () => {
+  it('computes percent = 100 / (2A + 1) (inverse of the forward mapping)', () => {
+    expect(symmetricRangePercentFromLinearWidth(15n * 10n ** 26n)).toBe(25)
+  })
+
+  it('returns 20% at the on-chain maximum linearWidth', () => {
+    expect(symmetricRangePercentFromLinearWidth(MAX_LINEAR_WIDTH)).toBe(20)
+  })
+
+  it('returns 100% when linearWidth is zero', () => {
+    expect(symmetricRangePercentFromLinearWidth(0n)).toBe(100)
+  })
+
+  it('rejects negative linearWidth', () => {
+    expect(() => symmetricRangePercentFromLinearWidth(-1n)).toThrow(/must be non-negative/)
+  })
+
+  it('rejects linearWidth above the on-chain maximum', () => {
+    expect(() => symmetricRangePercentFromLinearWidth(MAX_LINEAR_WIDTH + 1n)).toThrow(
+      /exceeds maximum/,
+    )
+  })
+
+  it('round-trips percent -> linearWidth -> percent', () => {
+    for (const percent of [20, 25, 25.5, 33.33, 50, 99]) {
+      const linearWidth = linearWidthFromSymmetricRangePercent(percent)
+      expect(symmetricRangePercentFromLinearWidth(linearWidth)).toBeCloseTo(percent, 10)
+    }
+  })
+
+  it('round-trips linearWidth -> percent -> linearWidth within rounding', () => {
+    for (const linearWidth of [
+      10n ** 26n,
+      5n * 10n ** 26n,
+      10n ** 27n,
+      15n * 10n ** 26n,
+      MAX_LINEAR_WIDTH,
+    ]) {
+      const percent = symmetricRangePercentFromLinearWidth(linearWidth)
+      const recovered = linearWidthFromSymmetricRangePercent(percent)
+      const tolerance = PEGGED_SWAP_ONE / 10n ** 13n
+      const delta = recovered > linearWidth ? recovered - linearWidth : linearWidth - recovered
+      expect(delta).toBeLessThanOrEqual(tolerance)
+    }
+  })
+
+  it('round-trips exactly for clean percents', () => {
+    for (const percent of [20, 25, 50]) {
+      const linearWidth = linearWidthFromSymmetricRangePercent(percent)
+      expect(symmetricRangePercentFromLinearWidth(linearWidth)).toBe(percent)
+    }
   })
 })
 
