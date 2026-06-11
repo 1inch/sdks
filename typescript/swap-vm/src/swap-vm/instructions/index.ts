@@ -160,4 +160,5 @@ export const aquaInstructions: Opcode<IArgsData>[] = [
   fee.aquaDynamicProtocolFeeAmountInXD, // 31
   peggedSwap.peggedSwapGrowPriceRange2D, // 32
   extruction.extruction, // 33
+  controls.onlyTxOriginTokenBalanceNonZero, // 34
 ] as const
