@@ -31,7 +31,7 @@ describe('PeggedSwapArgs', () => {
 
   it('should handle maximum uint256 values for reserves and rates', () => {
     const maxUint256 = (1n << 256n) - 1n
-    const maxLinearWidth = 2n * 10n ** 27n
+    const maxLinearWidth = 5000n * 10n ** 27n
     const args = new PeggedSwapArgs(maxUint256, maxUint256, maxLinearWidth, maxUint256, maxUint256)
 
     const encoded = PeggedSwapArgs.CODER.encode(args)
@@ -54,8 +54,8 @@ describe('PeggedSwapArgs', () => {
     expect(() => new PeggedSwapArgs(1n, 1n, 1n, 1n, 0n)).toThrow(/Invalid rateGt/)
   })
 
-  it('should throw when linearWidth exceeds 2e27', () => {
-    const tooLarge = 2n * 10n ** 27n + 1n
+  it('should throw when linearWidth exceeds 5000e27', () => {
+    const tooLarge = 5000n * 10n ** 27n + 1n
     expect(() => new PeggedSwapArgs(1n, 1n, tooLarge, 1n, 1n)).toThrow(/Invalid linearWidth/)
   })
 

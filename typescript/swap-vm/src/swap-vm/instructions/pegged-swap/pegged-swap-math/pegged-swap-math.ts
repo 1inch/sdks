@@ -6,8 +6,8 @@ import { bigintSqrt } from '../../utils'
 /** Matches `PeggedSwapMath.ONE` in swap-vm. */
 export const PEGGED_SWAP_ONE: bigint = 10n ** 27n
 
-/** Maximum on-chain `linearWidth` (`A` ≤ 2). */
-export const MAX_LINEAR_WIDTH: bigint = 2n * PEGGED_SWAP_ONE
+/** Maximum on-chain `linearWidth` (`A` ≤ 5000). */
+export const MAX_LINEAR_WIDTH: bigint = 5000n * PEGGED_SWAP_ONE
 
 const MARGINAL_PRICE_ONE = 10n ** 18n
 

@@ -4,6 +4,7 @@ import type { HexString } from '@1inch/sdk-core'
 import { UINT_256_MAX } from '@1inch/byte-utils'
 import assert from 'assert'
 import { PeggedSwapArgsCoder } from './pegged-swap-args-coder'
+import { MAX_LINEAR_WIDTH } from './pegged-swap-math/pegged-swap-math'
 import type { PeggedTokenInfo } from './types'
 import { resolveRate } from './rate-resolver'
 import type { IArgsCoder, IArgsData } from '../types'
@@ -19,7 +20,7 @@ export class PeggedSwapArgs implements IArgsData {
   /**
    * x0 - Initial X reserve (normalization factor) = initial_balance_X * rateLt (or rateGt)
    * y0 - Initial Y reserve (normalization factor) = initial_balance_Y * rateGt (or rateLt)
-   * linearWidth - Linear component coefficient A scaled by 1e27 (e.g., 0.8e27 for A=0.8)
+   * linearWidth - Linear component coefficient A scaled by 1e27 (e.g., 0.8e27 for A=0.8); must be ≤ MAX_LINEAR_WIDTH (A ≤ 5000)
    * rateLt - Rate multiplier for token with LOWER address
    * rateGt - Rate multiplier for token with GREATER address
    * > For equal decimals (e.g., both 18): rateLt = rateGt = 1
@@ -35,7 +36,7 @@ export class PeggedSwapArgs implements IArgsData {
     assert(x0 > 0n && y0 > 0n, 'Reserves cannot be zero')
     assert(x0 <= UINT_256_MAX, `Invalid x0: ${x0}`)
     assert(y0 <= UINT_256_MAX, `Invalid y0: ${y0}`)
-    assert(linearWidth <= 2n * 10n ** 27n, `Invalid linearWidth: ${linearWidth}`)
+    assert(linearWidth <= MAX_LINEAR_WIDTH, `Invalid linearWidth: ${linearWidth}`)
     assert(
       rateLt > 0n && rateLt <= UINT_256_MAX,
       `Invalid rateLt: ${rateLt}. Must be positive and <= UINT_256_MAX`,

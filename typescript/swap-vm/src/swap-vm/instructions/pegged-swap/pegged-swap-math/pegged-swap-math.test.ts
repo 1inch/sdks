@@ -25,8 +25,13 @@ describe('linearWidthFromSymmetricRangePercent', () => {
     expect(linearWidth).toBe(1460784313725490196078431372n)
   })
 
-  it('allows linearWidth at the on-chain maximum (20% symmetric range)', () => {
-    expect(linearWidthFromSymmetricRangePercent(20)).toBe(MAX_LINEAR_WIDTH)
+  it('maps a 20% symmetric range to A = 2', () => {
+    expect(linearWidthFromSymmetricRangePercent(20)).toBe(2n * PEGGED_SWAP_ONE)
+  })
+
+  it('allows narrow peg bands up to the on-chain maximum (A ≈ 5000 at the 0.01% floor)', () => {
+    // X = 0.0001 → A = (1 - X) / (2X) = 4999.5 → 4999.5e27 ≤ MAX_LINEAR_WIDTH (5000e27).
+    expect(linearWidthFromSymmetricRangePercent(0.01)).toBe(49995n * 10n ** 26n)
   })
 
   it('rejects zero and 100% symmetric range', () => {
@@ -34,8 +39,8 @@ describe('linearWidthFromSymmetricRangePercent', () => {
     expect(() => linearWidthFromSymmetricRangePercent(100)).toThrow(/less than 100%/)
   })
 
-  it('rejects narrow peg bands whose A exceeds 2', () => {
-    expect(() => linearWidthFromSymmetricRangePercent(0.2)).toThrow(/exceeds maximum/)
+  it('rejects peg bands tighter than the A ≤ 5000 floor', () => {
+    expect(() => linearWidthFromSymmetricRangePercent(0.001)).toThrow(/exceeds maximum/)
   })
 })
 
@@ -44,8 +49,12 @@ describe('symmetricRangePercentFromLinearWidth', () => {
     expect(symmetricRangePercentFromLinearWidth(15n * 10n ** 26n)).toBe(25)
   })
 
-  it('returns 20% at the on-chain maximum linearWidth', () => {
-    expect(symmetricRangePercentFromLinearWidth(MAX_LINEAR_WIDTH)).toBe(20)
+  it('returns 20% at A = 2', () => {
+    expect(symmetricRangePercentFromLinearWidth(2n * PEGGED_SWAP_ONE)).toBe(20)
+  })
+
+  it('returns ≈0.009999% at the on-chain maximum linearWidth (A = 5000)', () => {
+    expect(symmetricRangePercentFromLinearWidth(MAX_LINEAR_WIDTH)).toBeCloseTo(100 / 10001, 6)
   })
 
   it('returns 100% when linearWidth is zero', () => {
@@ -63,7 +72,7 @@ describe('symmetricRangePercentFromLinearWidth', () => {
   })
 
   it('round-trips percent -> linearWidth -> percent', () => {
-    for (const percent of [20, 25, 25.5, 33.33, 50, 99]) {
+    for (const percent of [0.01, 0.1, 1, 20, 25, 25.5, 33.33, 50, 99]) {
       const linearWidth = linearWidthFromSymmetricRangePercent(percent)
       expect(symmetricRangePercentFromLinearWidth(linearWidth)).toBeCloseTo(percent, 10)
     }
@@ -75,7 +84,7 @@ describe('symmetricRangePercentFromLinearWidth', () => {
       5n * 10n ** 26n,
       10n ** 27n,
       15n * 10n ** 26n,
-      MAX_LINEAR_WIDTH,
+      2n * PEGGED_SWAP_ONE,
     ]) {
       const percent = symmetricRangePercentFromLinearWidth(linearWidth)
       const recovered = linearWidthFromSymmetricRangePercent(percent)
@@ -86,7 +95,7 @@ describe('symmetricRangePercentFromLinearWidth', () => {
   })
 
   it('round-trips exactly for clean percents', () => {
-    for (const percent of [20, 25, 50]) {
+    for (const percent of [0.01, 0.1, 20, 25, 50]) {
       const linearWidth = linearWidthFromSymmetricRangePercent(percent)
       expect(symmetricRangePercentFromLinearWidth(linearWidth)).toBe(percent)
     }
