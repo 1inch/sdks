@@ -92,6 +92,21 @@ export class AquaProgramBuilder extends ProgramBuilder {
   }
 
   /**
+   * Requires tx.origin to hold any amount of specified token (supports NFTs)
+   **/
+  public onlyTxOriginTokenBalanceNonZero(
+    data: DataFor<controls.OnlyTxOriginTokenBalanceNonZeroArgs>,
+  ): this {
+    super.add(
+      controls.onlyTxOriginTokenBalanceNonZero.createIx(
+        new controls.OnlyTxOriginTokenBalanceNonZeroArgs(data.token),
+      ),
+    )
+
+    return this
+  }
+
+  /**
    * Requires taker to hold at least specified amount of token
    **/
   public onlyTakerTokenBalanceGte(data: DataFor<controls.OnlyTakerTokenBalanceGteArgs>): this {

@@ -24,6 +24,10 @@ export class AquaPeggedAmmStrategy extends AquaAMMStrategy {
   public build(): SwapVmProgram {
     const builder = new AquaProgramBuilder()
 
+    if (this.accessToken) {
+      builder.onlyTxOriginTokenBalanceNonZero({ token: this.accessToken })
+    }
+
     if (this.protocolFee) {
       const data = fee.ProtocolFeeArgs.fromBps(this.protocolFee.bps, this.protocolFee.receiver)
       builder.add(fee.aquaProtocolFeeAmountInXD.createIx(data))

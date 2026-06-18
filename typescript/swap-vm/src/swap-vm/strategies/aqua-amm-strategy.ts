@@ -12,6 +12,8 @@ export abstract class AquaAMMStrategy {
     receiver: Address
   }
 
+  accessToken?: Address
+
   salt?: bigint
 
   protected constructor() {}
@@ -30,6 +32,12 @@ export abstract class AquaAMMStrategy {
 
   public withFeeTokenIn(bps: number): this {
     this.feeBpsIn = bps
+
+    return this
+  }
+
+  public withTxOriginAccessToken(token: Address): this {
+    this.accessToken = token
 
     return this
   }
