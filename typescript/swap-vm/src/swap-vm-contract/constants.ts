@@ -8,22 +8,26 @@ import { Address, NetworkEnum } from '@1inch/sdk-core'
  *
  * Deployed with next params
  * - name    = `AquaSwapVMRouter`
- * - version = `1.0.0`
+ * - version = `1.0.1`
  *
- * @see https://github.com/1inch/swap-vm/blob/8cc4c467374959af9efdb6e2b67d32d3c1083e1e/src/routers/AquaSwapVMRouter.sol#L11
+ * v1.0.1 is opcode-compatible with v1.0.0 (identical instruction ordering for
+ * indices 0..32) and additionally registers the `onlyTxOriginTokenBalanceNonZero`
+ * (tx.origin access-token / KYC gate) opcode.
+ *
+ * @see https://github.com/1inch/swap-vm/blob/19cbd44/src/routers/AquaSwapVMRouter.sol#L11
  * @see "../swap-vm/programs/aqua-program-builder"
  */
 export const AQUA_SWAP_VM_CONTRACT_ADDRESSES: Record<NetworkEnum, Address> = {
-  [NetworkEnum.ETHEREUM]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
-  [NetworkEnum.BINANCE]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
-  [NetworkEnum.POLYGON]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
-  [NetworkEnum.ARBITRUM]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
-  [NetworkEnum.AVALANCHE]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
-  [NetworkEnum.GNOSIS]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
-  [NetworkEnum.COINBASE]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
-  [NetworkEnum.OPTIMISM]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
-  [NetworkEnum.ZKSYNC]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
-  [NetworkEnum.LINEA]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
-  [NetworkEnum.UNICHAIN]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
-  [NetworkEnum.SONIC]: new Address('0xdfd05fe230bfe7b212878414270c72c8345506fa'),
+  [NetworkEnum.ETHEREUM]: new Address('0x3c4758979ec30ca45857cabc2462a70699ed790e'),
+  [NetworkEnum.BINANCE]: new Address('0x3c4758979ec30ca45857cabc2462a70699ed790e'),
+  [NetworkEnum.POLYGON]: new Address('0x3c4758979ec30ca45857cabc2462a70699ed790e'),
+  [NetworkEnum.ARBITRUM]: new Address('0x3c4758979ec30ca45857cabc2462a70699ed790e'),
+  [NetworkEnum.AVALANCHE]: new Address('0x3c4758979ec30ca45857cabc2462a70699ed790e'),
+  [NetworkEnum.GNOSIS]: new Address('0x3c4758979ec30ca45857cabc2462a70699ed790e'),
+  [NetworkEnum.COINBASE]: new Address('0x3c4758979ec30ca45857cabc2462a70699ed790e'),
+  [NetworkEnum.OPTIMISM]: new Address('0x3c4758979ec30ca45857cabc2462a70699ed790e'),
+  [NetworkEnum.ZKSYNC]: new Address('0x3c4758979ec30ca45857cabc2462a70699ed790e'),
+  [NetworkEnum.LINEA]: new Address('0x3c4758979ec30ca45857cabc2462a70699ed790e'),
+  [NetworkEnum.UNICHAIN]: new Address('0x3c4758979ec30ca45857cabc2462a70699ed790e'),
+  [NetworkEnum.SONIC]: new Address('0x3c4758979ec30ca45857cabc2462a70699ed790e'),
 }
