@@ -398,7 +398,7 @@ describe('PriceRange', () => {
         maxPrice: Price.fromHuman('63752', pairUsdtQuoteWbtcBase),
       })
 
-      it('should accept token0-only reserves (spot at min bound)', () => {
+      it('should place spot exactly at the min bound for token0-only reserves', () => {
         const { minPrice, maxPrice } = wbtcUsdtBounds()
 
         const range = PriceRange.fromPriceBounds(
@@ -410,20 +410,20 @@ describe('PriceRange', () => {
           },
         )
 
-        expect(range.spotPrice.gte(range.minPrice)).toBe(true)
-        expect(range.spotPrice.lte(range.maxPrice)).toBe(true)
-        expect(range.spotPrice.toHuman(USDT)).toBe('58946.000012')
+        expect(range.spotPrice.equals(range.minPrice)).toBe(true)
+        expect(range.spotPrice.toHuman(USDT)).toBe('58946')
       })
 
-      it('should accept token1-only reserves (spot at max bound)', () => {
+      it('should place spot exactly at the max bound for token1-only reserves', () => {
         const { minPrice, maxPrice } = wbtcUsdtBounds()
 
         /**
          * Mirror of the min-side case above. In exact arithmetic the implied spot equals the
-         * max bound (amount0 = 0), but integer truncation in `computeLiquidityAndPrice`
-         * (`virtualLt = L / sqrtPmax` rounds down) lands the derived `sqrtSpot` ~3.4e-10
-         * (relative) above `sqrtPmax`, and the `PriceRange` constructor assert rejects this
+         * max bound (amount0 = 0), but deriving it via `computeLiquidityAndPrice` truncates
+         * (`virtualLt = L / sqrtPmax` rounds down), landing the derived `sqrtSpot` ~3.4e-10
+         * (relative) above `sqrtPmax` so the constructor assert used to reject this
          * legitimate single-sided composition with 'maxPrice should be >= spotPrice'.
+         * Single-sided compositions now short-circuit to the corresponding bound.
          */
         const range = PriceRange.fromPriceBounds(
           { minPrice, maxPrice },
@@ -434,9 +434,22 @@ describe('PriceRange', () => {
           },
         )
 
-        expect(range.spotPrice.gte(range.minPrice)).toBe(true)
-        expect(range.spotPrice.lte(range.maxPrice)).toBe(true)
         expect(range.spotPrice.equals(range.maxPrice)).toBe(true)
+        expect(range.spotPrice.toHuman(USDT)).toBe('63752')
+      })
+
+      it('should throw when both reserves are zero', () => {
+        const { minPrice, maxPrice } = wbtcUsdtBounds()
+
+        expect(() =>
+          PriceRange.fromPriceBounds(
+            { minPrice, maxPrice },
+            {
+              reserveA: TokenReserve.new({ token: WBTC, reserve: 0n }),
+              reserveB: TokenReserve.new({ token: USDT, reserve: 0n }),
+            },
+          ),
+        ).toThrow('at least one reserve must be positive')
       })
     })
 

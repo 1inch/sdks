@@ -71,6 +71,19 @@ export class PriceRange {
       'provided reserve for unknown token',
     )
 
+    assert(reserve0.reserve > 0n || reserve1.reserve > 0n, 'at least one reserve must be positive')
+
+    // Single-sided composition: the spot sits exactly on a bound (reserve0 depletes at max,
+    // reserve1 at min). Deriving it via computeLiquidityAndPrice would reintroduce integer
+    // truncation that can land the implied sqrt spot just outside the bounds.
+    if (reserve0.reserve === 0n) {
+      return PriceRange.new({ minPrice, spotPrice: maxPrice, maxPrice })
+    }
+
+    if (reserve1.reserve === 0n) {
+      return PriceRange.new({ minPrice, spotPrice: minPrice, maxPrice })
+    }
+
     const { sqrtPriceSpot } = computeLiquidityAndPrice(
       reserve0.reserve,
       reserve1.reserve,
