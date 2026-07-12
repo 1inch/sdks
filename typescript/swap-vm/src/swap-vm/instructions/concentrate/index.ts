@@ -20,6 +20,5 @@ export type {
   PriceAllocationRange,
   PriceBounds,
   ConcentratedLiquidityInfo,
-  SingleSidedRangeInfo,
 } from './concentrate-liquidity-calculator/types'
 export { bigintSqrt } from '../utils/bigint-sqrt'

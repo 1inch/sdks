@@ -30,15 +30,6 @@ export type ConcentratedLiquidityInfo = {
 }
 
 /**
- * Result of a single-sided range calculation: the price range with the spot sitting
- * exactly on one bound, and the reserves with the opposite (depleted) side at zero.
- */
-export type SingleSidedRangeInfo = {
-  prices: PriceAllocationRange
-  reserves: ConcentratedLiquidityInfo
-}
-
-/**
  * Constructor argument: the two tokens (tokenA, tokenB). Order is arbitrary;
  * token0/token1 are derived by address comparison.
  */

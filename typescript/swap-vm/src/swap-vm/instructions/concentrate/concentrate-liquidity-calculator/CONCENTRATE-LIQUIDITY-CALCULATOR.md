@@ -125,26 +125,30 @@ const result = calculator.computeFixedAllocation(
 // result.token0Reserve, result.token1Reserve are the two amounts to use
 ```
 
-### `computeSingleSidedRange(spotPrice, priceBound, reserveForToken, reserve)`
+### `computeSingleSidedRange(spotPrice, reserveForToken, reserve)`
 
-Builds a **single-sided** range: the spot price itself becomes one bound and only one token is deposited (the opposite reserve is zero by default). Which bound the spot sits on follows from the deposited token, in sqrt(token1/token0) terms:
+Builds a **single-sided** price range from the spot price and a single reserve: only one token is deposited (the opposite reserve is zero) and the spot price sits exactly on one bound. Which bound the spot sits on follows from the deposited token, in sqrt(token1/token0) terms:
 
-- depositing **token0**: spot = **min** bound, `priceBound` must be above the spot and becomes the max bound;
-- depositing **token1**: spot = **max** bound, `priceBound` must be below the spot and becomes the min bound.
+- depositing **token0**: spot = **min** bound;
+- depositing **token1**: spot = **max** bound.
 
-Returns `SingleSidedRangeInfo`: the `PriceAllocationRange` (`minPrice`, `spotPrice`, `maxPrice` as `Price` objects, ready for the allocation methods) and the `ConcentratedLiquidityInfo` reserves with the depleted side at zero.
+The opposite bound is derived from the other token's `maxAvailableLiquidity`: it is the price at which the deposited reserve has fully converted into exactly that amount. This is the range-order relation `sqrtPmin * sqrtPmax = amountGt / amountLt` (in 1e18 fixed-point) — the geometric mean of the bounds is the average execution price across the range. Consequently the opposite token's `maxAvailableLiquidity` must exceed the spot-equivalent value of the deposit, otherwise the range would be empty or inverted and the method throws.
 
-**Use case**: “I only have USDC; open a position that converts into WETH as the price moves through my range.”
+Returns a `PriceAllocationRange` (`minPrice`, `spotPrice`, `maxPrice` as `Price` objects), ready for the allocation methods.
+
+**Use case**: “I only have 1,000,000 USDC and want to end up with at most 800 WETH; give me the range that does that starting from the current spot.”
 
 ```ts
-const result = calculator.computeSingleSidedRange(
-  spotPrice,        // Price: current spot, sits exactly on one bound
-  priceBound,       // Price: the other bound of the range
-  usdcAddress,      // token being deposited
+// calculator tokens: USDC (maxAvailableLiquidity 1_000_000e6), WETH (maxAvailableLiquidity 800e18)
+const range = calculator.computeSingleSidedRange(
+  spotPrice,       // Price: current spot (e.g. 2500 USDC per WETH), sits on one bound
+  usdcAddress,     // token being deposited
   parseUnits('1000000', 6),
 )
-// result.prices  — { minPrice, spotPrice, maxPrice } with spot on a bound
-// result.reserves — { token0Reserve: 1000000e6, token1Reserve: 0n }
+// range.minPrice === spotPrice (token0 deposit)
+// range.maxPrice — derived far bound: 625 USDC per WETH here, so the
+// average execution across the range is sqrt(2500 * 625) = 1250 USDC per WETH
+// and the 1,000,000 USDC fully converts into exactly 800 WETH at the far bound
 ```
 
 ### `computeSpotPrice(token0Balance, token1Balance, scaledPriceBounds)`

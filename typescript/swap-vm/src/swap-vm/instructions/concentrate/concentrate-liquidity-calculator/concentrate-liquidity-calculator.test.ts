@@ -2,9 +2,14 @@
 
 import { describe, expect, it } from 'vitest'
 import { Address } from '@1inch/sdk-core'
+import { UINT_256_MAX } from '@1inch/byte-utils'
 import { ConcentrateLiquidityCalculator } from './concentrate-liquidity-calculator'
 import { Price } from '../price'
 import type { PricePair, PriceToken } from '../price/types'
+import {
+  computeBalances,
+  computeLiquidityFromAmounts,
+} from '../concentrate-liquidity-math/concentrate-liquidity-math'
 
 const USDC = new Address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
 const WETH = new Address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2')
@@ -17,107 +22,162 @@ const DAI_TOKEN: PriceToken = { address: DAI, decimals: 18n }
 
 const pairUsdcQuoteWethBase: PricePair = { quoteToken: USDC_TOKEN, baseToken: WETH_TOKEN }
 
+const maxUsdc = 1_000_000n * 10n ** 6n
+const maxWeth = 800n * 10n ** 18n
+
 /** USDC has the lower address, so it is token0 and WETH is token1. */
 const calculator = ConcentrateLiquidityCalculator.new({
-  tokenA: { address: USDC, decimals: 6n, maxAvailableLiquidity: 1_000_000n * 10n ** 6n },
-  tokenB: { address: WETH, decimals: 18n, maxAvailableLiquidity: 400n * 10n ** 18n },
+  tokenA: { address: USDC, decimals: 6n, maxAvailableLiquidity: maxUsdc },
+  tokenB: { address: WETH, decimals: 18n, maxAvailableLiquidity: maxWeth },
 })
 
 describe('ConcentrateLiquidityCalculator', () => {
   describe('computeSingleSidedRange', () => {
-    /**
-     * For a USDC-quoted pair a *lower* human price means a *higher* sqrt(token1/token0),
-     * so '2000 USDC per WETH' is above '3000 USDC per WETH' in sqrt terms.
-     */
-    const sqrtLowBound = Price.fromHuman('3000', pairUsdcQuoteWethBase)
     const spot = Price.fromHuman('2500', pairUsdcQuoteWethBase)
-    const sqrtHighBound = Price.fromHuman('2000', pairUsdcQuoteWethBase)
 
-    it('should place spot at the min bound for a token0 (USDC) deposit', () => {
+    describe('token0 (USDC) deposit', () => {
+      /** 1,000,000 USDC at 2500 is worth 400 WETH; target is maxWeth = 800 WETH. */
       const reserve = 1_000_000n * 10n ** 6n
 
-      const result = calculator.computeSingleSidedRange(spot, sqrtHighBound, USDC, reserve)
+      it('should place spot at the min bound and derive the max bound', () => {
+        const range = calculator.computeSingleSidedRange(spot, USDC, reserve)
 
-      expect(result.prices.minPrice).toBe(spot)
-      expect(result.prices.spotPrice).toBe(spot)
-      expect(result.prices.maxPrice).toBe(sqrtHighBound)
-      expect(result.reserves.token0Reserve).toBe(reserve)
-      expect(result.reserves.token1Reserve).toBe(0n)
+        expect(range.minPrice).toBe(spot)
+        expect(range.spotPrice).toBe(spot)
+        /**
+         * Range-order relation: sqrtPmax = targetGt * 1e18^2 / (reserve * sqrtPspot).
+         * Converting 1,000,000 USDC into 800 WETH means an average execution of
+         * 1250 USDC/WETH = sqrt(2500 * 625), so the far bound is 625 USDC per WETH.
+         */
+        expect(range.maxPrice.toSqrt()).toBe(2n * spot.toSqrt())
+        expect(range.maxPrice.toHuman(USDC)).toBe('625')
+      })
+
+      it('should fully convert the reserve into token1 maxAvailableLiquidity at the far bound', () => {
+        const range = calculator.computeSingleSidedRange(spot, USDC, reserve)
+
+        const { targetL } = computeLiquidityFromAmounts(
+          reserve,
+          UINT_256_MAX,
+          range.spotPrice.toSqrt(),
+          range.minPrice.toSqrt(),
+          range.maxPrice.toSqrt(),
+        )
+        /** Same liquidity, spot moved to the far bound: all token0 sold for token1. */
+        const atFarBound = computeBalances(
+          targetL,
+          range.maxPrice.toSqrt(),
+          range.minPrice.toSqrt(),
+          range.maxPrice.toSqrt(),
+        )
+
+        expect(atFarBound.bLt).toBe(0n)
+        expect(atFarBound.bGt).toBe(maxWeth)
+      })
+
+      it('should produce a range accepted by computeFixedAllocation', () => {
+        const range = calculator.computeSingleSidedRange(spot, USDC, reserve)
+
+        const allocation = calculator.computeFixedAllocation(range, USDC, reserve)
+
+        /** Only token0 is required; the fixed side may lose a few wei to integer math. */
+        expect(allocation.token1Reserve).toBe(0n)
+        expect(allocation.token0Reserve).toBeLessThanOrEqual(reserve)
+        expect(allocation.token0Reserve).toBeGreaterThan((reserve * 999_999n) / 1_000_000n)
+      })
     })
 
-    it('should place spot at the max bound for a token1 (WETH) deposit', () => {
-      const reserve = 100n * 10n ** 18n
+    describe('token1 (WETH) deposit', () => {
+      /** 200 WETH at 2500 is worth 500,000 USDC; target is maxUsdc = 1,000,000 USDC. */
+      const reserve = 200n * 10n ** 18n
 
-      const result = calculator.computeSingleSidedRange(spot, sqrtLowBound, WETH, reserve)
+      it('should place spot at the max bound and derive the min bound', () => {
+        const range = calculator.computeSingleSidedRange(spot, WETH, reserve)
 
-      expect(result.prices.minPrice).toBe(sqrtLowBound)
-      expect(result.prices.spotPrice).toBe(spot)
-      expect(result.prices.maxPrice).toBe(spot)
-      expect(result.reserves.token0Reserve).toBe(0n)
-      expect(result.reserves.token1Reserve).toBe(reserve)
+        expect(range.maxPrice).toBe(spot)
+        expect(range.spotPrice).toBe(spot)
+        /**
+         * Range-order relation: sqrtPmin = reserve * 1e18^2 / (targetLt * sqrtPspot).
+         * Converting 200 WETH into 1,000,000 USDC means an average execution of
+         * 5000 USDC/WETH = sqrt(2500 * 10000), so the far bound is 10000 USDC per WETH.
+         */
+        expect(range.minPrice.toSqrt()).toBe(spot.toSqrt() / 2n)
+        expect(range.minPrice.toHuman(USDC)).toBe('10000')
+      })
+
+      it('should fully convert the reserve into token0 maxAvailableLiquidity at the far bound', () => {
+        const range = calculator.computeSingleSidedRange(spot, WETH, reserve)
+
+        const { targetL } = computeLiquidityFromAmounts(
+          UINT_256_MAX,
+          reserve,
+          range.spotPrice.toSqrt(),
+          range.minPrice.toSqrt(),
+          range.maxPrice.toSqrt(),
+        )
+        /** Same liquidity, spot moved to the far bound: all token1 sold for token0. */
+        const atFarBound = computeBalances(
+          targetL,
+          range.minPrice.toSqrt(),
+          range.minPrice.toSqrt(),
+          range.maxPrice.toSqrt(),
+        )
+
+        expect(atFarBound.bLt).toBe(maxUsdc)
+        expect(atFarBound.bGt).toBe(0n)
+      })
+
+      it('should produce a range accepted by computeFixedAllocation', () => {
+        const range = calculator.computeSingleSidedRange(spot, WETH, reserve)
+
+        const allocation = calculator.computeFixedAllocation(range, WETH, reserve)
+
+        expect(allocation.token0Reserve).toBe(0n)
+        expect(allocation.token1Reserve).toBeLessThanOrEqual(reserve)
+        expect(allocation.token1Reserve).toBeGreaterThan((reserve * 999_999n) / 1_000_000n)
+      })
     })
 
-    it('should produce a range consistent with computeFixedAllocation (token0 deposit)', () => {
-      const reserve = 1_000_000n * 10n ** 6n
+    describe('validation', () => {
+      it('should throw when the reserve is zero', () => {
+        expect(() => calculator.computeSingleSidedRange(spot, USDC, 0n)).toThrow(
+          'reserve must be positive',
+        )
+      })
 
-      const result = calculator.computeSingleSidedRange(spot, sqrtHighBound, USDC, reserve)
-      const allocation = calculator.computeFixedAllocation(result.prices, USDC, reserve)
+      it('should throw when the reserve token is not in the pair', () => {
+        expect(() => calculator.computeSingleSidedRange(spot, DAI, 1n)).toThrow(
+          'reserve should be in some pair token',
+        )
+      })
 
-      /** Only token0 is required; the fixed side may lose a few wei to integer math. */
-      expect(allocation.token1Reserve).toBe(0n)
-      expect(allocation.token0Reserve).toBeLessThanOrEqual(reserve)
-      expect(allocation.token0Reserve).toBeGreaterThan((reserve * 999_999n) / 1_000_000n)
-    })
+      it('should throw when the spot price is for a different pair', () => {
+        const pairUsdcQuoteDaiBase: PricePair = { quoteToken: USDC_TOKEN, baseToken: DAI_TOKEN }
+        const foreignSpot = Price.fromHuman('1', pairUsdcQuoteDaiBase)
 
-    it('should produce a range consistent with computeFixedAllocation (token1 deposit)', () => {
-      const reserve = 100n * 10n ** 18n
+        expect(() => calculator.computeSingleSidedRange(foreignSpot, USDC, 1n)).toThrow(
+          'prices should be for the calculator token pair',
+        )
+      })
 
-      const result = calculator.computeSingleSidedRange(spot, sqrtLowBound, WETH, reserve)
-      const allocation = calculator.computeFixedAllocation(result.prices, WETH, reserve)
+      it('should throw when token1 maxAvailableLiquidity does not exceed the deposit spot value', () => {
+        /** 1,000,000 USDC at 2500 is worth exactly 400 WETH — no room for a range. */
+        const smallTarget = ConcentrateLiquidityCalculator.new({
+          tokenA: { address: USDC, decimals: 6n, maxAvailableLiquidity: maxUsdc },
+          tokenB: { address: WETH, decimals: 18n, maxAvailableLiquidity: 400n * 10n ** 18n },
+        })
 
-      expect(allocation.token0Reserve).toBe(0n)
-      expect(allocation.token1Reserve).toBeLessThanOrEqual(reserve)
-      expect(allocation.token1Reserve).toBeGreaterThan((reserve * 999_999n) / 1_000_000n)
-    })
+        expect(() =>
+          smallTarget.computeSingleSidedRange(spot, USDC, 1_000_000n * 10n ** 6n),
+        ).toThrow('token1 maxAvailableLiquidity should exceed the spot value of the deposit')
+      })
 
-    it('should throw when the reserve is zero', () => {
-      expect(() => calculator.computeSingleSidedRange(spot, sqrtHighBound, USDC, 0n)).toThrow(
-        'reserve must be positive',
-      )
-    })
-
-    it('should throw when the bound is below spot for a token0 deposit', () => {
-      expect(() => calculator.computeSingleSidedRange(spot, sqrtLowBound, USDC, 1n)).toThrow(
-        'price bound should be above spot for a token0 deposit',
-      )
-    })
-
-    it('should throw when the bound is above spot for a token1 deposit', () => {
-      expect(() => calculator.computeSingleSidedRange(spot, sqrtHighBound, WETH, 1n)).toThrow(
-        'price bound should be below spot for a token1 deposit',
-      )
-    })
-
-    it('should throw when the bound equals spot (degenerate range)', () => {
-      expect(() => calculator.computeSingleSidedRange(spot, spot, USDC, 1n)).toThrow(
-        'price bound should be above spot for a token0 deposit',
-      )
-    })
-
-    it('should throw when the reserve token is not in the pair', () => {
-      expect(() => calculator.computeSingleSidedRange(spot, sqrtHighBound, DAI, 1n)).toThrow(
-        'reserve should be in some pair token',
-      )
-    })
-
-    it('should throw when prices are for a different pair', () => {
-      const pairUsdcQuoteDaiBase: PricePair = { quoteToken: USDC_TOKEN, baseToken: DAI_TOKEN }
-      const foreignSpot = Price.fromHuman('1', pairUsdcQuoteDaiBase)
-      const foreignBound = Price.fromHuman('0.9', pairUsdcQuoteDaiBase)
-
-      expect(() => calculator.computeSingleSidedRange(foreignSpot, foreignBound, USDC, 1n)).toThrow(
-        'prices should be for the calculator token pair',
-      )
+      it('should throw when token0 maxAvailableLiquidity does not exceed the deposit spot value', () => {
+        /** 400 WETH at 2500 is worth exactly 1,000,000 USDC — no room for a range. */
+        expect(() => calculator.computeSingleSidedRange(spot, WETH, 400n * 10n ** 18n)).toThrow(
+          'token0 maxAvailableLiquidity should exceed the spot value of the deposit',
+        )
+      })
     })
   })
 })

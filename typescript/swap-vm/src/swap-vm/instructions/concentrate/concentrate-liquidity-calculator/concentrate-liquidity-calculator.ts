@@ -9,9 +9,9 @@ import type {
   ConcentrateTokenInfo,
   PriceAllocationRange,
   PriceBounds,
-  SingleSidedRangeInfo,
 } from './types'
-import type { Price } from '../price'
+import { Price } from '../price'
+import { ONE_E18 } from '../concentrate-grow-liquidity-2d-args'
 import {
   computeLiquidityAndPrice,
   computeLiquidityFromAmounts,
@@ -87,26 +87,30 @@ export class ConcentrateLiquidityCalculator {
   }
 
   /**
-   * Build a single-sided range from a spot price, one price bound and a single reserve.
+   * Build a single-sided price range from a spot price and a single reserve.
    *
-   * The spot price itself becomes the second bound, so the position holds only the
-   * provided token and the opposite reserve is zero by default:
-   * - depositing token0: spot = min bound, so `priceBound` must be above the spot
-   *   (in sqrt(token1/token0) terms) and becomes the max bound;
-   * - depositing token1: spot = max bound, so `priceBound` must be below the spot
-   *   and becomes the min bound.
+   * The spot price sits exactly on one bound (the position holds only the provided
+   * token, the opposite reserve is zero):
+   * - depositing token0: spot = min bound (in sqrt(token1/token0) terms);
+   * - depositing token1: spot = max bound.
+   *
+   * The opposite bound is derived from the other token's `maxAvailableLiquidity`:
+   * it is the price at which the deposited reserve has fully converted into exactly
+   * that amount. This follows from the range-order relation
+   * `sqrtPmin * sqrtPmax / 1e18^2 = amountGt / amountLt` (the geometric mean of the
+   * bounds is the average execution price across the range), so the opposite token's
+   * `maxAvailableLiquidity` must exceed the spot-equivalent value of the deposit.
    *
    * @param spotPrice Current spot price; sits exactly on one bound of the range
-   * @param priceBound The other bound of the range
    * @param reserveForToken Token being deposited (must be one of the pair tokens)
    * @param reserve Raw amount of `reserveForToken` to deposit (must be positive)
+   * @returns Price range with the spot on one bound and the derived opposite bound
    */
   computeSingleSidedRange(
     spotPrice: Price,
-    priceBound: Price,
     reserveForToken: Address,
     reserve: bigint,
-  ): SingleSidedRangeInfo {
+  ): PriceAllocationRange {
     assert(reserve > 0n, 'reserve must be positive')
     assert(
       spotPrice.token0.address.equal(this.token0.address) &&
@@ -119,21 +123,37 @@ export class ConcentrateLiquidityCalculator {
     )
 
     const isReserveLt = reserveForToken.equal(this.token0.address)
+    const sqrtPspot = spotPrice.toSqrt()
+    const pair = { tokenA: spotPrice.token0, tokenB: spotPrice.token1 }
 
     if (isReserveLt) {
-      assert(priceBound.gt(spotPrice), 'price bound should be above spot for a token0 deposit')
+      const targetGt = this.token1.maxAvailableLiquidity
+      const sqrtPmax = (targetGt * ONE_E18 * ONE_E18) / (reserve * sqrtPspot)
+      assert(
+        sqrtPmax > sqrtPspot,
+        'token1 maxAvailableLiquidity should exceed the spot value of the deposit',
+      )
 
       return {
-        prices: { minPrice: spotPrice, spotPrice, maxPrice: priceBound },
-        reserves: { token0Reserve: reserve, token1Reserve: 0n },
+        minPrice: spotPrice,
+        spotPrice,
+        maxPrice: Price.fromSqrt(sqrtPmax, pair),
       }
     }
 
-    assert(priceBound.lt(spotPrice), 'price bound should be below spot for a token1 deposit')
+    const targetLt = this.token0.maxAvailableLiquidity
+    assert(targetLt > 0n, 'token0 maxAvailableLiquidity must be positive')
+
+    const sqrtPmin = (reserve * ONE_E18 * ONE_E18) / (targetLt * sqrtPspot)
+    assert(
+      sqrtPmin > 0n && sqrtPmin < sqrtPspot,
+      'token0 maxAvailableLiquidity should exceed the spot value of the deposit',
+    )
 
     return {
-      prices: { minPrice: priceBound, spotPrice, maxPrice: spotPrice },
-      reserves: { token0Reserve: 0n, token1Reserve: reserve },
+      minPrice: Price.fromSqrt(sqrtPmin, pair),
+      spotPrice,
+      maxPrice: spotPrice,
     }
   }
 
