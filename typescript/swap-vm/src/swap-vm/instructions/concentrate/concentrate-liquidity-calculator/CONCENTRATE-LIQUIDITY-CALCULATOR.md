@@ -125,6 +125,28 @@ const result = calculator.computeFixedAllocation(
 // result.token0Reserve, result.token1Reserve are the two amounts to use
 ```
 
+### `computeSingleSidedRange(spotPrice, priceBound, reserveForToken, reserve)`
+
+Builds a **single-sided** range: the spot price itself becomes one bound and only one token is deposited (the opposite reserve is zero by default). Which bound the spot sits on follows from the deposited token, in sqrt(token1/token0) terms:
+
+- depositing **token0**: spot = **min** bound, `priceBound` must be above the spot and becomes the max bound;
+- depositing **token1**: spot = **max** bound, `priceBound` must be below the spot and becomes the min bound.
+
+Returns `SingleSidedRangeInfo`: the `PriceAllocationRange` (`minPrice`, `spotPrice`, `maxPrice` as `Price` objects, ready for the allocation methods) and the `ConcentratedLiquidityInfo` reserves with the depleted side at zero.
+
+**Use case**: “I only have USDC; open a position that converts into WETH as the price moves through my range.”
+
+```ts
+const result = calculator.computeSingleSidedRange(
+  spotPrice,        // Price: current spot, sits exactly on one bound
+  priceBound,       // Price: the other bound of the range
+  usdcAddress,      // token being deposited
+  parseUnits('1000000', 6),
+)
+// result.prices  — { minPrice, spotPrice, maxPrice } with spot on a bound
+// result.reserves — { token0Reserve: 1000000e6, token1Reserve: 0n }
+```
+
 ### `computeSpotPrice(token0Balance, token1Balance, scaledPriceBounds)`
 
 Takes **raw** amounts of token0 and token1 (pool order: lower address = token0) and a **`ScaledPriceBounds`** range. Converts the bounds the same way as allocation methods, then computes the **implied** spot `sqrt(P_spot)` in **1e18** fixed-point (same units as `ConcentratedLiquidityInfo.sqrtPriceSpot`).
