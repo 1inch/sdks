@@ -383,6 +383,63 @@ describe('PriceRange', () => {
       ).toThrow('provided reserve for unknown token')
     })
 
+    describe('single-sided compositions (DAPP-4462 repro: WBTC 8dp / USDT 6dp)', () => {
+      const WBTC = new Address('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599')
+      const USDT = new Address('0xdAC17F958D2ee523a2206206994597C13D831ec7')
+
+      /** WBTC has the lower address, so it is token0 and USDT is token1. */
+      const WBTC_TOKEN: PriceToken = { address: WBTC, decimals: 8n }
+      const USDT_TOKEN: PriceToken = { address: USDT, decimals: 6n }
+      const pairUsdtQuoteWbtcBase = pricePair(USDT_TOKEN, WBTC_TOKEN)
+
+      /** Range 58,946 -> 63,752 USDT per WBTC. */
+      const wbtcUsdtBounds = (): PriceBounds => ({
+        minPrice: Price.fromHuman('58946', pairUsdtQuoteWbtcBase),
+        maxPrice: Price.fromHuman('63752', pairUsdtQuoteWbtcBase),
+      })
+
+      it('should accept token0-only reserves (spot at min bound)', () => {
+        const { minPrice, maxPrice } = wbtcUsdtBounds()
+
+        const range = PriceRange.fromPriceBounds(
+          { minPrice, maxPrice },
+          {
+            /** 0.442142 WBTC */
+            reserveA: TokenReserve.new({ token: WBTC, reserve: 44214200n }),
+            reserveB: TokenReserve.new({ token: USDT, reserve: 0n }),
+          },
+        )
+
+        expect(range.spotPrice.gte(range.minPrice)).toBe(true)
+        expect(range.spotPrice.lte(range.maxPrice)).toBe(true)
+        expect(range.spotPrice.toHuman(USDT)).toBe('58946.000012')
+      })
+
+      it('should accept token1-only reserves (spot at max bound)', () => {
+        const { minPrice, maxPrice } = wbtcUsdtBounds()
+
+        /**
+         * Mirror of the min-side case above. In exact arithmetic the implied spot equals the
+         * max bound (amount0 = 0), but integer truncation in `computeLiquidityAndPrice`
+         * (`virtualLt = L / sqrtPmax` rounds down) lands the derived `sqrtSpot` ~3.4e-10
+         * (relative) above `sqrtPmax`, and the `PriceRange` constructor assert rejects this
+         * legitimate single-sided composition with 'maxPrice should be >= spotPrice'.
+         */
+        const range = PriceRange.fromPriceBounds(
+          { minPrice, maxPrice },
+          {
+            reserveA: TokenReserve.new({ token: WBTC, reserve: 0n }),
+            /** 28,207 USDT */
+            reserveB: TokenReserve.new({ token: USDT, reserve: 28_207_000_000n }),
+          },
+        )
+
+        expect(range.spotPrice.gte(range.minPrice)).toBe(true)
+        expect(range.spotPrice.lte(range.maxPrice)).toBe(true)
+        expect(range.spotPrice.equals(range.maxPrice)).toBe(true)
+      })
+    })
+
     describe('spot recovery after allocation', () => {
       const maxUsdc = 1_000_000n * 10n ** 6n
       const maxWeth = 400n * 10n ** 18n
