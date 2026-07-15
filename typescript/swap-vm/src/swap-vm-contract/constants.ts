@@ -30,4 +30,5 @@ export const AQUA_SWAP_VM_CONTRACT_ADDRESSES: Record<NetworkEnum, Address> = {
   [NetworkEnum.LINEA]: new Address('0x3c4758979ec30ca45857cabc2462a70699ed790e'),
   [NetworkEnum.UNICHAIN]: new Address('0x3c4758979ec30ca45857cabc2462a70699ed790e'),
   [NetworkEnum.SONIC]: new Address('0x3c4758979ec30ca45857cabc2462a70699ed790e'),
+  [NetworkEnum.ROBINHOOD]: new Address('0x3c4758979ec30ca45857cabc2462a70699ed790e'),
 }

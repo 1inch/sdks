@@ -200,6 +200,7 @@ The SDK includes pre-configured contract addresses for the following networks:
 | Linea | 59144 | [0x4a055aa172c98ec32de118b9b5b6ac8b4099a580](https://lineascan.build/address/0x4a055aa172c98ec32de118b9b5b6ac8b4099a580) |
 | Unichain | 1301 | [0x4a055aa172c98ec32de118b9b5b6ac8b4099a580](https://uniscan.xyz/address/0x4a055aa172c98ec32de118b9b5b6ac8b4099a580) |
 | Sonic | 146 | [0x4a055aa172c98ec32de118b9b5b6ac8b4099a580](https://sonicscan.org/address/0x4a055aa172c98ec32de118b9b5b6ac8b4099a580) |
+| Robinhood Chain | 4663 | [0x7c2d4aa5c900c08004fadb1c0d953c5b099fec86](https://robinhoodchain.blockscout.com/address/0x7c2d4aa5c900c08004fadb1c0d953c5b099fec86) |
 
 Access addresses using:
 

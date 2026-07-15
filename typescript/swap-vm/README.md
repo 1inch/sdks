@@ -535,6 +535,7 @@ The SDK includes pre-configured contract addresses of `AquaSwapVMRouter` for the
 | Linea | 59144 | [0x3c4758979ec30ca45857cabc2462a70699ed790e](https://lineascan.build/address/0x3c4758979ec30ca45857cabc2462a70699ed790e) |
 | Unichain | 1301 | [0x3c4758979ec30ca45857cabc2462a70699ed790e](https://uniscan.xyz/address/0x3c4758979ec30ca45857cabc2462a70699ed790e) |
 | Sonic | 146 | [0x3c4758979ec30ca45857cabc2462a70699ed790e](https://sonicscan.org/address/0x3c4758979ec30ca45857cabc2462a70699ed790e) |
+| Robinhood Chain | 4663 | [0x3c4758979ec30ca45857cabc2462a70699ed790e](https://robinhoodchain.blockscout.com/address/0x3c4758979ec30ca45857cabc2462a70699ed790e) |
 
 Access addresses using:
 

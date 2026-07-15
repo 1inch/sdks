@@ -11,4 +11,5 @@ export enum NetworkEnum {
   LINEA = 59144,
   SONIC = 146,
   UNICHAIN = 130,
+  ROBINHOOD = 4663,
 }
