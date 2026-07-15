@@ -1,6 +1,12 @@
+# TypeScript SDKs
+
 ## 📦 Available SDKs
 
-Each SDK is an independent package that can be published and used separately.
+Each SDK is an independent package that can be published and used separately:
+
+- [`@1inch/aqua-sdk`](aqua) — Aqua Protocol SDK ([docs](aqua/README.md))
+- [`@1inch/swap-vm-sdk`](swap-vm) — Swap VM SDK ([docs](swap-vm/README.md))
+- [`@1inch/sdk-core`](sdk-core) — shared core utilities and types
 
 ## 🛠️ Development
 
@@ -55,7 +61,7 @@ pnpm affected:lint:fix   # Lints and fixes only changed SDKs
 
 ### Individual SDK Development
 
-Each SDK can be developed independently:
+Each SDK can be developed independently. Target a single project with Nx (project names: `aqua`, `swap-vm`, `sdk-core`):
 
 ```bash
 # From the root directory
@@ -64,13 +70,13 @@ Each SDK can be developed independently:
 pnpm build:contracts
 
 # Build specific SDK
-pnpm aqua:build
+pnpm nx build aqua
 
 # Test specific SDK
-pnpm aqua:test
+pnpm nx test aqua
 
 # Lint specific SDK
-pnpm aqua:lint
+pnpm nx lint aqua
 
 # Type check all SDKs
 pnpm lint:types
@@ -95,6 +101,7 @@ pnpm lint:types
 ### Version Tags
 
 Each SDK has independent versioning with specific tag patterns:
+
 - `aqua/v*.*.*` - @1inch/aqua-sdk
 - `sdk-core/v*.*.*` - @1inch/sdk-core
 - `swap-vm/v*.*.*` - @1inch/swap-vm-sdk
