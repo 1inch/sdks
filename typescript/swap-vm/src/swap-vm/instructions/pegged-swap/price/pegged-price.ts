@@ -77,8 +77,12 @@ export class PeggedPrice {
     const ltDecimals = BigInt(tokenLt.decimals)
     const gtDecimals = BigInt(tokenGt.decimals)
 
+    // Canonical rate is RAW gt-per-lt in 1e18 fixed-point:
+    // raw = human gt-per-lt * 10^(gtDecimals - ltDecimals) * 1e18.
+    // lt quote: parsed = H * 10^ltDecimals with H = human lt-per-gt = 1/humanGtPerLt,
+    // so raw = 10^(18 + gtDecimals) / parsed.
     const marginalE18 = quoteToBase
-      ? 10n ** (gtDecimals + 18n + ltDecimals) / (parsed * 10n ** gtDecimals)
+      ? 10n ** (18n + gtDecimals) / parsed
       : (parsed * ONE_E18) / 10n ** ltDecimals
 
     return PeggedPrice.fromGtPerLtE18(marginalE18, tokenLt, tokenGt)
@@ -147,9 +151,12 @@ export class PeggedPrice {
     const gtDecimals = BigInt(this.tokenGt.decimals)
     const marginalE18 = this.toGtPerLtE18()
 
+    // marginalE18 is the RAW gt-per-lt rate in 1e18 fixed-point.
+    // lt quote: human lt-per-gt = 1e18 * 10^(gtDecimals - ltDecimals) / marginalE18;
+    // at display scale 10^ltDecimals that is 10^(18 + gtDecimals) / marginalE18.
     const scaled = quoteToken.equal(this.tokenGt.address)
       ? (marginalE18 * 10n ** ltDecimals) / ONE_E18
-      : 10n ** (gtDecimals + 18n + ltDecimals) / (marginalE18 * 10n ** gtDecimals)
+      : 10n ** (18n + gtDecimals) / marginalE18
 
     const full = formatUnits(scaled, Number(quoteDecimals))
 

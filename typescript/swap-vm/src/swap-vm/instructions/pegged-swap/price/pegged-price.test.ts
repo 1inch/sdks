@@ -185,6 +185,89 @@ describe('PeggedPrice', () => {
     })
   })
 
+  describe('lt-quote with mixed decimals (regression for raw vs human marginal mixup)', () => {
+    // Equal-value reserves at the deployment center: the true price is exactly 1
+    // in BOTH quote directions. Before the fix, quoting in the lower-address
+    // token was off by 10^|gtDecimals - ltDecimals| (returned '0' here).
+    it('fromReserves quotes 1 in both directions (lt 6 / gt 18)', () => {
+      const price = PeggedPrice.fromReserves({
+        linearWidth: LINEAR_WIDTH,
+        reserveA: {
+          address: TOKEN_A,
+          decimals: 6,
+          initialReserve: 2000n * 10n ** 6n,
+          currentReserve: 2000n * 10n ** 6n,
+        },
+        reserveB: {
+          address: TOKEN_B,
+          decimals: 18,
+          initialReserve: 2000n * 10n ** 18n,
+          currentReserve: 2000n * 10n ** 18n,
+        },
+      })
+      expect(price.toHuman(TOKEN_B)).toBe('1')
+      expect(price.toHuman(TOKEN_A)).toBe('1')
+    })
+
+    it('fromReserves quotes 1 in both directions (lt 18 / gt 6)', () => {
+      const price = PeggedPrice.fromReserves({
+        linearWidth: LINEAR_WIDTH,
+        reserveA: {
+          address: TOKEN_A,
+          decimals: 18,
+          initialReserve: 2000n * 10n ** 18n,
+          currentReserve: 2000n * 10n ** 18n,
+        },
+        reserveB: {
+          address: TOKEN_B,
+          decimals: 6,
+          initialReserve: 2000n * 10n ** 6n,
+          currentReserve: 2000n * 10n ** 6n,
+        },
+      })
+      expect(price.toHuman(TOKEN_B)).toBe('1')
+      expect(price.toHuman(TOKEN_A)).toBe('1')
+    })
+
+    it('fromHuman lt quote read as gt quote is the exact inverse', () => {
+      const price = PeggedPrice.fromHuman('2000', {
+        quoteToken: { address: TOKEN_A, decimals: 6 },
+        baseToken: { address: TOKEN_B, decimals: 18 },
+      })
+      expect(price.toHuman(TOKEN_A)).toBe('2000')
+      expect(price.toHuman(TOKEN_B)).toBe('0.0005')
+    })
+
+    it('fromHuman gt quote read as lt quote is the exact inverse', () => {
+      const price = PeggedPrice.fromHuman('0.0005', {
+        quoteToken: { address: TOKEN_B, decimals: 18 },
+        baseToken: { address: TOKEN_A, decimals: 6 },
+      })
+      expect(price.toHuman(TOKEN_B)).toBe('0.0005')
+      expect(price.toHuman(TOKEN_A)).toBe('2000')
+    })
+
+    it('equal decimals unchanged: both quote directions from reserves', () => {
+      const price = PeggedPrice.fromReserves({
+        linearWidth: LINEAR_WIDTH,
+        reserveA: {
+          address: TOKEN_A,
+          decimals: 18,
+          initialReserve: 2000n * 10n ** 18n,
+          currentReserve: 2000n * 10n ** 18n,
+        },
+        reserveB: {
+          address: TOKEN_B,
+          decimals: 18,
+          initialReserve: 2000n * 10n ** 18n,
+          currentReserve: 2000n * 10n ** 18n,
+        },
+      })
+      expect(price.toHuman(TOKEN_B)).toBe('1')
+      expect(price.toHuman(TOKEN_A)).toBe('1')
+    })
+  })
+
   describe('off-center reserves (current ≠ initial)', () => {
     it('equal 18/18 decimals', () => {
       const initial = 10n ** 18n
