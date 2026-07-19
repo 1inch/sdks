@@ -315,6 +315,85 @@ describe('PriceRange', () => {
     })
   })
 
+  describe('single-sided positions (1800 USDC per WETH market price)', () => {
+    const maxUsdc = 1_000_000n * 10n ** 6n
+    const maxWeth = 400n * 10n ** 18n
+
+    const maxReservesUsdcWeth = (): TokenReserves => ({
+      reserveA: TokenReserve.new({ token: USDC, reserve: maxUsdc }),
+      reserveB: TokenReserve.new({ token: WETH, reserve: maxWeth }),
+    })
+
+    /**
+     * Range 1800-2200 USDC per WETH with market at 1800: spot sits at the range bound
+     * closest to the market. Bounds are ordered by sqrt(P), so the higher human quote
+     * (2200) is the `minPrice` and the lower one (1800) is the `maxPrice`.
+     */
+    const rangeAboveMarket = (): PriceRange =>
+      PriceRange.new({
+        minPrice: Price.fromHuman('2200', pairUsdcQuoteWethBase),
+        spotPrice: Price.fromHuman('1800', pairUsdcQuoteWethBase),
+        maxPrice: Price.fromHuman('1800', pairUsdcQuoteWethBase),
+      })
+
+    /** Range 1500-1800 USDC per WETH with market at 1800 (spot at the other bound). */
+    const rangeBelowMarket = (): PriceRange =>
+      PriceRange.new({
+        minPrice: Price.fromHuman('1800', pairUsdcQuoteWethBase),
+        spotPrice: Price.fromHuman('1800', pairUsdcQuoteWethBase),
+        maxPrice: Price.fromHuman('1500', pairUsdcQuoteWethBase),
+      })
+
+    it('should allocate only WETH when the range is above the market price', () => {
+      const result = rangeAboveMarket().computeMaxAllocation(maxReservesUsdcWeth())
+
+      expect(result.reserve0.reserve).toBe(0n)
+      expect(result.reserve1.reserve).toBe(399999999999999999543n)
+    })
+
+    it('should allocate only USDC when the range is below the market price', () => {
+      const result = rangeBelowMarket().computeMaxAllocation(maxReservesUsdcWeth())
+
+      expect(result.reserve0.reserve).toBe(999999999999n)
+      expect(result.reserve1.reserve).toBe(0n)
+    })
+
+    it('should compute WETH-only fixed allocation for the range above the market price', () => {
+      const fixedWeth = 100n * 10n ** 18n
+
+      const result = rangeAboveMarket().computeFixedAllocation(
+        TokenReserve.new({ token: WETH, reserve: fixedWeth }),
+      )
+
+      expect(result.reserve0.reserve).toBe(0n)
+      expect(result.reserve1.reserve).toBe(99999999999999999323n)
+    })
+
+    it('should compute USDC-only fixed allocation for the range below the market price', () => {
+      const fixedUsdc = 500_000n * 10n ** 6n
+
+      const result = rangeBelowMarket().computeFixedAllocation(
+        TokenReserve.new({ token: USDC, reserve: fixedUsdc }),
+      )
+
+      expect(result.reserve0.reserve).toBe(499999999999n)
+      expect(result.reserve1.reserve).toBe(0n)
+    })
+
+    it('should recover the 1800 spot price from a USDC-only allocation', () => {
+      const range = rangeBelowMarket()
+      const allocation = range.computeMaxAllocation(maxReservesUsdcWeth())
+
+      const recovered = PriceRange.fromPriceBounds(
+        { minPrice: range.minPrice, maxPrice: range.maxPrice },
+        { reserveA: allocation.reserve0, reserveB: allocation.reserve1 },
+      )
+
+      expect(recovered.spotPrice.toSqrt()).toBe(23570226039551772382874n)
+      expect(recovered.spotPrice.toHuman(USDC)).toBe('1800')
+    })
+  })
+
   describe('fromPriceBounds', () => {
     const sqrtPriceMin = 9n * 10n ** 17n
     const sqrtPriceMax = 11n * 10n ** 17n
