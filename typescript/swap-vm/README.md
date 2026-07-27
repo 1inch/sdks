@@ -533,7 +533,7 @@ The SDK includes pre-configured contract addresses of `AquaSwapVMRouter` for the
 | Optimism | 10 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://optimistic.etherscan.io/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
 | zkSync Era | 324 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://era.zksync.network/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
 | Linea | 59144 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://lineascan.build/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
-| Unichain | 1301 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://uniscan.xyz/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| Unichain | 130 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://uniscan.xyz/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
 | Sonic | 146 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://sonicscan.org/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
 | Robinhood Chain | 4663 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://robinhoodchain.blockscout.com/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
 
