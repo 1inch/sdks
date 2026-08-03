@@ -12,6 +12,14 @@ export default defineConfig({
       reportsDirectory: '../../coverage/typescript/aqua',
       include: ['src'],
       exclude: ['**/index.ts', '**/constants.ts', '**/types.ts'],
+      // Set just below the levels measured when these were introduced, so a
+      // regression fails CI without the suite being brittle.
+      thresholds: {
+        statements: 97,
+        branches: 99,
+        functions: 80,
+        lines: 97,
+      },
     },
   },
 })
