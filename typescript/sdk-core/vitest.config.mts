@@ -8,6 +8,8 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     coverage: {
       reportsDirectory: '../../coverage/typescript/shared',
+      // lcov is what Codecov ingests; text keeps the console summary.
+      reporter: ['text', 'html', 'lcov'],
       // Matches the aqua and swap-vm configs, which already scope coverage to
       // src and drop barrels/constants. `*.abi.ts` holds generated ABI arrays
       // with no logic to exercise.

@@ -41,3 +41,41 @@ jobs:
 
       - name: Test affected packages
         run: pnpm affected:test --base=origin/${{ github.base_ref }}
+
+      # Each package writes lcov with paths relative to its own root (SF:src/...),
+      # so all three reports look identical to Codecov. They are uploaded
+      # separately, with `root_dir` pointing at the owning package so the paths
+      # resolve, and a flag each so the very different baselines
+      # (aqua ~99%, swap-vm ~92%, sdk-core ~45%) are tracked apart.
+      #
+      # `affected:test` only runs the projects a PR touches, so a given report
+      # may legitimately be missing. Uploads are best-effort and never fail CI.
+      - name: Upload sdk-core coverage
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/typescript/shared/lcov.info
+          root_dir: ${{ github.workspace }}/typescript/sdk-core
+          flags: sdk-core
+          fail_ci_if_error: false
+        continue-on-error: true
+
+      - name: Upload aqua coverage
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/typescript/aqua/lcov.info
+          root_dir: ${{ github.workspace }}/typescript/aqua
+          flags: aqua
+          fail_ci_if_error: false
+        continue-on-error: true
+
+      - name: Upload swap-vm coverage
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/typescript/swap-vm/lcov.info
+          root_dir: ${{ github.workspace }}/typescript/swap-vm
+          flags: swap-vm
+          fail_ci_if_error: false
+        continue-on-error: true

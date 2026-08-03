@@ -8,6 +8,8 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     coverage: {
       reportsDirectory: '../../coverage/typescript/swap-vm',
+      // lcov is what Codecov ingests; text keeps the console summary.
+      reporter: ['text', 'html', 'lcov'],
       include: ['src'],
       exclude: ['**/index.ts', '**/constants.ts', '**/types.ts'],
       // Set just below the levels measured when these were introduced, so a

@@ -1,0 +1,45 @@
+# https://docs.codecov.com/docs/codecovyml-reference
+
+coverage:
+  status:
+    project:
+      default:
+        # Match the per-package thresholds in the vitest configs: report a drop,
+        # but allow a little noise so unrelated PRs are not blocked.
+        target: auto
+        threshold: 1%
+        informational: true
+    patch:
+      default:
+        # New and changed lines should be tested, but this stays advisory until
+        # the team decides to enforce it.
+        target: 80%
+        informational: true
+
+# One flag per workspace package, so the three very different baselines
+# (aqua ~99%, swap-vm ~92%, sdk-core ~45%) are tracked separately rather than
+# being averaged into a single misleading number.
+flags:
+  aqua:
+    paths:
+      - typescript/aqua/
+  sdk-core:
+    paths:
+      - typescript/sdk-core/
+  swap-vm:
+    paths:
+      - typescript/swap-vm/
+
+ignore:
+  - "**/*.test.ts"
+  - "**/*.spec.ts"
+  - "**/index.ts"
+  - "**/*.abi.ts"
+  - "**/dist/**"
+  - "contracts/**"
+  - "scripts/**"
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: true
