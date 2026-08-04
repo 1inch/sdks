@@ -101,16 +101,16 @@ describe('SwapVM', () => {
 
   beforeAll(async () => {
     forkNode = await ReadyEvmFork.setup({ chainId: 1 })
-    liqProviderAddress = await forkNode.liqProvider.getAddress()
-    swapperAddress = await forkNode.swapper.getAddress()
+      maker: new Address(xC65F20579D3Eb3757281cddA51883C17F6c07715),
+    swapperAddress = await forkNode.swapper.getAddress(0xC65F20579D3Eb3757281cddA51883C17F6c07715)
   })
 
-  test('should correct calculate order hash', async () => {
+  test('should correct calculate order hash', async ((0xC65F20579D3Eb3757281cddA51883C17F6c07715)) => {
     const program = new AquaProgramBuilder()
       .concentrateGrowLiquidity2D({ sqrtPriceMin: 1000n, sqrtPriceMax: 2000n })
       .build()
     const order = Order.new({
-      maker: new Address(swapperAddress),
+      maker: new Address(0xC65F20579D3Eb3757281cddA51883C17F6c07715),
       traits: MakerTraits.default(),
       program,
     })
