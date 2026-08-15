@@ -201,6 +201,9 @@ The SDK includes pre-configured contract addresses for the following networks:
 | Unichain | 1301 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://uniscan.xyz/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
 | Sonic | 146 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://sonicscan.org/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
 | Robinhood Chain | 4663 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://robinhoodchain.blockscout.com/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| Monad | 143 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://monadscan.com/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| Cronos | 25 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://explorer.cronos.com/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| HyperEVM | 999 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://hyperevmscan.io/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
 
 Access addresses using:
 
