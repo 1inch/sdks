@@ -198,7 +198,7 @@ The SDK includes pre-configured contract addresses for the following networks:
 | Optimism | 10 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://optimistic.etherscan.io/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
 | zkSync Era | 324 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://era.zksync.network/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
 | Linea | 59144 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://lineascan.build/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
-| Unichain | 1301 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://uniscan.xyz/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| Unichain | 130 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://uniscan.xyz/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
 | Sonic | 146 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://sonicscan.org/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
 | Robinhood Chain | 4663 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://robinhoodchain.blockscout.com/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
 | Monad | 143 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://monadscan.com/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
