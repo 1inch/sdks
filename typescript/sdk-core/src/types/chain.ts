@@ -12,4 +12,7 @@ export enum NetworkEnum {
   SONIC = 146,
   UNICHAIN = 130,
   ROBINHOOD = 4663,
+  MONAD = 143,
+  CRONOS = 25,
+  HYPEREVM = 999,
 }

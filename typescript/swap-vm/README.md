@@ -536,6 +536,9 @@ The SDK includes pre-configured contract addresses of `AquaSwapVMRouter` for the
 | Unichain | 130 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://uniscan.xyz/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
 | Sonic | 146 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://sonicscan.org/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
 | Robinhood Chain | 4663 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://robinhoodchain.blockscout.com/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| Monad | 143 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://monadscan.com/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| Cronos | 25 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://explorer.cronos.com/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| HyperEVM | 999 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://hyperevmscan.io/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
 
 Access addresses using:
 

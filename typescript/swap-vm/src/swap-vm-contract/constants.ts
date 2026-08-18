@@ -8,7 +8,7 @@ import { Address, NetworkEnum } from '@1inch/sdk-core'
  *
  * Deployed with next EIP-712 domain params (per on-chain `eip712Domain()`)
  * - name    = `1inch SwapVM v1.0`
- * - version = `1.0.2`
+ * - version = `1.0.2` (the Monad, Cronos and HyperEVM deployments report `1.0`)
  *
  * Supersedes the previous AquaSwapVMRouter deployment at
  * `0x1111113db0e0ef9d0e3a50d5f094a3a57a26c0de` (all chains).
@@ -30,4 +30,7 @@ export const AQUA_SWAP_VM_CONTRACT_ADDRESSES: Record<NetworkEnum, Address> = {
   [NetworkEnum.UNICHAIN]: new Address('0x111111338c5091e8440b67b168bae16a668ac0de'),
   [NetworkEnum.SONIC]: new Address('0x111111338c5091e8440b67b168bae16a668ac0de'),
   [NetworkEnum.ROBINHOOD]: new Address('0x111111338c5091e8440b67b168bae16a668ac0de'),
+  [NetworkEnum.MONAD]: new Address('0x111111338c5091e8440b67b168bae16a668ac0de'),
+  [NetworkEnum.CRONOS]: new Address('0x111111338c5091e8440b67b168bae16a668ac0de'),
+  [NetworkEnum.HYPEREVM]: new Address('0x111111338c5091e8440b67b168bae16a668ac0de'),
 }
