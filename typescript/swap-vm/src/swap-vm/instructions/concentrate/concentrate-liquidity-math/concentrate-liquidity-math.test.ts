@@ -258,6 +258,80 @@ describe('concentrate-liquidity-math', () => {
       expect(actualGt).toBe(330119361793825978647n)
     })
 
+    describe('single-sided position at 1800 USDC per WETH market price', () => {
+      // USDC < WETH
+      const USDC_DECIMALS = 6n
+      const WETH_DECIMALS = 18n
+
+      const sqrtFromHumanUsdcPerWeth = (usdcPerWeth: bigint): bigint => {
+        const rawPrice = (10n ** WETH_DECIMALS * ONE_E18) / (usdcPerWeth * 10n ** USDC_DECIMALS)
+
+        return bigintSqrt(rawPrice * ONE_E18)
+      }
+
+      // Higher USDC-per-WETH human quote => lower sqrt(P) for this pair
+      const sqrtPrice1500 = sqrtFromHumanUsdcPerWeth(1500n)
+      const sqrtPrice1800 = sqrtFromHumanUsdcPerWeth(1800n)
+      const sqrtPrice2200 = sqrtFromHumanUsdcPerWeth(2200n)
+
+      const maxAvailableBalanceUSDC = parseUnits('1000000', 6)
+      const maxAvailableBalanceWETH = parseUnits('400', 18)
+
+      it('should build a WETH-only position when the range (1800 - 2200) is above the market', () => {
+        // Spot at 1800 equals the sqrt max bound => no USDC is needed
+        const { targetL, actualLt, actualGt } = computeLiquidityFromAmounts(
+          maxAvailableBalanceUSDC,
+          maxAvailableBalanceWETH,
+          sqrtPrice1800,
+          sqrtPrice2200,
+          sqrtPrice1800,
+        )
+
+        expect(actualLt).toBe(0n)
+        expect(actualGt).toBe(399999999999999999543n)
+        expect(targetL).toBe(177765578793446005n)
+      })
+
+      it('should build a USDC-only position when the range (1500 - 1800) is below the market', () => {
+        // Spot at 1800 equals the sqrt min bound => no WETH is needed
+        const { targetL, actualLt, actualGt } = computeLiquidityFromAmounts(
+          maxAvailableBalanceUSDC,
+          maxAvailableBalanceWETH,
+          sqrtPrice1800,
+          sqrtPrice1800,
+          sqrtPrice1500,
+        )
+
+        expect(actualLt).toBe(999999999999n)
+        expect(actualGt).toBe(0n)
+        expect(targetL).toBe(270520801110890067n)
+      })
+
+      it('should recover the spot at the range bound from WETH-only balances', () => {
+        const { liquidity, sqrtPriceSpot } = computeLiquidityAndPrice(
+          0n,
+          399999999999999999543n,
+          sqrtPrice2200,
+          sqrtPrice1800,
+        )
+
+        expect(liquidity).toBe(177765578793445997n)
+        expect(sqrtPriceSpot).toBe(23570226039552883488070n)
+      })
+
+      it('should recover the spot at the range bound from USDC-only balances', () => {
+        const { liquidity, sqrtPriceSpot } = computeLiquidityAndPrice(
+          999999999999n,
+          0n,
+          sqrtPrice1800,
+          sqrtPrice1500,
+        )
+
+        expect(liquidity).toBe(270520801110619533n)
+        expect(sqrtPriceSpot).toBe(23570226039551772382874n)
+      })
+    })
+
     it('should compute available liquidity for the given price range and one specified amount', () => {
       // USDC < WETH
       const USDC_DECIMALS = 6n
