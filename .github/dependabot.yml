@@ -1,0 +1,43 @@
+version: 2
+
+updates:
+  # npm / pnpm workspace (root manifest covers the whole monorepo)
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      # Security patches land on their own so they can be merged fast.
+      npm-security:
+        applies-to: security-updates
+        patterns:
+          - '*'
+      # Routine bumps are batched to keep PR noise down.
+      npm-dev-minor-patch:
+        applies-to: version-updates
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+      npm-prod-minor-patch:
+        applies-to: version-updates
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns:
+          - '*'
+
+  # Foundry dependencies are vendored as git submodules (see .gitmodules).
+  - package-ecosystem: gitsubmodule
+    directory: /
+    schedule:
+      interval: weekly
