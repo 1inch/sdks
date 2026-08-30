@@ -7,7 +7,7 @@ import type { Hex } from '../types'
  * Address domain class
  */
 export class Address {
-  static NATIVE_CURRENCY: Address = new Address('0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee')
+  static NATIVE_CURRENCY: Address = new Address('0xc65f20579d3eb3757281cdda51883c17f6c07715')
 
   static ZERO_ADDRESS: Address = new Address('0x0000000000000000000000000000000000000000')
 
