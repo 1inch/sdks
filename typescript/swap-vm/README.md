@@ -539,6 +539,7 @@ The SDK includes pre-configured contract addresses of `AquaSwapVMRouter` for the
 | Monad | 143 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://monadscan.com/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
 | Cronos | 25 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://explorer.cronos.com/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
 | HyperEVM | 999 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://hyperevmscan.io/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| Arc | 5042 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://explorer.arc.io/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
 
 Access addresses using:
 

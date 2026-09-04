@@ -198,4 +198,9 @@ jobs:
           npm config set @1inch:registry https://npm.pkg.github.com
           npm config set //npm.pkg.github.com/:_authToken "${NODE_AUTH_TOKEN}"
 
-          pnpm --filter "${{ needs.release.outputs.package_name }}" publish --access public --no-git-checks
+          TAG_ARG=""
+          if [ "${{ github.event.inputs.bump }}" = "prerelease" ]; then
+            TAG_ARG="--tag next"
+          fi
+
+          pnpm --filter "${{ needs.release.outputs.package_name }}" publish --access public --no-git-checks $TAG_ARG
