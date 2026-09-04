@@ -15,4 +15,5 @@ export enum NetworkEnum {
   MONAD = 143,
   CRONOS = 25,
   HYPEREVM = 999,
+  ARC = 5042,
 }
