@@ -57,7 +57,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Run Trivy scan (SARIF for GitHub Security tab)
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
         with:
           scan-type: fs
           scan-ref: .
@@ -78,14 +78,6 @@ jobs:
           category: trivy-fs
 
       - name: Fail on vulnerabilities
-        uses: aquasecurity/trivy-action@0.35.0
-        with:
-          scan-type: fs
-          scan-ref: .
-          severity: CRITICAL
-          ignore-unfixed: true
-          scanners: vuln
-          skip-files: .npmrc
-          format: table
-          exit-code: '1'
-          skip-setup-trivy: true
+        # Gate scan of trivy-scan.yaml@v1.0.8 (table output, exit-code 1), run via
+        # the trivy binary that the scan step above already installed on PATH.
+        run: trivy fs --scanners vuln --severity CRITICAL --ignore-unfixed --skip-files .npmrc --format table --exit-code 1 .
