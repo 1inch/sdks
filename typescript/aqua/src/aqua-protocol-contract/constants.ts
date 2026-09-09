@@ -22,4 +22,5 @@ export const AQUA_CONTRACT_ADDRESSES: Record<NetworkEnum, Address> = {
   [NetworkEnum.MONAD]: new Address('0x1111113ccf1426a8e30e2bff5e005d929bf6a90a'),
   [NetworkEnum.CRONOS]: new Address('0x1111113ccf1426a8e30e2bff5e005d929bf6a90a'),
   [NetworkEnum.HYPEREVM]: new Address('0x1111113ccf1426a8e30e2bff5e005d929bf6a90a'),
+  [NetworkEnum.ARC]: new Address('0x1111113ccf1426a8e30e2bff5e005d929bf6a90a'),
 }

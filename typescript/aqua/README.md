@@ -204,6 +204,7 @@ The SDK includes pre-configured contract addresses for the following networks:
 | Monad | 143 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://monadscan.com/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
 | Cronos | 25 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://explorer.cronos.com/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
 | HyperEVM | 999 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://hyperevmscan.io/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| Arc | 5042 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://explorer.arc.io/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
 
 Access addresses using:
 
