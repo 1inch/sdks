@@ -877,6 +877,274 @@ describe('SwapVM', () => {
     expect(price).to.equal(59999.739411764705)
   })
 
+  test('should swap by AquaXYCAmmStrategy Concentrated single-sided WETH-only position (1800 - 2200 range) at 1800 market price (USDC -> WETH)', async () => {
+    const liquidityProvider = forkNode.liqProvider
+    const swapper = forkNode.swapper
+
+    const aqua = new AquaProtocolContract(new Address(forkNode.addresses.aqua))
+    const swapVM = new SwapVMContract(new Address(forkNode.addresses.swapVMAquaRouter))
+
+    const USDC = new Address(ADDRESSES.USDC)
+    const WETH = new Address(ADDRESSES.WETH)
+    const USDC_DECIMALS = 6n
+    const WETH_DECIMALS = 18n
+
+    const pairUsdcWeth: PricePair = {
+      quoteToken: { address: USDC, decimals: USDC_DECIMALS },
+      baseToken: { address: WETH, decimals: WETH_DECIMALS },
+    }
+
+    // Market price is 1800 USDC per WETH and the whole 1800 - 2200 range is above it,
+    // so the position is single-sided: it holds only WETH and sells it as the price rises.
+    // Bounds are ordered by sqrt(P), so the higher human quote (2200) is the min bound.
+    const info = concentratedLiquidityMax(
+      pairUsdcWeth,
+      { min: '2200', spot: '1800', max: '1800' },
+      new Map([
+        [USDC.toString().toLowerCase(), 1_000_000n * 10n ** USDC_DECIMALS],
+        [WETH.toString().toLowerCase(), 400n * 10n ** WETH_DECIMALS],
+      ]),
+    )
+
+    // Single-sided: no USDC is needed at all
+    expect(info.token0Reserve).to.equal(0n)
+    expect(info.token1Reserve).to.equal(399999999999999999543n)
+
+    const program = AquaXYCAmmStrategy.newConcentrate({
+      sqrtPriceMin: info.sqrtPriceMin,
+      sqrtPriceMax: info.sqrtPriceMax,
+    })
+      .withSalt(1800n)
+      .build()
+
+    const order = Order.new({
+      maker: new Address(liqProviderAddress),
+      program,
+      traits: MakerTraits.default(),
+    })
+
+    const strategyHash = order
+      .hash({
+        chainId: forkNode.chainId as NetworkEnum,
+        name: 'TestAquaSwapVMRouter',
+        version: '1.0',
+        verifyingContract: new Address(forkNode.addresses.swapVMAquaRouter),
+      })
+      .toString()
+
+    // Both tokens must be registered in the strategy, but the USDC side is shipped with 0
+    const tx = aqua.ship({
+      app: new Address(forkNode.addresses.swapVMAquaRouter),
+      strategy: order.encode(),
+      amountsAndTokens: [
+        {
+          token: info.token0Address,
+          amount: info.token0Reserve,
+        },
+        {
+          token: info.token1Address,
+          amount: info.token1Reserve,
+        },
+      ],
+    })
+
+    await liquidityProvider.send(tx)
+
+    // The position holds no USDC yet, so it cannot pay out USDC for a WETH -> USDC swap
+    // (the quote over virtual reserves succeeds, but on-chain execution reverts)
+    await expect(
+      swapper.send({
+        ...swapVM.swap({
+          order,
+          amount: parseUnits('1', 18),
+          takerTraits: TakerTraits.default(),
+          tokenIn: WETH,
+          tokenOut: USDC,
+        }),
+        allowFail: false,
+      }),
+    ).rejects.toThrow('Transaction failed')
+
+    const srcAmount = parseUnits('1800', 6)
+
+    const swapParams = {
+      order,
+      amount: srcAmount,
+      takerTraits: TakerTraits.default(),
+      tokenIn: USDC,
+      tokenOut: WETH,
+    }
+
+    // Simulate the call to get the dstAmount
+    const simulateResult = await forkNode.provider.call({
+      account: swapperAddress,
+      ...swapVM.quote(swapParams),
+    })
+
+    const [_, dstAmount] = decodeFunctionResult({
+      abi: SWAP_VM_ABI,
+      functionName: 'quote',
+      data: simulateResult.data!,
+    })
+
+    const swap = swapVM.swap(swapParams)
+
+    await trackBalances(
+      swapper,
+      strategyHash,
+      swapParams.tokenIn,
+      swapParams.tokenOut,
+      swapParams.amount,
+      dstAmount,
+      async () => {
+        const { txHash } = await swapper.send({ ...swap, allowFail: false })
+
+        // await forkNode.printTrace(txHash)
+        return txHash
+      },
+    )
+
+    // Buying WETH from the single-sided position starts right at the 1800 bound
+    const price = +formatUnits(srcAmount, 6) / +formatUnits(dstAmount, 18)
+
+    expect(dstAmount).to.equal(999761392031661534n)
+    expect(price).to.equal(1800.4295968482404)
+  })
+
+  test('should swap by AquaXYCAmmStrategy Concentrated single-sided USDC-only position (1500 - 1800 range) at 1800 market price (WETH -> USDC)', async () => {
+    const liquidityProvider = forkNode.liqProvider
+    const swapper = forkNode.swapper
+
+    const aqua = new AquaProtocolContract(new Address(forkNode.addresses.aqua))
+    const swapVM = new SwapVMContract(new Address(forkNode.addresses.swapVMAquaRouter))
+
+    const USDC = new Address(ADDRESSES.USDC)
+    const WETH = new Address(ADDRESSES.WETH)
+    const USDC_DECIMALS = 6n
+    const WETH_DECIMALS = 18n
+
+    const pairUsdcWeth: PricePair = {
+      quoteToken: { address: USDC, decimals: USDC_DECIMALS },
+      baseToken: { address: WETH, decimals: WETH_DECIMALS },
+    }
+
+    // Market price is 1800 USDC per WETH and the whole 1500 - 1800 range is below it,
+    // so the position is single-sided: it holds only USDC and buys WETH as the price falls.
+    // Bounds are ordered by sqrt(P), so the lower human quote (1500) is the max bound.
+    const info = concentratedLiquidityMax(
+      pairUsdcWeth,
+      { min: '1800', spot: '1800', max: '1500' },
+      new Map([
+        [USDC.toString().toLowerCase(), 1_000_000n * 10n ** USDC_DECIMALS],
+        [WETH.toString().toLowerCase(), 400n * 10n ** WETH_DECIMALS],
+      ]),
+    )
+
+    // Single-sided: no WETH is needed at all
+    expect(info.token0Reserve).to.equal(999999999999n)
+    expect(info.token1Reserve).to.equal(0n)
+
+    const program = AquaXYCAmmStrategy.newConcentrate({
+      sqrtPriceMin: info.sqrtPriceMin,
+      sqrtPriceMax: info.sqrtPriceMax,
+    })
+      .withSalt(1801n)
+      .build()
+
+    const order = Order.new({
+      maker: new Address(liqProviderAddress),
+      program,
+      traits: MakerTraits.default(),
+    })
+
+    const strategyHash = order
+      .hash({
+        chainId: forkNode.chainId as NetworkEnum,
+        name: 'TestAquaSwapVMRouter',
+        version: '1.0',
+        verifyingContract: new Address(forkNode.addresses.swapVMAquaRouter),
+      })
+      .toString()
+
+    // Both tokens must be registered in the strategy, but the WETH side is shipped with 0
+    const tx = aqua.ship({
+      app: new Address(forkNode.addresses.swapVMAquaRouter),
+      strategy: order.encode(),
+      amountsAndTokens: [
+        {
+          token: info.token0Address,
+          amount: info.token0Reserve,
+        },
+        {
+          token: info.token1Address,
+          amount: info.token1Reserve,
+        },
+      ],
+    })
+
+    await liquidityProvider.send(tx)
+
+    // The position holds no WETH yet, so it cannot pay out WETH for a USDC -> WETH swap
+    // (the quote over virtual reserves succeeds, but on-chain execution reverts)
+    await expect(
+      swapper.send({
+        ...swapVM.swap({
+          order,
+          amount: parseUnits('1800', 6),
+          takerTraits: TakerTraits.default(),
+          tokenIn: USDC,
+          tokenOut: WETH,
+        }),
+        allowFail: false,
+      }),
+    ).rejects.toThrow('Transaction failed')
+
+    const srcAmount = parseUnits('1', 18)
+
+    const swapParams = {
+      order,
+      amount: srcAmount,
+      takerTraits: TakerTraits.default(),
+      tokenIn: WETH,
+      tokenOut: USDC,
+    }
+
+    // Simulate the call to get the dstAmount
+    const simulateResult = await forkNode.provider.call({
+      account: swapperAddress,
+      ...swapVM.quote(swapParams),
+    })
+
+    const [_, dstAmount] = decodeFunctionResult({
+      abi: SWAP_VM_ABI,
+      functionName: 'quote',
+      data: simulateResult.data!,
+    })
+
+    const swap = swapVM.swap(swapParams)
+
+    await trackBalances(
+      swapper,
+      strategyHash,
+      swapParams.tokenIn,
+      swapParams.tokenOut,
+      swapParams.amount,
+      dstAmount,
+      async () => {
+        const { txHash } = await swapper.send({ ...swap, allowFail: false })
+
+        // await forkNode.printTrace(txHash)
+        return txHash
+      },
+    )
+
+    // Selling WETH to the single-sided position starts right at the 1800 bound
+    const price = +formatUnits(dstAmount, 6) / +formatUnits(srcAmount, 18)
+
+    expect(dstAmount).to.equal(1799717746n)
+    expect(price).to.equal(1799.717746)
+  })
+
   test('should swap by AquaXYCAmmStrategy Concentrated (2000 - 3000 range) and 30bps flat fees', async () => {
     const liquidityProvider = forkNode.liqProvider
     const swapper = forkNode.swapper
