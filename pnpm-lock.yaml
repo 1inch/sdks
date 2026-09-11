@@ -8,7 +8,7 @@ overrides:
   '@babel/core@>=7.0.0 <7.29.6': '>=7.29.6 <8.0.0'
   '@babel/plugin-transform-modules-systemjs@>=7.12.0 <=7.29.3': '>=7.29.4 <8.0.0'
   '@grpc/grpc-js@>=1.14.0 <1.14.4': '>=1.14.4 <2.0.0'
-  adm-zip@<0.6.0: '>=0.6.0 <1.0.0'
+  adm-zip@<=0.6.0: '>=0.6.1 <1.0.0'
   axios@<=0.31.0: '>=1.18.0 <2.0.0'
   axios@>=1.0.0 <1.18.0: '>=1.18.0 <2.0.0'
   brace-expansion@<1.1.16: '>=1.1.16 <2.0.0'
@@ -2900,8 +2900,8 @@ packages:
     resolution: {integrity: sha512-XNAb/a6TCqou+TufU8/u11HCu9x1gYvOoxLwtlXgIqmkrYQADVv6ljyW2zwiPhHz9R1gItAWpuDrdJMmrOBFEA==}
     engines: {node: '>= 16.0.0'}
 
-  adm-zip@0.6.0:
-    resolution: {integrity: sha512-XleryMhbuksdKtofnWZ9Sk+4CUTbms4Mb/EU32SZwToAyZ5RgVos/ki8n+yr0LWHOGKuakbXTuuYNHLQjhddgg==}
+  adm-zip@0.6.1:
+    resolution: {integrity: sha512-Xwrja8nx9e5o2N1my4DsKCeKpdrnACyr1wtbPxBDgGzKzKyE9kRtBFA8mWldI+RVlD7CBZNWY/wQ2+ydwOR6kQ==}
     engines: {node: '>=14.0'}
 
   aes-js@3.0.0:
@@ -8844,7 +8844,7 @@ snapshots:
 
   address@2.0.3: {}
 
-  adm-zip@0.6.0: {}
+  adm-zip@0.6.1: {}
 
   aes-js@3.0.0: {}
 
@@ -10455,7 +10455,7 @@ snapshots:
       '@sentry/node': 5.30.0
       '@types/bn.js': 5.2.0
       '@types/lru-cache': 5.1.1
-      adm-zip: 0.6.0
+      adm-zip: 0.6.1
       aggregate-error: 3.1.0
       ansi-escapes: 4.3.2
       boxen: 5.1.2
