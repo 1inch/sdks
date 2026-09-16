@@ -42,4 +42,8 @@ describe('truncateHumanDecimalString', () => {
   it('handles empty fractional after strip (integer)', () => {
     expect(truncateHumanDecimalString('42.000000', 6)).toBe('42')
   })
+
+  it('rejects negative maxFrac', () => {
+    expect(() => truncateHumanDecimalString('1.0', -1)).toThrow('maxFrac must be non-negative')
+  })
 })

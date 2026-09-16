@@ -58,4 +58,12 @@ describe('BalancesArgsCoder', () => {
     const amountHex = hex.substring(26)
     expect(amountHex).toBe('0000000000000000000000000000000000000000000000000000000000000064')
   })
+
+  it('should convert balances to JSON', () => {
+    const args = new BalancesArgs([{ tokenHalf: USDC_HALF, value: 2000n }])
+
+    expect(args.toJSON()).toEqual({
+      tokenBalances: [{ token: USDC_HALF.toString(), value: '2000' }],
+    })
+  })
 })

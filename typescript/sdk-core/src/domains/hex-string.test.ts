@@ -128,4 +128,29 @@ describe('HexString Unit Test', () => {
   test('should create from 0x0000000000000000000000000000000000000000 because valid hex string', async () => {
     expect(() => new HexString('0x0000000000000000000000000000000000000000')).not.toThrow()
   })
+
+  test('should create from unknown bigint and string values', () => {
+    const fromBigInt = HexString.fromUnknown(255n)
+    const fromString = HexString.fromUnknown('0xaa')
+
+    expect(fromBigInt.toString()).toBe('0xff')
+    expect(fromString.toString()).toBe('0xaa')
+    expect(() => HexString.fromUnknown(123)).toThrow('Invalid hex string')
+    expect(() => HexString.fromUnknown(true)).toThrow('Invalid hex string')
+  })
+
+  test('should report empty, concat, byte count, slice and equality', () => {
+    const empty = new HexString('0x')
+    const left = new HexString('0x0011')
+    const right = new HexString('0x2233')
+
+    expect(empty.isEmpty()).toBe(true)
+    expect(left.isEmpty()).toBe(false)
+    expect(left.concat(right).toString()).toBe('0x00112233')
+    expect(left.bytesCount()).toBe(2)
+    expect(new HexString('0x00112233').sliceBytes(1, 3).toString()).toBe('0x1122')
+    expect(new HexString('0x00112233').sliceBytes(2).toString()).toBe('0x2233')
+    expect(left.equal(new HexString('0x0011'))).toBe(true)
+    expect(left.equal(right)).toBe(false)
+  })
 })

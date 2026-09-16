@@ -24,4 +24,8 @@ describe('bigintSqrt', () => {
   it('correct for UINT_256_MAX', () => {
     expect(bigintSqrt(UINT_256_MAX)).toBe(BigInt('340282366920938463463374607431768211455'))
   })
+
+  it('rejects negative values', () => {
+    expect(() => bigintSqrt(-1n)).toThrow('square root of negative numbers is not supported')
+  })
 })

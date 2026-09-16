@@ -50,4 +50,10 @@ describe('JumpArgsCoder', () => {
       nextPC: 42n,
     })
   })
+
+  it('should decode through JumpArgs.decode', () => {
+    const encoded = coder.encode(new JumpArgs(7n))
+
+    expect(JumpArgs.decode(encoded).nextPC).toBe(7n)
+  })
 })

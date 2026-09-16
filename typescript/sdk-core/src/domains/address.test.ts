@@ -68,5 +68,28 @@ describe('Address', () => {
       expect(zeroAddr.isZero()).toBe(true)
       expect(normalAddr.isZero()).toBe(false)
     })
+
+    it('should compare addresses with lt and gt', () => {
+      const lower = new Address('0x0000000000000000000000000000000000000001')
+      const higher = new Address('0x0000000000000000000000000000000000000002')
+
+      expect(lower.lt(higher)).toBe(true)
+      expect(higher.lt(lower)).toBe(false)
+      expect(higher.gt(lower)).toBe(true)
+      expect(lower.gt(higher)).toBe(false)
+    })
+
+    it('should return last half of the address', () => {
+      const address = new Address(validAddress)
+
+      expect(address.lastHalf()).toBe('0xdf2c5dacb4c659f2488d')
+    })
+
+    it('should serialize to JSON as the lowercase hex string', () => {
+      const address = new Address(validAddress)
+
+      expect(address.toJSON()).toBe(validAddressLowercase)
+      expect(JSON.stringify(address)).toBe(`"${validAddressLowercase}"`)
+    })
   })
 })
