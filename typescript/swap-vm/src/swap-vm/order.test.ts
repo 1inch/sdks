@@ -105,7 +105,9 @@ describe('Order', () => {
       })
 
       expect(hash.toString()).toMatch(/^0x[0-9a-f]{64}$/)
-      expect(hash.toString()).not.toBe(new Order(createMaker(), MakerTraits.default(), createProgram('0x01')).hash().toString())
+      expect(hash.toString()).not.toBe(
+        new Order(createMaker(), MakerTraits.default(), createProgram('0x01')).hash().toString(),
+      )
     })
   })
 })

@@ -194,8 +194,12 @@ describe('Price', () => {
   })
 
   it('should compare prices with gt and gte', () => {
-    const lower = Price.fromHuman('2000', pairUsdcQuoteWethBase)
-    const higher = Price.fromHuman('3000', pairUsdcQuoteWethBase)
+    const pair = {
+      tokenA: pairUsdcQuoteWethBase.quoteToken,
+      tokenB: pairUsdcQuoteWethBase.baseToken,
+    }
+    const lower = Price.fromSqrt(9n * 10n ** 17n, pair)
+    const higher = Price.fromSqrt(11n * 10n ** 17n, pair)
 
     expect(higher.gt(lower)).toBe(true)
     expect(lower.gt(higher)).toBe(false)

@@ -3,9 +3,9 @@
 import { describe, it, expect } from 'vitest'
 import { Address, HexString, NetworkEnum } from '@1inch/sdk-core'
 import { SwapVMContract } from './swap-vm-contract'
+import { AQUA_SWAP_VM_CONTRACT_ADDRESSES } from './constants'
 import { MakerTraits, Order, TakerTraits } from '../swap-vm'
 import { SwapVmProgram } from '../swap-vm/programs/swap-vm-program'
-import { AQUA_SWAP_VM_CONTRACT_ADDRESSES } from './constants'
 
 describe('SwapVMContract', () => {
   const mockMaker = new Address('0x1234567890123456789012345678901234567890')

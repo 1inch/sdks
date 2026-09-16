@@ -100,6 +100,11 @@ describe('ConcentrateLiquidityCalculator', () => {
     expect(() =>
       calculator.computeMaxAllocation({ minPrice: maxPrice, spotPrice, maxPrice: minPrice }),
     ).toThrow()
-    expect(() => calculator.computeSpotPrice({ token0Reserve: 1n, token1Reserve: 1n }, { minPrice: maxPrice, maxPrice: minPrice })).toThrow()
+    expect(() =>
+      calculator.computeSpotPrice(
+        { token0Reserve: 1n, token1Reserve: 1n },
+        { minPrice: maxPrice, maxPrice: minPrice },
+      ),
+    ).toThrow()
   })
 })
