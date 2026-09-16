@@ -161,4 +161,13 @@ describe('PeggedSwapCalculator', () => {
       expect(price.toHuman(USDC)).toBe('1.002')
     })
   })
+
+  it('should reject a token that is not in the pair', () => {
+    const other = new Address('0x0000000000000000000000000000000000000009')
+    const spot = PeggedPrice.fromHuman('1', pairGtQuoteLtBase)
+
+    expect(() => calculator.computeFixedAllocation(spot, other, 1n)).toThrow(
+      'fixedReserveForToken token must be one of the two pair tokens',
+    )
+  })
 })

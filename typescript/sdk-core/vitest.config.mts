@@ -9,6 +9,7 @@ export default defineConfig({
     coverage: {
       reportsDirectory: '../../coverage/typescript/shared',
       include: ['src'],
+      exclude: ['**/index.ts', '**/test-utils/**', '**/abi/**'],
     },
   },
 })

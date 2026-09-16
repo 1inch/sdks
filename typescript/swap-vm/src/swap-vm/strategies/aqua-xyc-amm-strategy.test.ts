@@ -94,5 +94,31 @@ describe('AquaXYCAMMStrategy', () => {
       expect(decoded1.build).toBeDefined()
       expect(decoded2.build).toBeDefined()
     })
+
+    it('should build concentrate from raw prices', () => {
+      const program = AquaXYCAmmStrategy.newConcentrate({
+        rawPriceMin: 10n ** 18n,
+        rawPriceMax: 4n * 10n ** 18n,
+      }).build()
+
+      expect(AquaProgramBuilder.decode(program).build().toString()).toBe(program.toString())
+      expect(program.toString().length).toBeGreaterThan(4)
+    })
+
+    it('should include a tx.origin access token', () => {
+      const access = new Address('0x0000000000000000000000000000000000000001')
+      const program = AquaXYCAmmStrategy.new().withTxOriginAccessToken(access).build()
+
+      expect(AquaProgramBuilder.decode(program).build().toString()).toBe(program.toString())
+      expect(program.toString().length).toBeGreaterThan(
+        AquaXYCAmmStrategy.new().build().toString().length,
+      )
+    })
+
+    it('should reject unknown concentrate parameters', () => {
+      expect(() =>
+        AquaXYCAmmStrategy.newConcentrate({} as { sqrtPriceMin: bigint; sqrtPriceMax: bigint }),
+      ).toThrow('unknown parameters for newXYCConcentrate')
+    })
   })
 })

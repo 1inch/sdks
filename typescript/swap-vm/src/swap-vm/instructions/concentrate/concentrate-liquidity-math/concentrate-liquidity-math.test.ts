@@ -295,5 +295,14 @@ describe('concentrate-liquidity-math', () => {
       // 399.999999999999998795n WETH
       expect(actualGt).toBe(399999999999999998795n)
     })
+
+    it('should reject inverted price bounds', () => {
+      expect(() => computeLiquidityFromAmounts(1n, 1n, ONE_E18, ONE_E18, ONE_E18)).toThrow(
+        'sqrtPmax should be greater than sqrtPmin',
+      )
+      expect(() => computeBalances(1n, ONE_E18, ONE_E18, ONE_E18)).toThrow(
+        'sqrtPmax should be greater than sqrtPmin',
+      )
+    })
   })
 })

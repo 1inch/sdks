@@ -3,6 +3,8 @@
 import { describe, it, expect } from 'vitest'
 import { Address, AddressHalf, HexString } from '@1inch/sdk-core'
 import { RegularProgramBuilder } from './regular-program-builder'
+import { SwapVmProgram } from './swap-vm-program'
+import { PeggedSwapArgs } from '../instructions/pegged-swap'
 import type * as balances from '../instructions/balances'
 import type * as controls from '../instructions/controls'
 import type * as invalidators from '../instructions/invalidators'
@@ -675,5 +677,49 @@ describe('ProgramBuilder', () => {
     expect(ixs[3].opcode.id.toString()).toContain('requireMinRate1D')
     expect(ixs[4].opcode.id.toString()).toContain('protocolFeeAmountInXD')
     expect(ixs[5].opcode.id.toString()).toContain('invalidateBit1D')
+  })
+
+  it('should encode deadline and pegged swap helpers', () => {
+    const pegged = PeggedSwapArgs.fromTokens(
+      { address: USDC, decimals: 6, reserve: 1_000_000n * 10n ** 6n },
+      { address: WETH, decimals: 18, reserve: 500n * 10n ** 18n },
+      8n * 10n ** 26n,
+    )
+    const program = new RegularProgramBuilder()
+      .deadline({ deadline: 1735689600n })
+      .peggedSwapGrowPriceRange2D(pegged)
+      .build()
+    const decoded = RegularProgramBuilder.decode(program)
+
+    expect(decoded.build().toString()).toBe(program.toString())
+    expect(decoded.getInstructions()).toHaveLength(2)
+    expect(decoded.getInstructions()[0].opcode.id.toString()).toContain('deadline')
+    expect(decoded.getInstructions()[1].opcode.id.toString()).toContain('peggedSwap')
+  })
+
+  it('should reject reserved and unknown opcodes on decode', () => {
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x0000'))).toThrow(
+      'Invalid opcode: 0',
+    )
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0xfe00'))).toThrow(
+      'Opcode at index 254 is missing',
+    )
+  })
+
+  it('should require withDebug before debug print instructions', () => {
+    expect(() => new RegularProgramBuilder().debugPrintContext()).toThrow('Invalid opcode')
+
+    const program = new RegularProgramBuilder()
+      .withDebug()
+      .debugPrintSwapRegisters()
+      .debugPrintSwapQuery()
+      .debugPrintContext()
+      .debugPrintAmountForSwap()
+      .debugPrintFreeMemoryPointer()
+      .debugPrintGasLeft()
+      .build()
+
+    expect(program.toString()).toMatch(/^0x[0-9a-f]+$/)
+    expect(program.toString().length).toBeGreaterThan(4)
   })
 })

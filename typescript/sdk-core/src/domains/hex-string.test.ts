@@ -136,7 +136,7 @@ describe('HexString Unit Test', () => {
     expect(fromBigInt.toString()).toBe('0xff')
     expect(fromString.toString()).toBe('0xaa')
     expect(() => HexString.fromUnknown(123)).toThrow('Invalid hex string')
-    expect(() => HexString.fromUnknown(true)).toThrow('Invalid hex string')
+    expect(() => HexString.fromUnknown(true, 'value')).toThrow('Invalid hex string value')
   })
 
   test('should report empty, concat, byte count, slice and equality', () => {
