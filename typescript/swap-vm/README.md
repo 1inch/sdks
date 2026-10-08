@@ -41,11 +41,16 @@ const maker = '0xmaker_address'
 const USDC = new Address('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')
 const WETH = new Address('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')
 
-// Price range as P = tokenGt/tokenLt (1e18). E.g. 1500–3000 USDC per WETH → rawPriceMin = 1e18/3000, rawPriceMax = 1e18/1500
-const { ONE_E18 } = instructions.concentrate
+// Price range 1500–3000 USDC per WETH. Bounds are sqrt(P) in 1e18 fixed-point with P = tokenGt/tokenLt
+// (WETH per USDC, as USDC < WETH), so 3000 USDC per WETH is the lower bound.
+const { Price } = instructions.concentrate
+const pair = {
+  quoteToken: { address: USDC, decimals: 6n },
+  baseToken: { address: WETH, decimals: 18n }
+}
 const program = AquaXYCAmmStrategy.newConcentrate({
-  rawPriceMin: ONE_E18 / 3000n,
-  rawPriceMax: ONE_E18 / 1500n
+  sqrtPriceMin: Price.fromHuman('3000', pair).toSqrt(),
+  sqrtPriceMax: Price.fromHuman('1500', pair).toSqrt()
 }).build()
 
 const order = Order.new({
@@ -340,14 +345,14 @@ const { concentrate, fee } = instructions
 
 /**
  * Minimal strategy:
- * - concentrates liquidity for a 2-token pool (price range in raw P = tokenGt/tokenLt, 1e18)
+ * - concentrates liquidity for a 2-token pool between two `Price` bounds
  * - optionally charges a taker fee on input
  * - always finishes with a simple XYC swap
  */
 export class SimpleAmmStrategy {
-  private rawPriceMin?: bigint
+  private minPrice?: instructions.concentrate.Price
 
-  private rawPriceMax?: bigint
+  private maxPrice?: instructions.concentrate.Price
 
   private feeBpsIn?: number
 
@@ -357,12 +362,14 @@ export class SimpleAmmStrategy {
   ) {}
 
   /**
-   * Sets the concentrated liquidity price range.
-   * Prices are P = tokenGt/tokenLt in 1e18 fixed-point (e.g. WETH per USDC when USDC < WETH).
+   * Sets the concentrated liquidity price range: two `Price` bounds of the pair, in either order.
    */
-  public withPriceRange(rawPriceMin: bigint, rawPriceMax: bigint): this {
-    this.rawPriceMin = rawPriceMin
-    this.rawPriceMax = rawPriceMax
+  public withPriceRange(
+    minPrice: instructions.concentrate.Price,
+    maxPrice: instructions.concentrate.Price,
+  ): this {
+    this.minPrice = minPrice
+    this.maxPrice = maxPrice
 
     return this
   }
@@ -384,10 +391,10 @@ export class SimpleAmmStrategy {
   public build(): SwapVmProgram {
     const builder = new AquaProgramBuilder()
 
-    if (this.rawPriceMin !== undefined && this.rawPriceMax !== undefined) {
-      const data = concentrate.ConcentrateGrowLiquidity2DArgs.fromRawPrices(
-        this.rawPriceMin,
-        this.rawPriceMax,
+    if (this.minPrice !== undefined && this.maxPrice !== undefined) {
+      const data = concentrate.ConcentrateGrowLiquidity2DArgs.fromPrices(
+        this.minPrice,
+        this.maxPrice,
       )
       builder.add(concentrate.concentrateGrowLiquidity2D.createIx(data))
     }
@@ -404,12 +411,15 @@ export class SimpleAmmStrategy {
   }
 }
 
-// Example usage (price range: e.g. 1500–3000 USDC per WETH → P = WETH per USDC = 1/3000 .. 1/1500 in 1e18):
+// Example usage (price range 1500–3000 USDC per WETH):
 
-const { ONE_E18 } = concentrate
+const pair = {
+  quoteToken: { address: USDC, decimals: 6n },
+  baseToken: { address: WETH, decimals: 18n },
+}
 
 const strategy = new SimpleAmmStrategy(USDC, WETH)
-  .withPriceRange(ONE_E18 / 3000n, ONE_E18 / 1500n) // 1500–3000 USDC per WETH
+  .withPriceRange(concentrate.Price.fromHuman('1500', pair), concentrate.Price.fromHuman('3000', pair))
   .withFeeTokenIn(5) // 5 bps taker fee on input (optional)
 
 const program = strategy.build()
@@ -563,13 +573,13 @@ The SDK exports:
 - **[`MakerTraits`](./src/swap-vm/maker-traits.ts)** - Maker-side configuration and flags
 - **[`TakerTraits`](./src/swap-vm/taker-traits.ts)** - Taker-side configuration and flags
 - **[`ABI`](./src/abi/)** - Contract ABI exports
-- **Strategies** - [`AquaAMMStrategy`](./src/swap-vm/strategies/aqua-amm-strategy.ts) (base), [`AquaXYCAmmStrategy`](./src/swap-vm/strategies/aqua-xyc-amm-strategy.ts) (use `new()` or `newConcentrate({ rawPriceMin, rawPriceMax })` / `{ sqrtPriceMin, sqrtPriceMax }`), [`AquaPeggedAmmStrategy`](./src/swap-vm/strategies/aqua-pegged-amm-strategy.ts)
+- **Strategies** - [`AquaAMMStrategy`](./src/swap-vm/strategies/aqua-amm-strategy.ts) (base), [`AquaXYCAmmStrategy`](./src/swap-vm/strategies/aqua-xyc-amm-strategy.ts) (use `new()` or `newConcentrate({ sqrtPriceMin, sqrtPriceMax })` with `Price.toSqrt()` bounds; `newConcentrate({ rawPriceMin, rawPriceMax })` rejects raw prices below 1e5), [`AquaPeggedAmmStrategy`](./src/swap-vm/strategies/aqua-pegged-amm-strategy.ts)
 - **[Instructions](./src/swap-vm/instructions/)** - Comprehensive instruction system:
   - `controls` - Flow control instructions
   - `balances` - Balance manipulation instructions
   - `invalidators` - Invalidation instructions
   - `xycSwap` - XYC swap instructions
-  - `concentrate` - Liquidity concentration (e.g. `ConcentrateGrowLiquidity2DArgs.fromSqrtPrices` / `fromRawPrices`; P = tokenGt/tokenLt in 1e18)
+  - `concentrate` - Liquidity concentration (e.g. `ConcentrateGrowLiquidity2DArgs.fromPrices` / `fromSqrtPrices`, exact; `fromRawPrices` takes P = tokenGt/tokenLt in 1e18 and rejects values below 1e5)
   - `decay` - Decay calculation instructions
   - `limitSwap` - Limit order instructions
   - `minRate` - Minimum rate guard instructions
