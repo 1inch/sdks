@@ -7,10 +7,10 @@ import type { ShipArgs, DockArgs } from './types'
 import { AQUA_ABI } from '../abi/Aqua.abi'
 
 /**
- * Aqua Protocol Contract - Encoding/decoding for ship, dock, push, pull
+ * Aqua Protocol Contract - Encoding for ship and dock
  *
- * This class provides methods to encode and decode calldata for the Aqua Protocol
- * smart contract's core functions.
+ * This class provides methods to encode calldata and build transactions for the Aqua Protocol
+ * smart contract's `ship` and `dock` functions. `push` and `pull` are not encoded here.
  */
 export class AquaProtocolContract {
   constructor(public readonly address: Address) {}

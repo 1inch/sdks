@@ -21,6 +21,9 @@ pnpm add @1inch/swap-vm-sdk
 ## Quick Start
 
 ### Provide liquidity
+
+`aqua.ship()` only records virtual balances for the strategy: the tokens stay in the maker's wallet and Aqua pulls them with `transferFrom` when swaps execute. The maker must keep the tokens in the wallet and approve the Aqua contract to spend each of them.
+
 ```typescript
 import {
   AQUA_SWAP_VM_CONTRACT_ADDRESSES,
@@ -32,6 +35,7 @@ import {
   instructions
 } from '@1inch/swap-vm-sdk'
 import { AquaProtocolContract, AQUA_CONTRACT_ADDRESSES } from '@1inch/aqua-sdk'
+import { encodeFunctionData, erc20Abi, maxUint256 } from 'viem'
 
 const chainId = NetworkEnum.ETHEREUM
 const aqua = new AquaProtocolContract(AQUA_CONTRACT_ADDRESSES[chainId])
@@ -54,8 +58,21 @@ const order = Order.new({
   traits: MakerTraits.default()
 })
 
+// Aqua pulls the tokens from the maker's wallet when swaps execute, so it needs an allowance
+for (const token of [USDC, WETH]) {
+  await makerWallet.send({
+    to: token.toString(),
+    data: encodeFunctionData({
+      abi: erc20Abi,
+      functionName: 'approve',
+      args: [aqua.address.toString(), maxUint256]
+    }),
+    value: 0n
+  })
+}
+
 const tx = aqua.ship({
-  app: new Address(swapVMAddress),
+  app: swapVMAddress,
   strategy: order.encode(),
   amountsAndTokens: [
     {
@@ -93,7 +110,7 @@ const USDC = new Address('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')
 const WETH = new Address('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')
 
 const encodedOrder = '0x...' // fetched from ship event or from api
-const order = Order.parse(new HexString(encodedOrder))
+const order = Order.decode(new HexString(encodedOrder))
 
 const srcAmount = 100n * 10n ** 6n
 const swapParams = {
@@ -126,8 +143,8 @@ await taker.send(swapTx)
 Get a quote for a swap.
 
 ```typescript
-const quoteTx = swapVm.quote({
-  order: Order.parse('0x...'),
+const quoteTx = swapVM.quote({
+  order: Order.decode(new HexString('0x...')),
   tokenIn: new Address('0x...'),
   tokenOut: new Address('0x...'),
   amount: 1000000000000000000n,
@@ -149,8 +166,8 @@ const quoteTx = swapVm.quote({
 Execute a swap transaction.
 
 ```typescript
-const swapTx = swapVm.swap({
-  order: Order.parse('0x...'),
+const swapTx = swapVM.swap({
+  order: Order.decode(new HexString('0x...')),
   tokenIn: new Address('0x...'),
   tokenOut: new Address('0x...'),
   amount: 1000000000000000000n,
@@ -168,13 +185,13 @@ const swapTx = swapVm.swap({
 Calculate the hash of an order (view).
 
 ```typescript
-const order = new Order({
+const order = Order.new({
   maker: new Address('0x...'),
   traits: MakerTraits.default(),
-  program: new HexString('0x...'),
+  program: new SwapVmProgram('0x...'),
 })
 
-const hashOrderTx = swapVm.hashOrder(order)
+const hashOrderTx = swapVM.hashOrder(order)
 ```
 
 **Parameters:**
@@ -208,14 +225,15 @@ The Swap VM uses a comprehensive instruction system for building swap programs.
 
 🔎 **Instruction coverage vs. deployment**
 
-- The **SDK** exposes the **full instruction set** (see `_allInstructions` in [`src/swap-vm/instructions/index.ts`](./src/swap-vm/instructions/index.ts)) and can safely **encode/decode every core opcode** defined by the protocol.
-- The **currently deployed `AquaSwapVMRouter` contracts** support **only the Aqua subset** of these instructions (see `aquaInstructions` in the same file).
+- The **SDK** ships two opcode tables in [`src/swap-vm/instructions/index.ts`](./src/swap-vm/instructions/index.ts): `_allInstructions` (the `SwapVMRouter` layout, `Opcodes.sol`) and `aquaInstructions` (the `AquaSwapVMRouter` layout, `AquaOpcodes.sol`). It can **encode/decode every opcode in these tables**; any other instruction needs a custom opcode table (see "Custom instruction sets & `ProgramBuilder`" below).
+- `ORACLE_PRICE_ADJUSTER_1D` is **in neither table**, and no router opcode table includes it: the SDK only ships its args and opcode definition (`instructions.oraclePriceAdjuster`), so `RegularProgramBuilder` and `AquaProgramBuilder` cannot encode or decode it.
+- The **currently deployed `AquaSwapVMRouter` contracts** support **only the Aqua instruction set** (`aquaInstructions`): a subset of `_allInstructions` plus `ONLY_TX_ORIGIN_TOKEN_BALANCE_NON_ZERO`, which only the Aqua table has.
 - Any program that uses instructions **outside `aquaInstructions`** will **not be executable on current Aqua deployments**, even though encoding/decoding will succeed.
 - After the **`Fusaka` Ethereum hardfork**, a full `SwapVM` deployment is planned; at that point, programs using the complete `_allInstructions` set will be executable on-chain on Ethereum.
 
 💡 **Gotcha**: When designing programs intended to run on today’s on-chain Aqua instances, treat `aquaInstructions` as the authoritative list of **runtime-available** opcodes, and the rest of the instruction set as **future / generic Swap VM** capabilities.
 
-Available instruction categories in the full Swap VM instruction set include:
+Instructions in the SDK opcode tables, by category (all of them are in `_allInstructions` unless noted):
 
 ### Balances
 - `STATIC_BALANCES_XD` - Initialize static token balances
@@ -234,11 +252,13 @@ Available instruction categories in the full Swap VM instruction set include:
 - `ONLY_TAKER_TOKEN_BALANCE_NON_ZERO` - Guard: only execute if taker token balance is non-zero
 - `ONLY_TAKER_TOKEN_BALANCE_GTE` - Guard: only execute if balance >= threshold
 - `ONLY_TAKER_TOKEN_SUPPLY_SHARE_GTE` - Guard: only execute if supply share >= threshold
+- `ONLY_TX_ORIGIN_TOKEN_BALANCE_NON_ZERO` - Guard: only execute if `tx.origin` token balance is non-zero (Aqua table only: `aquaInstructions` and the deployed `AquaSwapVMRouter` contracts)
 - `SALT` - Add randomness to order hash
 
 ### Trading instructions
 - `XYC_SWAP_XD` - XYC swap for multi-dimensional pools
 - `CONCENTRATE_GROW_LIQUIDITY_2D` - Concentrate liquidity in 2-token pools (sqrtPriceMin/sqrtPriceMax, P = tokenGt/tokenLt, 1e18)
+- `PEGGED_SWAP_GROW_PRICE_RANGE_2D` - Square-root linear swap curve for pegged assets in 2-token pools
 - `DECAY_XD` - Apply decay calculation
 - `LIMIT_SWAP_1D` - Execute limit order swap
 - `LIMIT_SWAP_ONLY_FULL_1D` - Execute limit order only if fully fillable
@@ -246,13 +266,18 @@ Available instruction categories in the full Swap VM instruction set include:
 - `ADJUST_MIN_RATE_1D` - Adjust minimum rate dynamically
 - `DUTCH_AUCTION_BALANCE_IN_1D` - Dutch auction based on available input balance
 - `DUTCH_AUCTION_BALANCE_OUT_1D` - Dutch auction based on desired output balance
-- `ORACLE_PRICE_ADJUSTER_1D` - Adjust prices based on oracle data
 - `BASE_FEE_ADJUSTER_1D` - Adjust for network base fees
 - `TWAP` - Time-weighted average price swap
 - `EXTRUCTION` - External contract instruction
 
 ### Fee instructions
 - `FLAT_FEE_AMOUNT_IN_XD` - Flat fee based on input amount
+- `PROTOCOL_FEE_AMOUNT_IN_XD` - Protocol fee on input, transferred from the maker to the fee recipient
+- `AQUA_PROTOCOL_FEE_AMOUNT_IN_XD` - Protocol fee on input, pulled from the maker's Aqua balance
+- `DYNAMIC_PROTOCOL_FEE_AMOUNT_IN_XD` - Protocol fee on input, with fee and recipient read from an external fee provider
+- `AQUA_DYNAMIC_PROTOCOL_FEE_AMOUNT_IN_XD` - Dynamic protocol fee on input, pulled from the maker's Aqua balance
+
+Experimental fee instructions (`FeeExperimental.sol`, not recommended for production, not in `aquaInstructions`):
 - `FLAT_FEE_AMOUNT_OUT_XD` - Flat fee based on output amount
 - `PROGRESSIVE_FEE_IN_XD` - Progressive fee applied on input
 - `PROGRESSIVE_FEE_OUT_XD` - Progressive fee applied on output
@@ -458,6 +483,12 @@ export class FlatFeeArgs implements IArgsData {
 
     return new FlatFeeArgs(fee)
   }
+
+  toJSON(): Record<string, unknown> {
+    return {
+      fee: this.fee.toString(),
+    }
+  }
 }
 ```
 
@@ -510,7 +541,7 @@ To make your instruction **usable at runtime**, you must place it at the correct
 ```typescript
 export const myInstructionSet: Opcode<IArgsData>[] = [
   /* ... previous opcodes ... */
-  fee.flatFeeXD,
+  flatFeeXD,
   /* ... */
 ]
 ```
@@ -570,11 +601,12 @@ The SDK exports:
   - `invalidators` - Invalidation instructions
   - `xycSwap` - XYC swap instructions
   - `concentrate` - Liquidity concentration (e.g. `ConcentrateGrowLiquidity2DArgs.fromSqrtPrices` / `fromRawPrices`; P = tokenGt/tokenLt in 1e18)
+  - `peggedSwap` - Pegged-asset swap curve instructions (`stableSwap` is a deprecated alias)
   - `decay` - Decay calculation instructions
   - `limitSwap` - Limit order instructions
   - `minRate` - Minimum rate guard instructions
   - `dutchAuction` - Dutch auction instructions
-  - `oraclePriceAdjuster` - Oracle-based price adjustment
+  - `oraclePriceAdjuster` - Oracle-based price adjustment (args and opcode definition only, not in `_allInstructions` or `aquaInstructions`)
   - `baseFeeAdjuster` - Base fee adjustment
   - `twapSwap` - Time-weighted average price instructions
   - `extruction` - External instruction call
