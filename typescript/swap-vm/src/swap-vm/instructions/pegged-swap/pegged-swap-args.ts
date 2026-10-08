@@ -2,12 +2,12 @@
 
 import type { HexString } from '@1inch/sdk-core'
 import { UINT_256_MAX } from '@1inch/byte-utils'
-import assert from 'assert'
 import { PeggedSwapArgsCoder } from './pegged-swap-args-coder'
 import { MAX_LINEAR_WIDTH } from './pegged-swap-math/pegged-swap-math'
 import type { PeggedTokenInfo } from './types'
 import { resolveRate } from './rate-resolver'
 import type { IArgsCoder, IArgsData } from '../types'
+import { assert } from '../../../utils/assert'
 
 /**
  * Arguments for PeggedSwap._peggedSwapGrowPriceRange2D.

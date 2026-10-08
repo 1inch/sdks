@@ -2,9 +2,9 @@
 
 import type { HexString } from '@1inch/sdk-core'
 import { UINT_32_MAX } from '@1inch/byte-utils'
-import assert from 'assert'
 import { InvalidateBit1DArgsCoder } from './invalidate-bit-1d-args-coder'
 import type { IArgsCoder, IArgsData } from '../types'
+import { assert } from '../../../utils/assert'
 
 /**
  * Arguments for invalidateBit1D instruction to invalidate a specific bit index

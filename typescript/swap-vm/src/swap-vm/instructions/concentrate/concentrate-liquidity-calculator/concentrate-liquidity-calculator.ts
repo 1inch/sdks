@@ -2,7 +2,6 @@
 
 import type { Address } from '@1inch/sdk-core'
 import { UINT_256_MAX } from '@1inch/byte-utils'
-import assert from 'assert'
 import type {
   ConcentratedLiquidityInfo,
   ConcentrateLiquidityCalculatorArgs,
@@ -14,6 +13,7 @@ import {
   computeLiquidityAndPrice,
   computeLiquidityFromAmounts,
 } from '../concentrate-liquidity-math/concentrate-liquidity-math'
+import { assert } from '../../../../utils/assert'
 
 export class ConcentrateLiquidityCalculator {
   constructor(

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-import assert from 'assert'
 import { bigintSqrt } from '../../utils'
+import { assert } from '../../../../utils/assert'
 
 /** Matches `PeggedSwapMath.ONE` in swap-vm. */
 export const PEGGED_SWAP_ONE: bigint = 10n ** 27n

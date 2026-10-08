@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import type { HexString } from '@1inch/sdk-core'
-import assert from 'assert'
 import { JumpArgsCoder } from './jump-args-coder'
 import type { IArgsCoder, IArgsData } from '../types'
+import { assert } from '../../../utils/assert'
 
 const UINT_16_MAX = 0xffffn
 
