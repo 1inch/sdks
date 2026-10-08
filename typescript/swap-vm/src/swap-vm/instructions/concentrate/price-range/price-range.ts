@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-import { UINT_256_MAX } from '@1inch/byte-utils'
 import assert from 'assert'
 import type {
   PriceAllocationRange,
@@ -12,8 +11,11 @@ import type {
 import type { PriceToken } from '../price'
 import { Price } from '../price'
 import {
+  computeBalances,
   computeLiquidityAndPrice,
   computeLiquidityFromAmounts,
+  computeLiquidityFromGt,
+  computeLiquidityFromLt,
 } from '../concentrate-liquidity-math/concentrate-liquidity-math'
 import { TokenReserve } from '../token-reserve'
 
@@ -108,25 +110,38 @@ export class PriceRange {
 
     const isFixedLt = fixedReserve.token.equal(this.token0.address)
 
-    const availableLt = isFixedLt ? fixedReserve.reserve : UINT_256_MAX
-    const availableGt = isFixedLt ? UINT_256_MAX : fixedReserve.reserve
+    if (isFixedLt) {
+      assert(
+        this.spotPrice.lt(this.maxPrice),
+        `cannot fix token0 (${this.token0.address}) amount: the range holds only token1 ` +
+          `when spotPrice equals maxPrice, fix the token1 (${this.token1.address}) amount instead`,
+      )
+    } else {
+      assert(
+        this.spotPrice.gt(this.minPrice),
+        `cannot fix token1 (${this.token1.address}) amount: the range holds only token0 ` +
+          `when spotPrice equals minPrice, fix the token0 (${this.token0.address}) amount instead`,
+      )
+    }
 
-    const { actualLt, actualGt } = computeLiquidityFromAmounts(
-      availableLt,
-      availableGt,
-      this.spotPrice.toSqrt(),
-      this.minPrice.toSqrt(),
-      this.maxPrice.toSqrt(),
-    )
+    const sqrtPspot = this.spotPrice.toSqrt()
+    const sqrtPmin = this.minPrice.toSqrt()
+    const sqrtPmax = this.maxPrice.toSqrt()
+
+    const liquidity = isFixedLt
+      ? computeLiquidityFromLt(fixedReserve.reserve, sqrtPspot, sqrtPmax)
+      : computeLiquidityFromGt(fixedReserve.reserve, sqrtPspot, sqrtPmin)
+
+    const { bLt, bGt } = computeBalances(liquidity, sqrtPspot, sqrtPmin, sqrtPmax)
 
     return {
       reserve0: TokenReserve.new({
         token: this.token0.address,
-        reserve: actualLt,
+        reserve: bLt,
       }),
       reserve1: TokenReserve.new({
         token: this.token1.address,
-        reserve: actualGt,
+        reserve: bGt,
       }),
     }
   }

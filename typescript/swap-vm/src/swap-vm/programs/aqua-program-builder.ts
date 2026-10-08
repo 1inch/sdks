@@ -46,22 +46,22 @@ export class AquaProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Jumps if tokenIn is the specified token
+   * Jumps to `nextPC` if tokenIn is the specified token (full 20-byte address)
    **/
   public jumpIfTokenIn(data: DataFor<controls.JumpIfTokenArgs>): this {
     super.add(
-      controls.jumpIfTokenIn.createIx(new controls.JumpIfTokenArgs(data.tokenTail, data.nextPC)),
+      controls.jumpIfTokenIn.createIx(new controls.JumpIfTokenArgs(data.token, data.nextPC)),
     )
 
     return this
   }
 
   /**
-   * Jumps if tokenOut is the specified token
+   * Jumps to `nextPC` if tokenOut is the specified token (full 20-byte address)
    **/
   public jumpIfTokenOut(data: DataFor<controls.JumpIfTokenArgs>): this {
     super.add(
-      controls.jumpIfTokenOut.createIx(new controls.JumpIfTokenArgs(data.tokenTail, data.nextPC)),
+      controls.jumpIfTokenOut.createIx(new controls.JumpIfTokenArgs(data.token, data.nextPC)),
     )
 
     return this

@@ -2,7 +2,6 @@
 
 import { describe, expect, it } from 'vitest'
 import { Address } from '@1inch/sdk-core'
-import { UINT_256_MAX } from '@1inch/byte-utils'
 import { ConcentrateLiquidityCalculator } from './concentrate-liquidity-calculator'
 import { Price } from '../price'
 import { computeLiquidityFromAmounts } from '../concentrate-liquidity-math/concentrate-liquidity-math'
@@ -36,32 +35,57 @@ describe('ConcentrateLiquidityCalculator', () => {
     const calculator = ConcentrateLiquidityCalculator.new({ tokenA, tokenB })
     const fixedLt = 100n * ONE_E18
     const allocation = calculator.computeFixedAllocation(prices, TOKEN_A, fixedLt)
-    const expected = computeLiquidityFromAmounts(
-      fixedLt,
-      UINT_256_MAX,
-      spotPrice.toSqrt(),
-      minPrice.toSqrt(),
-      maxPrice.toSqrt(),
-    )
 
-    expect(allocation.token0Reserve).toBe(expected.actualLt)
-    expect(allocation.token1Reserve).toBe(expected.actualGt)
+    // L = 100 * 1.1 / (1.1 - 1) = 1100, bGt = L * (1 - 0.9)
+    expect(allocation.token0Reserve).toBe(fixedLt)
+    expect(allocation.token1Reserve).toBe(110n * ONE_E18)
   })
 
   it('should compute fixed allocation for the higher-address token', () => {
     const calculator = ConcentrateLiquidityCalculator.new({ tokenA, tokenB })
     const fixedGt = 80n * ONE_E18
     const allocation = calculator.computeFixedAllocation(prices, TOKEN_B, fixedGt)
-    const expected = computeLiquidityFromAmounts(
-      UINT_256_MAX,
-      fixedGt,
-      spotPrice.toSqrt(),
-      minPrice.toSqrt(),
-      maxPrice.toSqrt(),
-    )
 
-    expect(allocation.token0Reserve).toBe(expected.actualLt)
-    expect(allocation.token1Reserve).toBe(expected.actualGt)
+    // L = 80 / (1 - 0.9) = 800, bLt = L * (1.1 - 1) / 1.1
+    expect(allocation.token0Reserve).toBe(72727272727272727272n)
+    expect(allocation.token1Reserve).toBe(fixedGt)
+  })
+
+  describe('fixed allocation in one-sided ranges (spot on a bound)', () => {
+    const atMax = { minPrice, spotPrice: maxPrice, maxPrice }
+    const atMin = { minPrice, spotPrice: minPrice, maxPrice }
+
+    it('should allocate only token1 when token1 is fixed at spot == maxPrice', () => {
+      const calculator = ConcentrateLiquidityCalculator.new({ tokenA, tokenB })
+      const allocation = calculator.computeFixedAllocation(atMax, TOKEN_B, 100n * ONE_E18)
+
+      expect(allocation).toEqual({ token0Reserve: 0n, token1Reserve: 100n * ONE_E18 })
+    })
+
+    it('should allocate only token0 when token0 is fixed at spot == minPrice', () => {
+      const calculator = ConcentrateLiquidityCalculator.new({ tokenA, tokenB })
+      const allocation = calculator.computeFixedAllocation(atMin, TOKEN_A, 100n * ONE_E18)
+
+      expect(allocation).toEqual({ token0Reserve: 100n * ONE_E18, token1Reserve: 0n })
+    })
+
+    it('should throw when token0 is fixed at spot == maxPrice', () => {
+      const calculator = ConcentrateLiquidityCalculator.new({ tokenA, tokenB })
+
+      expect(() => calculator.computeFixedAllocation(atMax, TOKEN_A, 100n * ONE_E18)).toThrow(
+        `cannot fix token0 (${TOKEN_A}) amount: the range holds only token1 when spotPrice ` +
+          `equals maxPrice, fix the token1 (${TOKEN_B}) amount instead`,
+      )
+    })
+
+    it('should throw when token1 is fixed at spot == minPrice', () => {
+      const calculator = ConcentrateLiquidityCalculator.new({ tokenA, tokenB })
+
+      expect(() => calculator.computeFixedAllocation(atMin, TOKEN_B, 100n * ONE_E18)).toThrow(
+        `cannot fix token1 (${TOKEN_B}) amount: the range holds only token0 when spotPrice ` +
+          `equals minPrice, fix the token0 (${TOKEN_A}) amount instead`,
+      )
+    })
   })
 
   it('should compute max allocation from available liquidity', () => {

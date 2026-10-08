@@ -17,7 +17,9 @@ const ONE = 10n ** 18n
  * @param sqrtPspot sqrt(P_spot) in 1e18 fixed-point
  * @param sqrtPmin sqrt(P_min) in 1e18 fixed-point
  * @param sqrtPmax sqrt(P_max) in 1e18 fixed-point
- * @returns { targetL, actualLt, actualGt } max L and amounts actually needed (<= available)
+ * @returns { targetL, actualLt, actualGt } max L and amounts actually needed (<= available,
+ * up to a few wei of integer rounding — the limiting token can round marginally above its
+ * available amount, exactly as the deployed contract's helper does)
  */
 export function computeLiquidityFromAmounts(
   availableLt: bigint,
@@ -31,12 +33,10 @@ export function computeLiquidityFromAmounts(
   }
 
   const lFromLt =
-    sqrtPmax > sqrtPspot
-      ? mulDiv(availableLt, mulDiv(sqrtPmax, sqrtPspot, ONE), sqrtPmax - sqrtPspot)
-      : UINT_256_MAX
+    sqrtPmax > sqrtPspot ? computeLiquidityFromLt(availableLt, sqrtPspot, sqrtPmax) : UINT_256_MAX
 
   const lFromGt =
-    sqrtPspot > sqrtPmin ? mulDiv(availableGt, ONE, sqrtPspot - sqrtPmin) : UINT_256_MAX
+    sqrtPspot > sqrtPmin ? computeLiquidityFromGt(availableGt, sqrtPspot, sqrtPmin) : UINT_256_MAX
 
   const targetL = lFromLt < lFromGt ? lFromLt : lFromGt
   const { bLt: actualLt, bGt: actualGt } = computeBalances(targetL, sqrtPspot, sqrtPmin, sqrtPmax)
@@ -45,11 +45,71 @@ export function computeLiquidityFromAmounts(
 }
 
 /**
+ * Compute L implied by an amount of the token with lower address at a given spot price:
+ *   L = availableLt * (sqrtPmax * sqrtPspot / ONE) / (sqrtPmax - sqrtPspot)
+ *
+ * Mirrors the `lFromLt` term of XYCConcentrateArgsBuilder.computeLiquidityFromAmounts
+ * in XYCConcentrate.sol.
+ *
+ * @param availableLt Amount of token with lower address
+ * @param sqrtPspot sqrt(P_spot) in 1e18 fixed-point, must be < sqrtPmax
+ * @param sqrtPmax sqrt(P_max) in 1e18 fixed-point
+ * @returns L backed by availableLt
+ * @throws if sqrtPspot >= sqrtPmax (the range holds no tokenLt at this spot price)
+ */
+export function computeLiquidityFromLt(
+  availableLt: bigint,
+  sqrtPspot: bigint,
+  sqrtPmax: bigint,
+): bigint {
+  if (sqrtPspot >= sqrtPmax) {
+    throw new Error(
+      'sqrtPspot should be less than sqrtPmax: the range holds no tokenLt at this spot price',
+    )
+  }
+
+  return mulDiv(availableLt, mulDiv(sqrtPmax, sqrtPspot, ONE), sqrtPmax - sqrtPspot)
+}
+
+/**
+ * Compute L implied by an amount of the token with higher address at a given spot price:
+ *   L = availableGt * ONE / (sqrtPspot - sqrtPmin)
+ *
+ * Mirrors the `lFromGt` term of XYCConcentrateArgsBuilder.computeLiquidityFromAmounts
+ * in XYCConcentrate.sol.
+ *
+ * @param availableGt Amount of token with higher address
+ * @param sqrtPspot sqrt(P_spot) in 1e18 fixed-point, must be > sqrtPmin
+ * @param sqrtPmin sqrt(P_min) in 1e18 fixed-point
+ * @returns L backed by availableGt
+ * @throws if sqrtPspot <= sqrtPmin (the range holds no tokenGt at this spot price)
+ */
+export function computeLiquidityFromGt(
+  availableGt: bigint,
+  sqrtPspot: bigint,
+  sqrtPmin: bigint,
+): bigint {
+  if (sqrtPspot <= sqrtPmin) {
+    throw new Error(
+      'sqrtPspot should be greater than sqrtPmin: the range holds no tokenGt at this spot price',
+    )
+  }
+
+  return mulDiv(availableGt, ONE, sqrtPspot - sqrtPmin)
+}
+
+/**
  * Compute the initial balances for given L, P_spot, P_min, P_max:
- *   bLt = L * (sqrtPmax - sqrtPspot) / (sqrtPmax * sqrtPspot / ONE)
+ *   bLt = L * (1/sqrtPspot - 1/sqrtPmax)
  *   bGt = L * (sqrtPspot - sqrtPmin)
  *
  * Mirrors XYCConcentrateArgsBuilder.computeBalances in XYCConcentrate.sol.
+ *
+ * The bLt leg is computed on reciprocal sqrt prices (invSqrtP = ONE * ONE / sqrtP).
+ * The algebraically equivalent product form L * (sqrtPmax - sqrtPspot) / (sqrtPmax * sqrtPspot / ONE)
+ * is NOT used: its floored denominator loses relative precision as sqrtPmax * sqrtPspot approaches
+ * ONE (cheap tokenLt, e.g. an 18-decimal token0 priced at ~1e-6 of a 6-decimal token1), overstating
+ * bLt manyfold, and collapses to zero below it — a division-by-zero the deployed contract does not have.
  *
  * @param targetL Liquidity L (1e18 scale implied by ONE)
  * @param sqrtPspot sqrt(P_spot) in 1e18 fixed-point
@@ -67,10 +127,12 @@ export function computeBalances(
     throw new Error('sqrtPmax should be greater than sqrtPmin')
   }
 
-  const bLt =
-    sqrtPmax > sqrtPspot
-      ? mulDiv(targetL, sqrtPmax - sqrtPspot, mulDiv(sqrtPmax, sqrtPspot, ONE))
-      : 0n
+  const invSqrtPspot = mulDiv(ONE, ONE, sqrtPspot)
+  const invSqrtPmax = mulDiv(ONE, ONE, sqrtPmax)
+
+  // Boundary: if sqrtPspot >= sqrtPmax, bLt = 0 (floored reciprocals decide, as on-chain)
+  const bLt = invSqrtPspot > invSqrtPmax ? mulDiv(targetL, invSqrtPspot - invSqrtPmax, ONE) : 0n
+  // Boundary: if sqrtPspot <= sqrtPmin, bGt = 0
   const bGt = sqrtPspot > sqrtPmin ? mulDiv(targetL, sqrtPspot - sqrtPmin, ONE) : 0n
 
   return { bLt, bGt }

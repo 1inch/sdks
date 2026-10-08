@@ -320,7 +320,7 @@ describe('SwapVM', () => {
 
     const price = +formatUnits(srcAmount, 6) / +formatUnits(dstAmount, 18)
 
-    expect(price).to.equal(2500.0002639315903)
+    expect(price).to.equal(2500.000263932153)
   })
 
   test('should swap by AquaXYCAmmStrategy Concentrated (2000 - 3000 range) with 2500 spot price (WETH -> USDC)', async () => {
@@ -653,7 +653,7 @@ describe('SwapVM', () => {
 
     const price = +formatUnits(srcAmount, 6) / +formatUnits(dstAmount, 18)
 
-    expect(price).to.equal(2500.000263885709)
+    expect(price).to.equal(2500.000263931915)
   })
 
   test('should swap by AquaXYCAmmStrategy Concentrated (2000 - 3000 range) with 2500 spot price (USDT -> WBTC)', async () => {
@@ -967,7 +967,7 @@ describe('SwapVM', () => {
 
     const price = +formatUnits(srcAmount, 6) / +formatUnits(dstAmount, 18)
 
-    expect(price).to.equal(2462.2959342765034)
+    expect(price).to.equal(2462.295934276742)
   })
 
   test('should swap by AquaPeggedAmmStrategy 1bps flat fees USDC -> DAI', async () => {
