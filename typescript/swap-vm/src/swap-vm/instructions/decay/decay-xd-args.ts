@@ -18,6 +18,7 @@ export class DecayXDArgs implements IArgsData {
       decayPeriod >= 0n && decayPeriod <= UINT_16_MAX,
       `Invalid decayPeriod value: ${decayPeriod}. Must be a valid uint16`,
     )
+    assert(decayPeriod > 0n, `Invalid decayPeriod value: ${decayPeriod}. Must be > 0`)
   }
 
   /**

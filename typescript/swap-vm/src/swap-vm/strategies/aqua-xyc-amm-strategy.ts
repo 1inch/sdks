@@ -55,7 +55,7 @@ export class AquaXYCAmmStrategy extends AquaAMMStrategy {
       builder.add(concentrate.concentrateGrowLiquidity2D.createIx(this.xycConcentrateArgs))
     }
 
-    if (this.decayPeriod) {
+    if (this.decayPeriod !== undefined) {
       builder.decayXD({ decayPeriod: this.decayPeriod })
     }
 

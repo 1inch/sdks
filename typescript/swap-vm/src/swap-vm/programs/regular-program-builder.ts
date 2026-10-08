@@ -374,8 +374,8 @@ export class RegularProgramBuilder extends ProgramBuilder {
   /**
    * Applies progressive fee to amountIn
    **/
-  public progressiveFeeInXD(data: DataFor<fee.FlatFeeArgs>): this {
-    super.add(fee.progressiveFeeInXD.createIx(new fee.FlatFeeArgs(data.fee)))
+  public progressiveFeeInXD(data: DataFor<fee.ProgressiveFeeArgs>): this {
+    super.add(fee.progressiveFeeInXD.createIx(new fee.ProgressiveFeeArgs(data.fee)))
 
     return this
   }
@@ -383,8 +383,8 @@ export class RegularProgramBuilder extends ProgramBuilder {
   /**
    * Applies progressive fee to amountOut
    **/
-  public progressiveFeeOutXD(data: DataFor<fee.FlatFeeArgs>): this {
-    super.add(fee.progressiveFeeOutXD.createIx(new fee.FlatFeeArgs(data.fee)))
+  public progressiveFeeOutXD(data: DataFor<fee.ProgressiveFeeArgs>): this {
+    super.add(fee.progressiveFeeOutXD.createIx(new fee.ProgressiveFeeArgs(data.fee)))
 
     return this
   }

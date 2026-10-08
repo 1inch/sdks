@@ -52,6 +52,12 @@ describe('AquaXYCAMMStrategy', () => {
       expect(rebuilt.toString()).toBe(program.toString())
     })
 
+    it('should reject a zero decay period instead of omitting decayXD', () => {
+      expect(() => AquaXYCAmmStrategy.new().withDecayPeriod(0n).build()).toThrow(
+        'Invalid decayPeriod value: 0. Must be > 0',
+      )
+    })
+
     it('should add fee when feeBpsIn is non-zero', () => {
       const program = AquaXYCAmmStrategy.new().withFeeTokenIn(0.03).build()
 

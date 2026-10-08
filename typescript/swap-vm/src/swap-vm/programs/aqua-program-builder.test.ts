@@ -3,8 +3,10 @@
 import { describe, it, expect } from 'vitest'
 import { Address } from '@1inch/sdk-core'
 import { AquaProgramBuilder } from './aqua-program-builder'
+import { SwapVmProgram } from './swap-vm-program'
 import { PeggedSwapArgs } from '../instructions/pegged-swap'
 import type { JumpIfTokenArgs } from '../instructions/controls'
+import type { ProtocolFeeArgs } from '../instructions/fee'
 
 const USDC = new Address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
 const WETH = new Address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2')
@@ -66,5 +68,40 @@ describe('AquaProgramBuilder', () => {
     expect((jumpIn.args as JumpIfTokenArgs).nextPC).toBe(6n)
     expect((jumpOut.args as JumpIfTokenArgs).token.equal(WETH)).toBe(true)
     expect((jumpOut.args as JumpIfTokenArgs).nextPC).toBe(7n)
+  })
+
+  it('should apply instruction args validation when decoding programs', () => {
+    const valid = new AquaProgramBuilder()
+      .decayXD({ decayPeriod: 3600n })
+      .aquaProtocolFeeAmountInXD({ fee: 100000n, to: RECEIVER })
+      .build()
+
+    // decayXD (0x13) | aquaProtocolFeeAmountInXD (0x1c)
+    expect(valid.toString()).toBe(
+      '0x13020e10' + '1c18' + '000186a0' + '0000000000000000000000000000000000000001',
+    )
+
+    expect(() => AquaProgramBuilder.decode(new SwapVmProgram('0x13020000'))).toThrow(
+      'Invalid decayPeriod value: 0',
+    )
+    expect(() =>
+      AquaProgramBuilder.decode(new SwapVmProgram('0x1c18' + '000186a0' + '00'.repeat(20))),
+    ).toThrow('Invalid fee recipient (to). Must be non zero address when fee > 0')
+  })
+
+  it('should accept a zero protocol fee without a recipient', () => {
+    const program = new AquaProgramBuilder()
+      .aquaProtocolFeeAmountInXD({ fee: 0n, to: Address.ZERO_ADDRESS })
+      .build()
+
+    // aquaProtocolFeeAmountInXD (0x1c)
+    expect(program.toString()).toBe('0x1c18' + '00000000' + '00'.repeat(20))
+
+    const decoded = AquaProgramBuilder.decode(program)
+    expect(decoded.build().toString()).toBe(program.toString())
+
+    const args = decoded.getInstructions()[0].args as ProtocolFeeArgs
+    expect(args.fee).toBe(0n)
+    expect(args.to.isZero()).toBe(true)
   })
 })

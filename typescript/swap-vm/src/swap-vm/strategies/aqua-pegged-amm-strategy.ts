@@ -33,7 +33,7 @@ export class AquaPeggedAmmStrategy extends AquaAMMStrategy {
       builder.add(fee.aquaProtocolFeeAmountInXD.createIx(data))
     }
 
-    if (this.decayPeriod) {
+    if (this.decayPeriod !== undefined) {
       builder.decayXD({ decayPeriod: this.decayPeriod })
     }
 
