@@ -1,0 +1,380 @@
+// SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
+
+import type { DataFor } from '@1inch/sdk-core'
+import { ProgramBuilder } from './program-builder'
+import type { SwapVmProgram } from './swap-vm-program'
+import { limitInstructions } from '../instructions'
+import * as balances from '../instructions/balances'
+import * as controls from '../instructions/controls'
+import * as invalidators from '../instructions/invalidators'
+import * as limitSwap from '../instructions/limit-swap'
+import * as minRate from '../instructions/min-rate'
+import * as dutchAuction from '../instructions/dutch-auction'
+import * as baseFeeAdjuster from '../instructions/base-fee-adjuster'
+import * as twapSwap from '../instructions/twap-swap'
+import * as fee from '../instructions/fee'
+import * as extruction from '../instructions/extruction'
+
+/**
+ * Builds programs for `LimitSwapVMRouter` (and `LimitSwapVMRouterDebug`) using the `LimitOpcodes`
+ * table. Its opcode bytes differ from the `Opcodes` table of `RegularProgramBuilder` (e.g.
+ * `limitSwap1D` is 0x15 here and 0x19 there), so these programs must not be sent to other routers
+ */
+export class LimitProgramBuilder extends ProgramBuilder {
+  constructor() {
+    super([...limitInstructions])
+  }
+
+  static decode(program: SwapVmProgram): LimitProgramBuilder {
+    return new LimitProgramBuilder().decode(program)
+  }
+
+  /**
+   * Sets initial token balances for the swap program
+   **/
+  public staticBalancesXD(data: DataFor<balances.BalancesArgs>): this {
+    super.add(balances.staticBalancesXD.createIx(new balances.BalancesArgs(data.tokenBalances)))
+
+    return this
+  }
+
+  /**
+   * Unconditional jump to specified program counter
+   **/
+  public jump(data: DataFor<controls.JumpArgs>): this {
+    super.add(controls.jump.createIx(new controls.JumpArgs(data.nextPC)))
+
+    return this
+  }
+
+  /**
+   * Jumps if tokenIn is the specified token
+   **/
+  public jumpIfTokenIn(data: DataFor<controls.JumpIfTokenArgs>): this {
+    super.add(
+      controls.jumpIfTokenIn.createIx(new controls.JumpIfTokenArgs(data.tokenTail, data.nextPC)),
+    )
+
+    return this
+  }
+
+  /**
+   * Jumps if tokenOut is the specified token
+   **/
+  public jumpIfTokenOut(data: DataFor<controls.JumpIfTokenArgs>): this {
+    super.add(
+      controls.jumpIfTokenOut.createIx(new controls.JumpIfTokenArgs(data.tokenTail, data.nextPC)),
+    )
+
+    return this
+  }
+
+  /**
+   * Reverts if the deadline has been reached
+   **/
+  public deadline(data: DataFor<controls.DeadlineArgs>): this {
+    super.add(controls.deadline.createIx(new controls.DeadlineArgs(data.deadline)))
+
+    return this
+  }
+
+  /**
+   * Requires taker to hold any amount of specified token (supports NFTs)
+   **/
+  public onlyTakerTokenBalanceNonZero(
+    data: DataFor<controls.OnlyTakerTokenBalanceNonZeroArgs>,
+  ): this {
+    super.add(
+      controls.onlyTakerTokenBalanceNonZero.createIx(
+        new controls.OnlyTakerTokenBalanceNonZeroArgs(data.token),
+      ),
+    )
+
+    return this
+  }
+
+  /**
+   * Requires taker to hold at least specified amount of token
+   **/
+  public onlyTakerTokenBalanceGte(data: DataFor<controls.OnlyTakerTokenBalanceGteArgs>): this {
+    super.add(
+      controls.onlyTakerTokenBalanceGte.createIx(
+        new controls.OnlyTakerTokenBalanceGteArgs(data.token, data.minAmount),
+      ),
+    )
+
+    return this
+  }
+
+  /**
+   * Requires taker to hold at least specified share of token's total supply
+   **/
+  public onlyTakerTokenSupplyShareGte(
+    data: DataFor<controls.OnlyTakerTokenSupplyShareGteArgs>,
+  ): this {
+    super.add(
+      controls.onlyTakerTokenSupplyShareGte.createIx(
+        new controls.OnlyTakerTokenSupplyShareGteArgs(data.token, data.minShareE18),
+      ),
+    )
+
+    return this
+  }
+
+  /**
+   * No-op instruction used to add uniqueness to order hashes (prevents replay attacks)
+   **/
+  public salt(data: DataFor<controls.SaltArgs>): this {
+    super.add(controls.salt.createIx(new controls.SaltArgs(data.salt)))
+
+    return this
+  }
+
+  /**
+   * Invalidates a specific bit index for order uniqueness
+   **/
+  public invalidateBit1D(data: DataFor<invalidators.InvalidateBit1DArgs>): this {
+    super.add(
+      invalidators.invalidateBit1D.createIx(new invalidators.InvalidateBit1DArgs(data.bitIndex)),
+    )
+
+    return this
+  }
+
+  /**
+   * Invalidates order by token input to prevent re-use
+   **/
+  public invalidateTokenIn1D(): this {
+    super.add(invalidators.invalidateTokenIn1D.createIx(new invalidators.InvalidateTokenIn1DArgs()))
+
+    return this
+  }
+
+  /**
+   * Invalidates order by token output to prevent re-use
+   **/
+  public invalidateTokenOut1D(): this {
+    super.add(
+      invalidators.invalidateTokenOut1D.createIx(new invalidators.InvalidateTokenOut1DArgs()),
+    )
+
+    return this
+  }
+
+  /**
+   * Limit order swap with proportional execution
+   **/
+  public limitSwap1D(data: DataFor<limitSwap.LimitSwapDirectionArgs>): this {
+    super.add(
+      limitSwap.limitSwap1D.createIx(new limitSwap.LimitSwapDirectionArgs(data.makerDirectionLt)),
+    )
+
+    return this
+  }
+
+  /**
+   * Limit order swap requiring full amount execution
+   **/
+  public limitSwapOnlyFull1D(data: DataFor<limitSwap.LimitSwapDirectionArgs>): this {
+    super.add(
+      limitSwap.limitSwapOnlyFull1D.createIx(
+        new limitSwap.LimitSwapDirectionArgs(data.makerDirectionLt),
+      ),
+    )
+
+    return this
+  }
+
+  /**
+   * Enforces minimum exchange rate or reverts
+   **/
+  public requireMinRate1D(data: DataFor<minRate.MinRateArgs>): this {
+    super.add(minRate.requireMinRate1D.createIx(new minRate.MinRateArgs(data.rateLt, data.rateGt)))
+
+    return this
+  }
+
+  /**
+   * Adjusts swap amounts to meet minimum rate if needed
+   **/
+  public adjustMinRate1D(data: DataFor<minRate.MinRateArgs>): this {
+    super.add(minRate.adjustMinRate1D.createIx(new minRate.MinRateArgs(data.rateLt, data.rateGt)))
+
+    return this
+  }
+
+  /**
+   * Dutch auction with time-based decay on amountIn
+   **/
+  public dutchAuctionBalanceIn1D(data: DataFor<dutchAuction.DutchAuctionArgs>): this {
+    super.add(
+      dutchAuction.dutchAuctionBalanceIn1D.createIx(
+        new dutchAuction.DutchAuctionArgs(data.startTime, data.duration, data.decayFactor),
+      ),
+    )
+
+    return this
+  }
+
+  /**
+   * Dutch auction with time-based decay on amountOut
+   **/
+  public dutchAuctionBalanceOut1D(data: DataFor<dutchAuction.DutchAuctionArgs>): this {
+    super.add(
+      dutchAuction.dutchAuctionBalanceOut1D.createIx(
+        new dutchAuction.DutchAuctionArgs(data.startTime, data.duration, data.decayFactor),
+      ),
+    )
+
+    return this
+  }
+
+  /**
+   * Adjusts swap prices based on network gas costs
+   **/
+  public baseFeeAdjuster1D(data: DataFor<baseFeeAdjuster.BaseFeeAdjusterArgs>): this {
+    super.add(
+      baseFeeAdjuster.baseFeeAdjuster1D.createIx(
+        new baseFeeAdjuster.BaseFeeAdjusterArgs(
+          data.baseGasPrice,
+          data.ethToToken1Price,
+          data.gasAmount,
+          data.maxPriceDecay,
+        ),
+      ),
+    )
+
+    return this
+  }
+
+  /**
+   * TWAP trading with exponential dutch auction and illiquidity handling
+   **/
+  public twap(data: DataFor<twapSwap.TWAPSwapArgs>): this {
+    super.add(
+      twapSwap.twap.createIx(
+        new twapSwap.TWAPSwapArgs(
+          data.balanceIn,
+          data.balanceOut,
+          data.startTime,
+          data.duration,
+          data.priceBumpAfterIlliquidity,
+          data.minTradeAmountOut,
+        ),
+      ),
+    )
+
+    return this
+  }
+
+  /**
+   * Calls external contract to perform custom logic
+   **/
+  public extruction(data: DataFor<extruction.ExtructionArgs>): this {
+    super.add(
+      extruction.extruction.createIx(
+        new extruction.ExtructionArgs(data.target, data.extructionArgs),
+      ),
+    )
+
+    return this
+  }
+
+  /**
+   * Applies fee to amountIn
+   **/
+  public flatFeeAmountInXD(data: DataFor<fee.FlatFeeArgs>): this {
+    super.add(fee.flatFeeAmountInXD.createIx(new fee.FlatFeeArgs(data.fee)))
+
+    return this
+  }
+
+  /**
+   * Applies protocol fee to amountIn with direct transfer
+   **/
+  public protocolFeeAmountInXD(data: DataFor<fee.ProtocolFeeArgs>): this {
+    super.add(fee.protocolFeeAmountInXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
+
+    return this
+  }
+
+  /**
+   * Applies protocol fee to amountIn through Aqua protocol
+   **/
+  public aquaProtocolFeeAmountInXD(data: DataFor<fee.ProtocolFeeArgs>): this {
+    super.add(fee.aquaProtocolFeeAmountInXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
+
+    return this
+  }
+
+  /**
+   * Applies protocol fee, fetched from external contract, to amountIn with direct transfer
+   **/
+  public dynamicProtocolFeeAmountInXD(data: DataFor<fee.DynamicProtocolFeeArgs>): this {
+    super.add(
+      fee.dynamicProtocolFeeAmountInXD.createIx(new fee.DynamicProtocolFeeArgs(data.feeProvider)),
+    )
+
+    return this
+  }
+
+  /**
+   * Applies protocol fee, fetched from external contract, to amountIn through Aqua protocol
+   **/
+  public aquaDynamicProtocolFeeAmountInXD(data: DataFor<fee.DynamicProtocolFeeArgs>): this {
+    super.add(
+      fee.aquaDynamicProtocolFeeAmountInXD.createIx(
+        new fee.DynamicProtocolFeeArgs(data.feeProvider),
+      ),
+    )
+
+    return this
+  }
+
+  /*  BELOW ARE EXPERIMENTAL OPCODES. DO NOT RECOMMEND TO USE THEM IN PRODUCTION */
+
+  /**
+   * EXPERIMENTAL: Applies fee to amountOut
+   **/
+  public flatFeeAmountOutXD(data: DataFor<fee.FlatFeeArgs>): this {
+    super.add(fee.flatFeeAmountOutXD.createIx(new fee.FlatFeeArgs(data.fee)))
+
+    return this
+  }
+
+  /**
+   * EXPERIMENTAL: Applies progressive fee to amountIn
+   **/
+  public progressiveFeeInXD(data: DataFor<fee.FlatFeeArgs>): this {
+    super.add(fee.progressiveFeeInXD.createIx(new fee.FlatFeeArgs(data.fee)))
+
+    return this
+  }
+
+  /**
+   * EXPERIMENTAL: Applies progressive fee to amountOut
+   **/
+  public progressiveFeeOutXD(data: DataFor<fee.FlatFeeArgs>): this {
+    super.add(fee.progressiveFeeOutXD.createIx(new fee.FlatFeeArgs(data.fee)))
+
+    return this
+  }
+
+  /**
+   * EXPERIMENTAL: Applies protocol fee to amountOut with direct transfer
+   **/
+  public protocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
+    super.add(fee.protocolFeeAmountOutXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
+
+    return this
+  }
+
+  /**
+   * EXPERIMENTAL: Applies protocol fee to amountOut through Aqua protocol
+   **/
+  public aquaProtocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
+    super.add(fee.aquaProtocolFeeAmountOutXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
+
+    return this
+  }
+}

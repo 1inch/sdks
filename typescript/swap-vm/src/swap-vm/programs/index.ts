@@ -3,4 +3,5 @@
 export { ProgramBuilder } from './program-builder'
 export { RegularProgramBuilder } from './regular-program-builder'
 export { AquaProgramBuilder } from './aqua-program-builder'
+export { LimitProgramBuilder } from './limit-program-builder'
 export { SwapVmProgram } from './swap-vm-program'

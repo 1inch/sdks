@@ -294,6 +294,20 @@ For strategies intended to run on **today’s deployed `AquaSwapVM` contracts**,
   - Targeting future full `SwapVM` deployments (post-`Fusaka` on Ethereum), or
   - Working with your own custom instruction sets and contracts.
 
+### Program builders and target routers
+
+Each SwapVM router executes programs against its own opcode table, so the same instruction can have a different opcode byte on different routers. Build a program with the builder whose opcode table matches the router that will execute it:
+
+| Builder | Opcode table | Target routers |
+|---------|--------------|----------------|
+| [`RegularProgramBuilder`](./src/swap-vm/programs/regular-program-builder.ts) | `_allInstructions` (`Opcodes.sol`) | `SwapVMRouter`, `SwapVMRouterDebug` |
+| [`AquaProgramBuilder`](./src/swap-vm/programs/aqua-program-builder.ts) | `aquaInstructions` (`AquaOpcodes.sol`) | `AquaSwapVMRouter`, `AquaSwapVMRouterDebug` |
+| [`LimitProgramBuilder`](./src/swap-vm/programs/limit-program-builder.ts) | `limitInstructions` (`LimitOpcodes.sol`) | `LimitSwapVMRouter`, `LimitSwapVMRouterDebug` |
+
+Programs built with `RegularProgramBuilder` are **only valid for routers that use the full `Opcodes` table**. Other routers read the same bytes as different instructions: `limitSwap1D` is byte `0x19` in `Opcodes`, but `LimitSwapVMRouter` executes `0x19` as `dutchAuctionBalanceIn1D` and expects `limitSwap1D` as `0x15`.
+
+`LimitProgramBuilder` has typed methods for every `LimitOpcodes` instruction (controls, `staticBalancesXD`, invalidators, limit swaps, min-rate guards, Dutch auctions, `baseFeeAdjuster1D`, `twap`, `extruction`, `salt` and fees), and `LimitProgramBuilder.decode(program)` parses programs for these routers. It has no debug helpers. Its `FeeExperimental` methods (`flatFeeAmountOutXD`, `progressiveFeeInXD`, `progressiveFeeOutXD`, `protocolFeeAmountOutXD`, `aquaProtocolFeeAmountOutXD`) are experimental and not recommended for production.
+
 ## Strategies
 
 A **strategy** is a reusable template that produces a `SwapVmProgram` – a sequence of instructions that defines **how** liquidity behaves and **how** swaps should be executed.
