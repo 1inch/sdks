@@ -3,6 +3,7 @@
 import { BN, BitMask } from '@1inch/byte-utils'
 import type { DataFor } from '@1inch/sdk-core'
 import { Interaction, HexString, Address } from '@1inch/sdk-core'
+import assert from 'assert'
 
 /**
  * Maker-side order configuration packed into a single `uint256` and an optional hooks data blob.
@@ -58,13 +59,17 @@ export class MakerTraits {
 
   constructor(
     /**
-     * If true, maker WETH proceeds are unwrapped into the native currency when
-     * the order is settled.
+     * If true, the `tokenIn` WETH paid by the taker is unwrapped and delivered
+     * to the receiver as native currency.
+     * Not supported for Aqua orders: SwapVM reverts their swaps with
+     * `MakerTraitsUnwrapIsIncompatibleWithAqua`.
      */
     public readonly shouldUnwrap: boolean,
     /**
      * If true, the order is intended to be authenticated via Aqua (push-based
      * mechanism) instead of a traditional ECDSA signature.
+     * The taker's payment is then credited to the maker's Aqua balance, so
+     * `shouldUnwrap` and a `customReceiver` other than the maker are not supported.
      */
     public readonly useAquaInsteadOfSignature: boolean,
     /**
@@ -74,8 +79,10 @@ export class MakerTraits {
      */
     public readonly allowZeroAmountIn: boolean,
     /**
-     * Optional receiver of the maker's output assets. When omitted or equal to
-     * the zero address, the maker address is used as the receiver.
+     * Optional receiver of the taker's `tokenIn` payment (the maker's proceeds).
+     * When omitted or equal to the zero address, the maker receives it.
+     * Aqua orders only support the maker: SwapVM reverts their swaps with
+     * `MakerTraitsCustomReceiverIsIncompatibleWithAqua` for any other receiver.
      */
     public readonly customReceiver?: Address,
     /**
@@ -107,6 +114,8 @@ export class MakerTraits {
 
   /**
    * Construct traits from a plain data object.
+   *
+   * Flag combinations are not checked here, see {@link MakerTraits.validate}.
    */
   static new(data: DataFor<MakerTraits>): MakerTraits {
     return new MakerTraits(
@@ -122,11 +131,14 @@ export class MakerTraits {
   }
 
   /**
-   * Create traits with library defaults that match the on-chain SwapVM expectations:
+   * Create traits with library defaults for an Aqua order:
    * - `useAquaInsteadOfSignature` = `true`
    * - `shouldUnwrap`             = `false`
    * - `allowZeroAmountIn`        = `false`
    * - no receiver or hooks configured.
+   *
+   * `shouldUnwrap` and a `customReceiver` other than the maker additionally require
+   * `useAquaInsteadOfSignature: false` (signature-based order).
    */
   static default(): MakerTraits {
     return MakerTraits.new({
@@ -242,15 +254,54 @@ export class MakerTraits {
    *
    * This is primarily used for fluent-style construction in tests and examples, e.g.:
    *
-   * `MakerTraits.default().with({ shouldUnwrap: true })`
+   * `MakerTraits.default().with({ useAquaInsteadOfSignature: false, shouldUnwrap: true })`
    *
    * Only fields present in `data` are updated; flags, receiver, and hooks can be
-   * changed independently.
+   * changed independently. Flag combinations are not checked here, see {@link validate}.
    */
   public with(data: Partial<DataFor<MakerTraits>>): this {
     Object.assign(this, data)
 
     return this
+  }
+
+  /**
+   * Checks that the traits can be settled by SwapVM.
+   *
+   * Aqua orders credit the taker's payment to the maker's Aqua balance, so SwapVM rejects
+   * them when `shouldUnwrap` is set (`MakerTraitsUnwrapIsIncompatibleWithAqua`) or when the
+   * receiver is not the maker (`MakerTraitsCustomReceiverIsIncompatibleWithAqua`).
+   * The contract checks this only for swaps with `amountIn > 0`, so such an order can still
+   * be shipped and quoted, but those swaps revert.
+   *
+   * Called by `Order.new()`. Decoding, encoding and hashing do not validate, so existing
+   * orders with such traits can still be processed.
+   *
+   * @param maker - Order maker. For Aqua orders a non-zero `customReceiver` is accepted only
+   *                when it equals `maker`, and rejected when `maker` is omitted.
+   * @throws if `useAquaInsteadOfSignature` is combined with `shouldUnwrap` or with a
+   *         `customReceiver` other than the maker
+   */
+  public validate(maker?: Address): void {
+    if (!this.useAquaInsteadOfSignature) {
+      return
+    }
+
+    assert(
+      !this.shouldUnwrap,
+      'MakerTraitsUnwrapIsIncompatibleWithAqua: shouldUnwrap is not supported for Aqua orders',
+    )
+
+    const receiver = this.customReceiver
+
+    if (!receiver || receiver.isZero()) {
+      return
+    }
+
+    assert(
+      maker && receiver.equal(maker),
+      `MakerTraitsCustomReceiverIsIncompatibleWithAqua: customReceiver ${receiver} must be the maker (${maker ?? 'not provided'}) for Aqua orders`,
+    )
   }
 
   /**

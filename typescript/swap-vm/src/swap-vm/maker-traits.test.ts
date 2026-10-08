@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
+import type { DataFor } from '@1inch/sdk-core'
 import { Address, HexString, Interaction } from '@1inch/sdk-core'
 import { MakerTraits } from './maker-traits'
 
@@ -82,6 +83,106 @@ describe('MakerTraits', () => {
 
       traits.with({ customReceiver: receiver })
       expect(traits.customReceiver?.toString()).toBe(receiver.toString())
+    })
+  })
+
+  describe('validate', () => {
+    type Case = { name: string; data: Partial<DataFor<MakerTraits>>; maker?: Address }
+
+    const maker = new Address('0x742d35cc6634c0532925a3b844bc454e4438f44e')
+    const receiver = Address.fromBigInt(1n)
+    const signature = { useAquaInsteadOfSignature: false }
+
+    it.each<Case>([
+      { name: 'Aqua defaults', data: {}, maker },
+      { name: 'Aqua defaults without maker', data: {} },
+      {
+        name: 'Aqua with zero receiver without maker',
+        data: { customReceiver: Address.ZERO_ADDRESS },
+      },
+      { name: 'Aqua with the maker as receiver', data: { customReceiver: maker }, maker },
+      {
+        name: 'Aqua with allowZeroAmountIn and hooks',
+        data: {
+          allowZeroAmountIn: true,
+          preTransferInHook: new Interaction(Address.ZERO_ADDRESS, new HexString('0xaaaa')),
+        },
+        maker,
+      },
+      { name: 'signature with shouldUnwrap', data: { ...signature, shouldUnwrap: true }, maker },
+      {
+        name: 'signature with custom receiver',
+        data: { ...signature, customReceiver: receiver },
+        maker,
+      },
+      {
+        name: 'signature with custom receiver without maker',
+        data: { ...signature, customReceiver: receiver },
+      },
+      {
+        name: 'signature with shouldUnwrap and custom receiver',
+        data: { ...signature, shouldUnwrap: true, customReceiver: receiver },
+        maker,
+      },
+    ])('should accept $name', ({ data, maker }) => {
+      expect(() => MakerTraits.default().with(data).validate(maker)).not.toThrow()
+    })
+
+    it.each<Case & { error: string }>([
+      {
+        name: 'Aqua with shouldUnwrap',
+        data: { shouldUnwrap: true },
+        maker,
+        error: 'MakerTraitsUnwrapIsIncompatibleWithAqua',
+      },
+      {
+        name: 'Aqua with shouldUnwrap and the maker as receiver',
+        data: { shouldUnwrap: true, customReceiver: maker },
+        maker,
+        error: 'MakerTraitsUnwrapIsIncompatibleWithAqua',
+      },
+      {
+        name: 'Aqua with custom receiver',
+        data: { customReceiver: receiver },
+        maker,
+        error: 'MakerTraitsCustomReceiverIsIncompatibleWithAqua',
+      },
+      {
+        name: 'Aqua with custom receiver without maker',
+        data: { customReceiver: receiver },
+        error: 'MakerTraitsCustomReceiverIsIncompatibleWithAqua',
+      },
+      {
+        name: 'Aqua with the maker as receiver without maker',
+        data: { customReceiver: maker },
+        error: 'MakerTraitsCustomReceiverIsIncompatibleWithAqua',
+      },
+    ])('should reject $name', ({ data, maker, error }) => {
+      expect(() => MakerTraits.default().with(data).validate(maker)).toThrow(error)
+    })
+
+    it('should name the receiver and the maker in the error', () => {
+      const traits = MakerTraits.default().with({ customReceiver: receiver })
+
+      expect(() => traits.validate(maker)).toThrow(
+        `MakerTraitsCustomReceiverIsIncompatibleWithAqua: customReceiver ${receiver} must be the maker (${maker}) for Aqua orders`,
+      )
+      expect(() => traits.validate()).toThrow(
+        `customReceiver ${receiver} must be the maker (not provided) for Aqua orders`,
+      )
+    })
+
+    it('should not be enforced when building, encoding or decoding traits', () => {
+      const traits = MakerTraits.new({
+        shouldUnwrap: true,
+        useAquaInsteadOfSignature: true,
+        allowZeroAmountIn: false,
+        customReceiver: receiver,
+      })
+
+      const decoded = encodeDecodeTest(traits, maker)
+
+      expect(() => decoded.validate(maker)).toThrow('MakerTraitsUnwrapIsIncompatibleWithAqua')
     })
   })
 
