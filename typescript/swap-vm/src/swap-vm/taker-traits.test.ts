@@ -114,6 +114,36 @@ describe('TakerTraits', () => {
   })
 
   describe('threshold', () => {
+    // Bytes 18..20 (the uint16 right before the flags) hold the end offset of the threshold
+    // section; the router only checks the threshold when that section is exactly 32 bytes long
+    const thresholdSectionLength = (traits: TakerTraits): number =>
+      Number(traits.encode().sliceBytes(18, 20).toBigInt())
+
+    it('should leave the threshold section out by default, so the swap has no slippage check', () => {
+      expect(TakerTraits.default().threshold).toBe(0n)
+      expect(thresholdSectionLength(TakerTraits.default())).toBe(0)
+      expect(thresholdSectionLength(TakerTraits.new())).toBe(0)
+    })
+
+    it('should encode a threshold derived from a quote and slippage tolerance as a 32-byte section', () => {
+      const quotedAmountOut = 39_123_456_789_012_345n
+      const slippageBps = 50n
+      const minAmountOut = (quotedAmountOut * (10_000n - slippageBps)) / 10_000n
+
+      const traits = TakerTraits.default().with({ threshold: minAmountOut })
+      const encoded = traits.encode()
+
+      expect(thresholdSectionLength(traits)).toBe(32)
+      expect(encoded.sliceBytes(22, 54).toBigInt()).toBe(minAmountOut)
+      expect(TakerTraits.new({ threshold: minAmountOut }).encode()).toEqual(encoded)
+
+      expect(() => traits.validate(1n, quotedAmountOut)).not.toThrow()
+      expect(() => traits.validate(1n, minAmountOut)).not.toThrow()
+      expect(() => traits.validate(1n, minAmountOut - 1n)).toThrow(
+        'TakerTraitsInsufficientMinOutputAmount',
+      )
+    })
+
     it('should set and get threshold', () => {
       const traits = TakerTraits.default()
       const threshold = 1000000n
