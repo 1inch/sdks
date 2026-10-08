@@ -25,6 +25,20 @@ type BuiltOrder = {
 }
 
 /**
+ * EIP-712 domain of the SwapVM router that verifies signature-based orders.
+ *
+ * Use `getAquaSwapVmEip712Domain(chainId)` for the deployed AquaSwapVMRouter contracts,
+ * or read it from any router with `SwapVMContract.eip712Domain()` and
+ * `SwapVMContract.decodeEip712DomainResult()`.
+ */
+export type Eip712Domain = {
+  chainId: NetworkEnum
+  name: string
+  version: string
+  verifyingContract: Address
+}
+
+/**
  * Representation of a SwapVM order.
  */
 export class Order {
@@ -76,13 +90,10 @@ export class Order {
    * ⚠️ IMPORTANT:
    * - Callers must ensure they pass the same `domain` parameters that the verifier
    *   uses on-chain; mismatches will produce hashes that cannot be verified.
+   * - Deployed routers do not share one domain (the `version` differs between chains),
+   *   see {@link Eip712Domain} for how to obtain it.
    */
-  public hash(domain?: {
-    chainId: NetworkEnum
-    name: string
-    verifyingContract: Address
-    version: string
-  }): HexString {
+  public hash(domain?: Eip712Domain): HexString {
     if (this.traits.useAquaInsteadOfSignature) {
       return new HexString(keccak256(this.encode().toString()))
     }

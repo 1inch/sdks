@@ -132,6 +132,41 @@ describe('SwapVM', () => {
     expect(calculatedHash.toString()).toEqual(hashFromContract)
   })
 
+  test('should calculate signature-based order hash with EIP-712 domain read from router', async () => {
+    const swapVM = new SwapVMContract(new Address(forkNode.addresses.swapVMAquaRouter))
+    const order = Order.new({
+      maker: new Address(liqProviderAddress),
+      traits: MakerTraits.default().with({
+        useAquaInsteadOfSignature: false,
+        customReceiver: new Address(swapperAddress),
+        preTransferInHook: new Interaction(
+          new Address(forkNode.addresses.makerHooks),
+          new HexString(toHex('preTransferIn')),
+        ),
+      }),
+      program: AquaXYCAmmStrategy.new().build(),
+    })
+
+    const domainResult = await forkNode.provider.call(swapVM.eip712Domain())
+    const domain = SwapVMContract.decodeEip712DomainResult(new HexString(domainResult.data!))
+
+    expect(domain).toEqual({
+      chainId: forkNode.chainId,
+      name: 'TestAquaSwapVMRouter',
+      version: '1.0',
+      verifyingContract: swapVM.address,
+    })
+
+    const hashResult = await forkNode.provider.call(swapVM.hashOrder(order))
+    const hashFromContract = decodeFunctionResult({
+      abi: SWAP_VM_ABI,
+      functionName: 'hash',
+      data: hashResult.data!,
+    })
+
+    expect(order.hash(domain).toString()).toEqual(hashFromContract)
+  })
+
   test('should swap by AquaXYCAmmStrategy', async () => {
     const liquidityProvider = forkNode.liqProvider
     const swapper = forkNode.swapper

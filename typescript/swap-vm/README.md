@@ -6,7 +6,7 @@ A TypeScript SDK for encoding, decoding, and interacting with the 1inch Swap VM 
 
 The Swap VM Protocol is a lightweight virtual machine designed for efficient and flexible token swapping on-chain. This SDK simplifies integration by providing:
 
-- **Transaction Building**: Build typed call data for `quote`, `swap`, and `hash` operations
+- **Transaction Building**: Build typed call data for `quote`, `swap`, `hash`, and `eip712Domain` operations
 - **Instruction System**: Comprehensive instruction set including swaps, liquidity concentration, fees, and controls
 - **Trait management**: Taker and maker traits builders with sensible defaults for standard swaps, plus fine-grained control whenever you need advanced order customization.
 
@@ -181,6 +181,40 @@ const hashOrderTx = swapVm.hashOrder(order)
 - `order` - The order to hash
 
 **Returns:** `CallInfo` object with encoded transaction data for the `hash` order function
+
+### EIP-712 domain (signature-based orders)
+
+Orders authorized by a maker signature (`useAquaInsteadOfSignature: false`) are hashed as EIP-712 typed data `Order(address maker,uint256 traits,bytes data)`, so `order.hash(domain)` needs the EIP-712 domain of the router that executes the order. Aqua orders (`MakerTraits.default()`) are hashed as `keccak256(order.encode())` and ignore the domain.
+
+The domain must match the router exactly. A hash computed with another `name`, `version`, `chainId` or `verifyingContract` still looks valid, but the router rejects its signature with `BadSignature`. The deployed `AquaSwapVMRouter` contracts all use the name `1inch SwapVM v1.0`, and the version is `1.0.2` on every chain except Monad, Cronos, HyperEVM and Arc, where it is `1.0`.
+
+For the deployed routers, take the domain from the SDK:
+
+```typescript
+import { Address, getAquaSwapVmEip712Domain, MakerTraits, NetworkEnum, Order } from '@1inch/swap-vm-sdk'
+
+const order = Order.new({
+  maker: new Address('0x...'),
+  traits: MakerTraits.default().with({ useAquaInsteadOfSignature: false }),
+  program, // SwapVmProgram built with a program builder
+})
+
+// { chainId, name, version, verifyingContract }
+const domain = getAquaSwapVmEip712Domain(NetworkEnum.ETHEREUM)
+const orderHash = order.hash(domain)
+```
+
+For any other router, read the domain from the contract (`eip712Domain()`, EIP-5267):
+
+```typescript
+import { Address, HexString, SwapVMContract } from '@1inch/swap-vm-sdk'
+
+const swapVM = new SwapVMContract(new Address('0x...')) // router address
+const { data } = await publicClient.call(swapVM.eip712Domain()) // viem PublicClient
+const domain = SwapVMContract.decodeEip712DomainResult(new HexString(data!))
+
+const orderHash = order.hash(domain)
+```
 
 ## Event Parsing
 
@@ -558,6 +592,7 @@ The SDK exports:
 
 - **[`SwapVMContract`](./src/swap-vm-contract/swap-vm-contract.ts)** - Main contract class for encoding, decoding, and building transactions
 - **[`AQUA_SWAP_VM_CONTRACT_ADDRESSES`](./src/swap-vm-contract/constants.ts)** - Pre-configured contract addresses by network
+- **[`AQUA_SWAP_VM_EIP712_DOMAINS`, `getAquaSwapVmEip712Domain`](./src/swap-vm-contract/constants.ts)** - EIP-712 domain of the deployed routers by network, for hashing signature-based orders
 - **[`SwappedEvent`](./src/swap-vm-contract/events/swapped-event.ts)** - Event class for parsing swapped events
 - **[`Order`](./src/swap-vm/order.ts)** - Order data structure
 - **[`MakerTraits`](./src/swap-vm/maker-traits.ts)** - Maker-side configuration and flags
