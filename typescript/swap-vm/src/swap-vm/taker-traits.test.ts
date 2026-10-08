@@ -331,7 +331,7 @@ describe('TakerTraits', () => {
       )
     })
 
-    it('should report failures in the on-chain check order for exact input', () => {
+    it('should throw for the first failing check in on-chain order for exact input', () => {
       const deadline = 1735689600n
       const traits = TakerTraits.new({ exactIn: true, threshold: 1000n, deadline })
       const expired = { takerAmount: 1n, timestamp: deadline + 1n }
@@ -348,7 +348,7 @@ describe('TakerTraits', () => {
       expect(() => traits.validate(100n, 1000n, { ...inTime, takerAmount: 100n })).not.toThrow()
     })
 
-    it('should report failures in the on-chain check order for exact output', () => {
+    it('should throw for the first failing check in on-chain order for exact output', () => {
       const deadline = 1735689600n
       const traits = TakerTraits.new({ exactIn: false, threshold: 1000n, deadline })
       const expired = { takerAmount: 1n, timestamp: deadline + 1n }
