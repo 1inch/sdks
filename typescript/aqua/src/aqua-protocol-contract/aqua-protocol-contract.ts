@@ -3,8 +3,11 @@
 import { encodeFunctionData, keccak256 } from 'viem'
 import type { CallInfo, Address } from '@1inch/sdk-core'
 import { HexString } from '@1inch/sdk-core'
+import assert from 'assert'
 import type { ShipArgs, DockArgs } from './types'
 import { AQUA_ABI } from '../abi/Aqua.abi'
+
+const UINT_248_MAX = 2n ** 248n - 1n
 
 /**
  * Aqua Protocol Contract - Encoding/decoding for ship, dock, push, pull
@@ -19,10 +22,18 @@ export class AquaProtocolContract {
    * Encodes the calldata for the ship function
    * @param args - Ship arguments containing app address, strategy, tokens, and amounts
    * @returns Encoded calldata as HexString
+   * @throws if an amount is negative or above UINT_248_MAX, as Aqua stores balances as uint248
    * @see https://github.com/1inch/aqua-protocol/blob/master/src/Aqua.sol#L34
    */
   static encodeShipCallData(args: ShipArgs): HexString {
     const { app, strategy, amountsAndTokens } = args
+
+    for (const { token, amount } of amountsAndTokens) {
+      assert(
+        amount >= 0n && amount <= UINT_248_MAX,
+        `Invalid amount for token ${token}: ${amount}. Must be >= 0 and <= UINT_248_MAX (2^248 - 1)`,
+      )
+    }
 
     const result = encodeFunctionData({
       abi: AQUA_ABI,
