@@ -224,6 +224,99 @@ describe('PriceRange', () => {
       expect(result.reserve0.reserve).toBe(302920735871n)
       expect(result.reserve1.reserve).toBe(99999999999999999914n)
     })
+
+    describe('one-sided ranges (spot on a bound)', () => {
+      /** 1500 -> 3000 USDC per WETH; 1500 has the higher sqrt, so it becomes maxPrice. */
+      const bounds = (): PriceBounds => ({
+        minPrice: Price.fromHuman('1500', pairUsdcQuoteWethBase),
+        maxPrice: Price.fromHuman('3000', pairUsdcQuoteWethBase),
+      })
+
+      /** No token0 (USDC) puts the spot on maxPrice: the range holds only token1 (WETH). */
+      const wethOnlyRange = (): PriceRange =>
+        PriceRange.fromPriceBounds(bounds(), {
+          reserveA: TokenReserve.new({ token: USDC, reserve: 0n }),
+          reserveB: TokenReserve.new({ token: WETH, reserve: 10n ** 18n }),
+        })
+
+      /** No token1 (WETH) puts the spot on minPrice: the range holds only token0 (USDC). */
+      const usdcOnlyRange = (): PriceRange =>
+        PriceRange.fromPriceBounds(bounds(), {
+          reserveA: TokenReserve.new({ token: USDC, reserve: 1_000n * 10n ** 6n }),
+          reserveB: TokenReserve.new({ token: WETH, reserve: 0n }),
+        })
+
+      it('should allocate only token1 when token1 (WETH) is fixed at spot == maxPrice', () => {
+        const range = wethOnlyRange()
+        const fixedWeth = 10n ** 18n
+
+        expect(range.spotPrice.equals(range.maxPrice)).toBe(true)
+
+        const result = range.computeFixedAllocation(
+          TokenReserve.new({ token: WETH, reserve: fixedWeth }),
+        )
+
+        expect(result.reserve0.token.equal(USDC)).toBe(true)
+        expect(result.reserve0.reserve).toBe(0n)
+        expect(result.reserve1.token.equal(WETH)).toBe(true)
+        // 0.999999999999992822 WETH: floor rounding of L shaves a few wei off the fixed side
+        expect(result.reserve1.reserve).toBe(999999999999992822n)
+        expect(result.reserve1.reserve <= fixedWeth).toBe(true)
+      })
+
+      it('should allocate only token0 when token0 (USDC) is fixed at spot == minPrice', () => {
+        const range = usdcOnlyRange()
+        const fixedUsdc = 1_000_000n * 10n ** 6n
+
+        expect(range.spotPrice.equals(range.minPrice)).toBe(true)
+
+        const result = range.computeFixedAllocation(
+          TokenReserve.new({ token: USDC, reserve: fixedUsdc }),
+        )
+
+        expect(result.reserve0.token.equal(USDC)).toBe(true)
+        // 999_999.999999 USDC
+        expect(result.reserve0.reserve).toBe(999999999999n)
+        expect(result.reserve1.token.equal(WETH)).toBe(true)
+        expect(result.reserve1.reserve).toBe(0n)
+      })
+
+      it('should match computeMaxAllocation when the other token is not limiting', () => {
+        const fixedWeth = TokenReserve.new({ token: WETH, reserve: 10n ** 18n })
+        const fixedUsdc = TokenReserve.new({ token: USDC, reserve: 1_000_000n * 10n ** 6n })
+
+        expect(wethOnlyRange().computeFixedAllocation(fixedWeth)).toEqual(
+          wethOnlyRange().computeMaxAllocation({ reserveA: fixedUsdc, reserveB: fixedWeth }),
+        )
+        expect(usdcOnlyRange().computeFixedAllocation(fixedUsdc)).toEqual(
+          usdcOnlyRange().computeMaxAllocation({ reserveA: fixedUsdc, reserveB: fixedWeth }),
+        )
+      })
+
+      it('should throw when token0 (USDC) is fixed at spot == maxPrice', () => {
+        const range = wethOnlyRange()
+
+        expect(() =>
+          range.computeFixedAllocation(
+            TokenReserve.new({ token: USDC, reserve: 1_000_000n * 10n ** 6n }),
+          ),
+        ).toThrow(
+          `cannot fix token0 (${USDC}) amount: the range holds only token1 when spotPrice ` +
+            `equals maxPrice, fix the token1 (${WETH}) amount instead`,
+        )
+      })
+
+      it('should throw when token1 (WETH) is fixed at spot == minPrice', () => {
+        const range = usdcOnlyRange()
+
+        expect(() =>
+          range.computeFixedAllocation(TokenReserve.new({ token: WETH, reserve: 10n ** 18n })),
+        ).toThrow(
+          `cannot fix token1 (${WETH}) amount: the range holds only token0 when spotPrice ` +
+            `equals minPrice, fix the token0 (${USDC}) amount instead`,
+        )
+      })
+    })
   })
 
   describe('WETH / MUSD (same decimals, 18)', () => {
