@@ -171,7 +171,7 @@ describe('PriceRange', () => {
       const range = PriceRange.new(prices)
       const result = range.computeMaxAllocation(maxReservesUsdcWeth())
 
-      expect(result.reserve0.reserve).toBe(999999999999n)
+      expect(result.reserve0.reserve).toBe(1000000000000n)
       expect(result.reserve1.reserve).toBe(330119361793825978647n)
     })
 
@@ -185,7 +185,7 @@ describe('PriceRange', () => {
       const range = PriceRange.new(prices)
       const result = range.computeMaxAllocation(maxReservesUsdcWeth())
 
-      expect(result.reserve0.reserve).toBe(999999999999n)
+      expect(result.reserve0.reserve).toBe(1000000000000n)
       expect(result.reserve1.reserve).toBe(330119361793827708014n)
     })
   })
@@ -204,7 +204,7 @@ describe('PriceRange', () => {
         TokenReserve.new({ token: USDC, reserve: fixedUsdc }),
       )
 
-      expect(result.reserve0.reserve).toBe(999999999999n)
+      expect(result.reserve0.reserve).toBe(1000000000000n)
       expect(result.reserve1.reserve).toBe(330119361793825978647n)
     })
 
@@ -256,7 +256,7 @@ describe('PriceRange', () => {
         reserveB: TokenReserve.new({ token: WETH, reserve: maxWeth }),
       })
 
-      expect(result.reserve0.reserve).toBe(330119361793825980083n)
+      expect(result.reserve0.reserve).toBe(330119361793826001957n)
       expect(result.reserve1.reserve).toBe(999999999999999999999998n)
     })
 
@@ -274,7 +274,7 @@ describe('PriceRange', () => {
         reserveB: TokenReserve.new({ token: MUSD, reserve: maxMUSD }),
       })
 
-      expect(result.reserve0.reserve).toBe(330119361793827709443n)
+      expect(result.reserve0.reserve).toBe(330119361793827896384n)
       expect(result.reserve1.reserve).toBe(999999999999999999999998n)
     })
 
@@ -292,7 +292,7 @@ describe('PriceRange', () => {
         TokenReserve.new({ token: MUSD, reserve: fixedMUSD }),
       )
 
-      expect(result.reserve0.reserve).toBe(33011936179382598008n)
+      expect(result.reserve0.reserve).toBe(33011936179382600195n)
       expect(result.reserve1.reserve).toBe(99999999999999999999998n)
     })
 
@@ -310,7 +310,7 @@ describe('PriceRange', () => {
         TokenReserve.new({ token: WETH, reserve: fixedWeth }),
       )
 
-      expect(result.reserve0.reserve).toBe(9999999999999999999n)
+      expect(result.reserve0.reserve).toBe(10000000000000000662n)
       expect(result.reserve1.reserve).toBe(30292073587145241674914n)
     })
   })
@@ -480,7 +480,7 @@ describe('PriceRange', () => {
           reserveB: allocation.reserve1,
         })
 
-        expect(recovered.spotPrice.toSqrt()).toBe(20000000000001729646634n)
+        expect(recovered.spotPrice.toSqrt()).toBe(20000000000000554582453n)
       })
 
       it('should match concentrate-liquidity-math given scaled bounds (quote token1)', () => {
@@ -506,7 +506,7 @@ describe('PriceRange', () => {
           reserveB: allocation.reserve1,
         })
 
-        expect(recovered.spotPrice.toSqrt()).toBe(20000000000001728634703n)
+        expect(recovered.spotPrice.toSqrt()).toBe(20000000000000553329586n)
       })
     })
   })

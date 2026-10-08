@@ -17,7 +17,9 @@ const ONE = 10n ** 18n
  * @param sqrtPspot sqrt(P_spot) in 1e18 fixed-point
  * @param sqrtPmin sqrt(P_min) in 1e18 fixed-point
  * @param sqrtPmax sqrt(P_max) in 1e18 fixed-point
- * @returns { targetL, actualLt, actualGt } max L and amounts actually needed (<= available)
+ * @returns { targetL, actualLt, actualGt } max L and amounts actually needed (<= available,
+ * up to a few wei of integer rounding — the limiting token can round marginally above its
+ * available amount, exactly as the deployed contract's helper does)
  */
 export function computeLiquidityFromAmounts(
   availableLt: bigint,
@@ -46,10 +48,16 @@ export function computeLiquidityFromAmounts(
 
 /**
  * Compute the initial balances for given L, P_spot, P_min, P_max:
- *   bLt = L * (sqrtPmax - sqrtPspot) / (sqrtPmax * sqrtPspot / ONE)
+ *   bLt = L * (1/sqrtPspot - 1/sqrtPmax)
  *   bGt = L * (sqrtPspot - sqrtPmin)
  *
  * Mirrors XYCConcentrateArgsBuilder.computeBalances in XYCConcentrate.sol.
+ *
+ * The bLt leg is computed on reciprocal sqrt prices (invSqrtP = ONE * ONE / sqrtP).
+ * The algebraically equivalent product form L * (sqrtPmax - sqrtPspot) / (sqrtPmax * sqrtPspot / ONE)
+ * is NOT used: its floored denominator loses relative precision as sqrtPmax * sqrtPspot approaches
+ * ONE (cheap tokenLt, e.g. an 18-decimal token0 priced at ~1e-6 of a 6-decimal token1), overstating
+ * bLt manyfold, and collapses to zero below it — a division-by-zero the deployed contract does not have.
  *
  * @param targetL Liquidity L (1e18 scale implied by ONE)
  * @param sqrtPspot sqrt(P_spot) in 1e18 fixed-point
@@ -67,10 +75,12 @@ export function computeBalances(
     throw new Error('sqrtPmax should be greater than sqrtPmin')
   }
 
-  const bLt =
-    sqrtPmax > sqrtPspot
-      ? mulDiv(targetL, sqrtPmax - sqrtPspot, mulDiv(sqrtPmax, sqrtPspot, ONE))
-      : 0n
+  const invSqrtPspot = mulDiv(ONE, ONE, sqrtPspot)
+  const invSqrtPmax = mulDiv(ONE, ONE, sqrtPmax)
+
+  // Boundary: if sqrtPspot >= sqrtPmax, bLt = 0 (floored reciprocals decide, as on-chain)
+  const bLt = invSqrtPspot > invSqrtPmax ? mulDiv(targetL, invSqrtPspot - invSqrtPmax, ONE) : 0n
+  // Boundary: if sqrtPspot <= sqrtPmin, bGt = 0
   const bGt = sqrtPspot > sqrtPmin ? mulDiv(targetL, sqrtPspot - sqrtPmin, ONE) : 0n
 
   return { bLt, bGt }
