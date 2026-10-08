@@ -1,8 +1,17 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-import { add0x, BN, BytesBuilder, BytesIter, trim0x } from '@1inch/byte-utils'
+import {
+  add0x,
+  BN,
+  BytesBuilder,
+  BytesIter,
+  trim0x,
+  UINT_256_MAX,
+  UINT_40_MAX,
+} from '@1inch/byte-utils'
 import type { DataFor } from '@1inch/sdk-core'
 import { Address, HexString } from '@1inch/sdk-core'
+import assert from 'assert'
 
 /**
  * TakerTraits encodes taker-specific parameters and flags for swap execution.
@@ -63,7 +72,7 @@ export class TakerTraits {
     public readonly useTransferFromAndAquaPush: boolean,
     /**
      * Minimum output amount (for exactIn) or maximum input amount (for exactOut).
-     * Set to 0n for no threshold.
+     * Must fit in uint256. Set to 0n for no threshold.
      */
     public readonly threshold: bigint = 0n,
     /**
@@ -109,7 +118,9 @@ export class TakerTraits {
      * Can be empty when using Aqua authentication.
      */
     public readonly signature: HexString = HexString.EMPTY,
-  ) {}
+  ) {
+    TakerTraits.assertValueRanges({ threshold, deadline })
+  }
 
   /**
    * Creates a new TakerTraits instance with the specified data.
@@ -250,10 +261,36 @@ export class TakerTraits {
   }
 
   /**
+   * The contract reads the threshold only from an exactly 32-byte section and the
+   * deadline only from an exactly 5-byte section (uint40), so values outside these
+   * ranges cannot be encoded without changing their on-chain meaning.
+   * Fields that are not provided are skipped.
+   */
+  private static assertValueRanges(
+    data: Partial<Pick<DataFor<TakerTraits>, 'threshold' | 'deadline'>>,
+  ): void {
+    if (data.threshold !== undefined) {
+      assert(
+        data.threshold >= 0n && data.threshold <= UINT_256_MAX,
+        `Invalid threshold: ${data.threshold}. Must be >= 0 and <= UINT_256_MAX`,
+      )
+    }
+
+    if (data.deadline !== undefined) {
+      assert(
+        data.deadline >= 0n && data.deadline <= UINT_40_MAX,
+        `Invalid deadline: ${data.deadline}. Must be >= 0 and <= UINT_40_MAX`,
+      )
+    }
+  }
+
+  /**
    * Creates a new instance with updated fields.
    * Useful for creating modified versions of existing TakerTraits.
+   * @throws Error if `threshold` or `deadline` is out of range; the instance is left unchanged
    */
   public with(data: Partial<DataFor<TakerTraits>>): this {
+    TakerTraits.assertValueRanges(data)
     Object.assign(this, data)
 
     return this

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
+import { UINT_256_MAX, UINT_40_MAX } from '@1inch/byte-utils'
 import { Address, HexString } from '@1inch/sdk-core'
 import { TakerTraits } from './taker-traits'
 
@@ -196,6 +197,120 @@ describe('TakerTraits', () => {
 
       expect(decoded.deadline).toBe(deadline)
       expect(decoded.exactIn).toBe(true)
+    })
+  })
+
+  describe('value ranges', () => {
+    const sectionEnds = (encoded: HexString): number[] =>
+      Array.from({ length: 10 }, (_, i) =>
+        Number(encoded.sliceBytes(i * 2, i * 2 + 2).toBigInt()),
+      ).reverse()
+
+    const construct = (threshold: bigint, deadline: bigint): TakerTraits =>
+      new TakerTraits(
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        threshold,
+        Address.ZERO_ADDRESS,
+        deadline,
+      )
+
+    it('should encode the max threshold as a 32-byte section that round-trips', () => {
+      const encoded = TakerTraits.new({ threshold: UINT_256_MAX }).encode()
+
+      expect(encoded.toString()).toBe(
+        '0x00200020002000200020002000200020002000200041' + 'ff'.repeat(32),
+      )
+      expect(sectionEnds(encoded)[0]).toBe(32)
+
+      const decoded = TakerTraits.decode(encoded)
+      expect(decoded.threshold).toBe(UINT_256_MAX)
+      expect(decoded.encode().toString()).toBe(encoded.toString())
+    })
+
+    it('should encode the max deadline as a 5-byte section that round-trips', () => {
+      const encoded = TakerTraits.new({ deadline: UINT_40_MAX }).encode()
+
+      expect(encoded.toString()).toBe(
+        '0x00050005000500050005000500050005000000000041' + 'ff'.repeat(5),
+      )
+      const [thresholdEnd, toEnd, deadlineEnd] = sectionEnds(encoded)
+      expect(thresholdEnd).toBe(0)
+      expect(deadlineEnd - toEnd).toBe(5)
+
+      const decoded = TakerTraits.decode(encoded)
+      expect(decoded.deadline).toBe(UINT_40_MAX)
+      expect(decoded.encode().toString()).toBe(encoded.toString())
+    })
+
+    it('should match TakerTraitsLib.build output for max threshold and deadline', () => {
+      const encoded = TakerTraits.new({ threshold: UINT_256_MAX, deadline: UINT_40_MAX }).encode()
+
+      expect(encoded.toString()).toBe(
+        '0x00250025002500250025002500250025002000200041' + 'ff'.repeat(37),
+      )
+
+      const decoded = TakerTraits.decode(encoded)
+      expect(decoded.threshold).toBe(UINT_256_MAX)
+      expect(decoded.deadline).toBe(UINT_40_MAX)
+    })
+
+    it('should accept boundary values via constructor, new() and with()', () => {
+      for (const [threshold, deadline] of [
+        [0n, 0n],
+        [UINT_256_MAX, UINT_40_MAX],
+      ]) {
+        expect(construct(threshold, deadline).threshold).toBe(threshold)
+        expect(TakerTraits.new({ threshold, deadline }).deadline).toBe(deadline)
+
+        const updated = TakerTraits.default().with({ threshold, deadline })
+        expect(updated.threshold).toBe(threshold)
+        expect(updated.deadline).toBe(deadline)
+      }
+    })
+
+    it.each([
+      { label: '-1', threshold: -1n },
+      { label: 'UINT_256_MAX + 1', threshold: UINT_256_MAX + 1n },
+      { label: '2^264 - 1', threshold: 2n ** 264n - 1n },
+    ])('should reject threshold $label via constructor, new() and with()', ({ threshold }) => {
+      const message = `Invalid threshold: ${threshold}. Must be >= 0 and <= UINT_256_MAX`
+
+      expect(() => construct(threshold, 0n)).toThrow(message)
+      expect(() => TakerTraits.new({ threshold })).toThrow(message)
+      expect(() => TakerTraits.default().with({ threshold })).toThrow(message)
+    })
+
+    it.each([
+      { label: '-1', deadline: -1n },
+      { label: 'UINT_40_MAX + 1', deadline: UINT_40_MAX + 1n },
+      { label: '2^44', deadline: 2n ** 44n },
+    ])('should reject deadline $label via constructor, new() and with()', ({ deadline }) => {
+      const message = `Invalid deadline: ${deadline}. Must be >= 0 and <= UINT_40_MAX`
+
+      expect(() => construct(0n, deadline)).toThrow(message)
+      expect(() => TakerTraits.new({ deadline })).toThrow(message)
+      expect(() => TakerTraits.default().with({ deadline })).toThrow(message)
+    })
+
+    it('should leave the instance unchanged when with() rejects a value', () => {
+      const traits = TakerTraits.new({ threshold: 1000n, deadline: 1735689600n })
+      const encoded = traits.encode().toString()
+
+      expect(() => traits.with({ exactIn: false, threshold: -1n })).toThrow('Invalid threshold')
+      expect(() => traits.with({ exactIn: false, deadline: UINT_40_MAX + 1n })).toThrow(
+        'Invalid deadline',
+      )
+
+      expect(traits.exactIn).toBe(true)
+      expect(traits.threshold).toBe(1000n)
+      expect(traits.deadline).toBe(1735689600n)
+      expect(traits.encode().toString()).toBe(encoded)
     })
   })
 
