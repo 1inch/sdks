@@ -46,6 +46,19 @@ describe('concentrate-liquidity-math', () => {
       expect(liquidity).toBe(2048750744047355406501n)
       expect(sqrtPriceSpot).toBe(998810232426052786n)
     })
+
+    it('should round the discriminant square root down like Math.sqrt in the contract', () => {
+      // disc = 80000001^2 - 1, whose floating-point square root rounds up to 80000001
+      const { liquidity, sqrtPriceSpot } = computeLiquidityAndPrice(
+        40000000n,
+        2n,
+        2n * ONE_E18,
+        4n * ONE_E18,
+      )
+
+      expect(liquidity).toBe(160000000n)
+      expect(sqrtPriceSpot).toBe(2000000006249999990n)
+    })
   })
 
   describe('computeBalances', () => {
