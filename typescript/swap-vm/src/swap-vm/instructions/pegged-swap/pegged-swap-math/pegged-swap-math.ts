@@ -2,6 +2,7 @@
 
 import assert from 'assert'
 import { bigintSqrt } from '../../utils'
+import { mulDiv } from '../../utils/mul-div'
 
 /** Matches `PeggedSwapMath.ONE` in swap-vm. */
 export const PEGGED_SWAP_ONE: bigint = 10n ** 27n
@@ -119,12 +120,4 @@ function scaledFractionToSymmetricRangePercent(scaledFraction: bigint): number {
     Number(mulDiv(scaledFraction, 100n * PERCENT_PRECISION, PEGGED_SWAP_ONE)) /
     PERCENT_PRECISION_NUMBER
   )
-}
-
-function mulDiv(a: bigint, b: bigint, c: bigint): bigint {
-  if (c === 0n) {
-    throw new Error('mulDiv: division by zero')
-  }
-
-  return (a * b) / c
 }

@@ -2,6 +2,7 @@
 
 import { UINT_256_MAX } from '@1inch/byte-utils'
 import { bigintSqrt } from '../../utils/bigint-sqrt'
+import { mulDiv } from '../../utils/mul-div'
 
 const ONE = 10n ** 18n
 
@@ -164,12 +165,4 @@ function computeL(bLt: bigint, bGt: bigint, sqrtPriceMin: bigint, sqrtPriceMax: 
   const disc = beta * beta + fourAC
 
   return mulDiv(beta + bigintSqrt(disc), ONE, 2n * alpha)
-}
-
-function mulDiv(a: bigint, b: bigint, c: bigint): bigint {
-  if (c === 0n) {
-    throw new Error('mulDiv: division by zero')
-  }
-
-  return (a * b) / c
 }
