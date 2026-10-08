@@ -70,5 +70,17 @@ describe('AquaPeggedAmmStrategy', () => {
 
       expect(opcodes).not.toContain(controls.salt.id)
     })
+
+    it('should add a random salt unique per strategy', () => {
+      const first = AquaPeggedAmmStrategy.new(params).withRandomSalt()
+      const second = AquaPeggedAmmStrategy.new(params).withRandomSalt()
+      const ixs = AquaProgramBuilder.decode(first.build()).getInstructions()
+      const saltIx = ixs[ixs.length - 1]
+
+      expect(saltIx.opcode.id).toBe(controls.salt.id)
+      expect((saltIx.args as controls.SaltArgs).salt).toBe(first.salt)
+      expect(first.salt).not.toBe(second.salt)
+      expect(first.build().toString()).not.toBe(second.build().toString())
+    })
   })
 })

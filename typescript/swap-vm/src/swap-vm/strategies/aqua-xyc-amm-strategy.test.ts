@@ -96,6 +96,22 @@ describe('AquaXYCAMMStrategy', () => {
       expect(opcodes).not.toContain(controls.salt.id)
     })
 
+    it('should add a random salt', () => {
+      const strategy = AquaXYCAmmStrategy.new().withRandomSalt()
+      const [, saltIx] = AquaProgramBuilder.decode(strategy.build()).getInstructions()
+
+      expect(saltIx.opcode.id).toBe(controls.salt.id)
+      expect((saltIx.args as controls.SaltArgs).salt).toBe(strategy.salt)
+    })
+
+    it('should give strategies with identical parameters different random salts', () => {
+      const first = AquaXYCAmmStrategy.new().withFeeTokenIn(0.03).withRandomSalt()
+      const second = AquaXYCAmmStrategy.new().withFeeTokenIn(0.03).withRandomSalt()
+
+      expect(first.salt).not.toBe(second.salt)
+      expect(first.build().toString()).not.toBe(second.build().toString())
+    })
+
     it('should handle token ordering for concentrate', () => {
       const program1 = AquaXYCAmmStrategy.newConcentrate({
         sqrtPriceMin: 100000n,
