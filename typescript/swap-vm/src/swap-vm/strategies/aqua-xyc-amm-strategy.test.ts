@@ -4,6 +4,7 @@ import { describe, it, expect } from 'vitest'
 import { Address } from '@1inch/sdk-core'
 import { AquaXYCAmmStrategy } from './aqua-xyc-amm-strategy'
 import { AquaProgramBuilder } from '../programs/aqua-program-builder'
+import * as controls from '../instructions/controls'
 
 describe('AquaXYCAMMStrategy', () => {
   describe('buildProgram', () => {
@@ -70,12 +71,29 @@ describe('AquaXYCAMMStrategy', () => {
       expect(rebuilt.toString()).toBe(program.toString())
     })
 
-    it('should add salt when non-zero', () => {
+    it('should add salt when set', () => {
       const program = AquaXYCAmmStrategy.new().withSalt(12345n).build()
 
       const decoded = AquaProgramBuilder.decode(program)
       const rebuilt = decoded.build()
       expect(rebuilt.toString()).toBe(program.toString())
+      expect(program.toString()).toBe('0x1100' + '1408' + '0000000000003039')
+    })
+
+    it('should add salt when set to zero', () => {
+      const program = AquaXYCAmmStrategy.new().withSalt(0n).build()
+
+      expect(program.toString()).toBe('0x1100' + '1408' + '0000000000000000')
+      expect(program.toString()).not.toBe(AquaXYCAmmStrategy.new().build().toString())
+    })
+
+    it('should not add salt when not set', () => {
+      const program = AquaXYCAmmStrategy.new().withFeeTokenIn(0.03).build()
+      const opcodes = AquaProgramBuilder.decode(program)
+        .getInstructions()
+        .map((ix) => ix.opcode.id)
+
+      expect(opcodes).not.toContain(controls.salt.id)
     })
 
     it('should handle token ordering for concentrate', () => {
