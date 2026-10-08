@@ -333,37 +333,81 @@ export class TakerTraits {
   }
 
   /**
-   * Validates the swap amounts against the threshold settings.
+   * Validates the swap amounts against these traits with the same checks, in the same
+   * order, as the contract's `TakerTraitsLib.validate`:
+   * 1. `amountOut` must be greater than zero
+   * 2. if a deadline is set, the timestamp must not be past it
+   * 3. `takerAmount` must equal `amountIn` (exactIn) or `amountOut` (exactOut)
+   * 4. if a threshold is set, it must be matched exactly (`strictThreshold`), or else be
+   *    the minimum `amountOut` (exactIn) or the maximum `amountIn` (exactOut)
+   *
    * @param amountIn - The input amount of the swap
    * @param amountOut - The output amount of the swap
-   * @throws Error if the amounts don't meet the threshold requirements
+   * @param options.takerAmount - The `amount` passed to `swap`/`quote`.
+   * Check 3 is skipped when it is omitted.
+   * @param options.timestamp - Unix time in seconds to check the deadline against.
+   * Defaults to the current time.
+   * @throws Error whose message starts with the name of the error the contract reverts with,
+   * e.g. `TakerTraitsInsufficientMinOutputAmount: amountOut 999 < threshold 1000`
    */
-  validate(amountIn: bigint, amountOut: bigint): void {
-    if (this.threshold === 0n) return
+  validate(
+    amountIn: bigint,
+    amountOut: bigint,
+    options: { takerAmount?: bigint; timestamp?: bigint } = {},
+  ): void {
+    if (amountOut <= 0n) {
+      throw new Error(`TakerTraitsAmountOutMustBeGreaterThanZero: amountOut ${amountOut}`)
+    }
 
-    const threshold = this.threshold
+    if (this.deadline > 0n) {
+      const timestamp = options.timestamp ?? BigInt(Math.floor(Date.now() / 1000))
 
-    if (this.strictThreshold) {
-      const actual = this.exactIn ? amountOut : amountIn
-
-      if (actual !== threshold) {
+      if (timestamp > this.deadline) {
         throw new Error(
-          `TakerTraitsNonExactThresholdAmount: ${this.exactIn ? 'amountOut' : 'amountIn'} ${actual} != threshold ${threshold}`,
+          `TakerTraitsDeadlineExpired: timestamp ${timestamp} > deadline ${this.deadline}`,
+        )
+      }
+    }
+
+    const { takerAmount } = options
+    const threshold = this.threshold
+    const hasThreshold = threshold > 0n
+
+    if (this.exactIn) {
+      if (takerAmount !== undefined && takerAmount !== amountIn) {
+        throw new Error(
+          `TakerTraitsTakerAmountInMismatch: takerAmount ${takerAmount} != amountIn ${amountIn}`,
+        )
+      }
+
+      if (hasThreshold && this.strictThreshold && amountOut !== threshold) {
+        throw new Error(
+          `TakerTraitsNonExactThresholdAmountOut: amountOut ${amountOut} != threshold ${threshold}`,
+        )
+      }
+
+      if (hasThreshold && !this.strictThreshold && amountOut < threshold) {
+        throw new Error(
+          `TakerTraitsInsufficientMinOutputAmount: amountOut ${amountOut} < threshold ${threshold}`,
         )
       }
     } else {
-      if (this.exactIn) {
-        if (amountOut < threshold) {
-          throw new Error(
-            `TakerTraitsInsufficientMinOutputAmount: amountOut ${amountOut} < threshold ${threshold}`,
-          )
-        }
-      } else {
-        if (amountIn > threshold) {
-          throw new Error(
-            `TakerTraitsExceedingMaxInputAmount: amountIn ${amountIn} > threshold ${threshold}`,
-          )
-        }
+      if (takerAmount !== undefined && takerAmount !== amountOut) {
+        throw new Error(
+          `TakerTraitsTakerAmountOutMismatch: takerAmount ${takerAmount} != amountOut ${amountOut}`,
+        )
+      }
+
+      if (hasThreshold && this.strictThreshold && amountIn !== threshold) {
+        throw new Error(
+          `TakerTraitsNonExactThresholdAmountIn: amountIn ${amountIn} != threshold ${threshold}`,
+        )
+      }
+
+      if (hasThreshold && !this.strictThreshold && amountIn > threshold) {
+        throw new Error(
+          `TakerTraitsExceedingMaxInputAmount: amountIn ${amountIn} > threshold ${threshold}`,
+        )
       }
     }
   }
