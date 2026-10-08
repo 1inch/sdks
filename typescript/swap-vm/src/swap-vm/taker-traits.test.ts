@@ -347,7 +347,7 @@ describe('TakerTraits', () => {
       }
     })
 
-    it.each([1, 31, 33, 64])('should decode a threshold section of %i bytes as absent', (size) => {
+    it.each([1, 31, 33, 64])('should decode a threshold section of length %i as absent', (size) => {
       const decoded = TakerTraits.decode(pack(['ff'.repeat(size), '', '', '1234']))
 
       expect(decoded.threshold).toBe(0n)
@@ -355,7 +355,7 @@ describe('TakerTraits', () => {
     })
 
     it.each([1, 19, 21, 32])(
-      'should decode a receiver section of %i bytes as the taker',
+      'should decode a receiver section of length %i as the taker',
       (size) => {
         const decoded = TakerTraits.decode(pack(['', '11'.repeat(size), '', '1234']))
 
@@ -364,7 +364,7 @@ describe('TakerTraits', () => {
       },
     )
 
-    it.each([1, 4, 6, 8])('should decode a deadline section of %i bytes as absent', (size) => {
+    it.each([1, 4, 6, 8])('should decode a deadline section of length %i as absent', (size) => {
       const decoded = TakerTraits.decode(pack(['', '', 'ff'.repeat(size), '1234']))
 
       expect(decoded.deadline).toBe(0n)
