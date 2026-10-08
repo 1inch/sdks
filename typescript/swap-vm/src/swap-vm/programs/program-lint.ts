@@ -11,7 +11,7 @@ export type ProgramLintWarningCode =
   | 'unreachable-instruction'
 
 /**
- * Control-flow issue reported by `ProgramBuilder.lint()`
+ * Control-flow warning returned by `ProgramBuilder.lint()`
  **/
 export type ProgramLintWarning = {
   code: ProgramLintWarningCode

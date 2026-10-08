@@ -48,11 +48,11 @@ describe.each<[string, () => Builder]>([
     createBuilder().jumpIfTokenIn(jumpIfToken(0n)).build().bytesCount(),
   )
 
-  it('should report nothing for an empty program', () => {
+  it('should return no warnings for an empty program', () => {
     expect(createBuilder().lint()).toEqual([])
   })
 
-  it('should report nothing for a program without jumps', () => {
+  it('should return no warnings for a program without jumps', () => {
     const builder = createBuilder()
       .deadline({ deadline: 1735689600n })
       .flatFeeAmountInXD({ fee: 1000n })
@@ -73,7 +73,7 @@ describe.each<[string, () => Builder]>([
     expect(builder.lint()).toEqual([])
   })
 
-  it('should report instructions skipped by an unconditional jump', () => {
+  it('should flag instructions skipped by an unconditional jump', () => {
     const target = JUMP_SIZE + FEE_SIZE + JUMP_SIZE
     const builder = createBuilder()
       .jump({ nextPC: target })
@@ -100,7 +100,7 @@ describe.each<[string, () => Builder]>([
     expect(trailing.lint()).toEqual([])
   })
 
-  it('should report instructions after an unconditional jump to the program end', () => {
+  it('should flag instructions after an unconditional jump to the program end', () => {
     const builder = createBuilder()
       .jump({ nextPC: JUMP_SIZE + FEE_SIZE + SWAP_SIZE })
       .flatFeeAmountInXD({ fee: 1000n })
@@ -112,13 +112,13 @@ describe.each<[string, () => Builder]>([
     ])
   })
 
-  it('should report a backward jump that loops', () => {
+  it('should flag a backward jump that loops', () => {
     const builder = createBuilder().xycSwapXD().jump({ nextPC: 0n })
 
     expect(builder.lint()).toMatchObject([{ code: 'backward-jump', instructionIndex: 1 }])
   })
 
-  it('should report a jump to itself and the instructions after it', () => {
+  it('should flag a jump to itself and the instructions after it', () => {
     const builder = createBuilder().jump({ nextPC: 0n }).xycSwapXD()
 
     expect(builder.lint()).toMatchObject([
@@ -127,7 +127,7 @@ describe.each<[string, () => Builder]>([
     ])
   })
 
-  it('should report a backward conditional jump', () => {
+  it('should flag a backward conditional jump', () => {
     const builder = createBuilder()
       .xycSwapXD()
       .jumpIfTokenIn(jumpIfToken(0n))
@@ -136,7 +136,7 @@ describe.each<[string, () => Builder]>([
     expect(builder.lint()).toMatchObject([{ code: 'backward-jump', instructionIndex: 1 }])
   })
 
-  it('should report a jump past the program end and the instructions it skips', () => {
+  it('should flag a jump past the program end and the instructions it skips', () => {
     const builder = createBuilder()
       .jump({ nextPC: 100n })
       .flatFeeAmountInXD({ fee: 1000n })
@@ -232,7 +232,7 @@ describe.each<[string, () => Builder]>([
     }
   })
 
-  it('should keep reporting jumps but skip reachability for programs with an extruction', () => {
+  it('should still flag jumps but skip reachability for programs with an extruction', () => {
     const extructionIx = extruction.extruction.createIx(
       new extruction.ExtructionArgs(RECEIVER, new HexString('0x1234')),
     )
@@ -289,7 +289,7 @@ describe('ProgramBuilder.lint', () => {
         .withFeeTokenIn(1)
         .build(),
     ],
-  ])('should report nothing for decoded %s programs', (_, program) => {
+  ])('should return no warnings for decoded %s programs', (_, program) => {
     expect(AquaProgramBuilder.decode(program).lint()).toEqual([])
   })
 

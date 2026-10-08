@@ -68,7 +68,7 @@ export class ProgramBuilder {
   }
 
   /**
-   * Reports control-flow issues of the program as warnings, without throwing.
+   * Lints the control flow of the program and returns the issues as warnings, without throwing.
    *
    * Builders do not validate control flow: on-chain execution is bounded only by gas, and making
    * a program terminate is up to the maker. Offsets are computed exactly as {@link build} lays out
@@ -79,7 +79,7 @@ export class ProgramBuilder {
    * - `misaligned-jump-target` - the target is neither an instruction start nor the program end
    *   (targets past the end included)
    * - `unreachable-instruction` - no execution path from offset 0 reaches the instruction, with
-   *   conditional jumps followed both ways; not reported for programs containing `extruction`,
+   *   conditional jumps followed both ways; skipped for programs containing `extruction`,
    *   which can continue at any offset
    *
    * To lint an existing program, decode it first, e.g. `AquaProgramBuilder.decode(program).lint()`
