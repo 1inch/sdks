@@ -560,6 +560,31 @@ describe('ProgramBuilder', () => {
     expect(extructionArgs.extructionArgs.toString()).toBe(extructionData.toString())
   })
 
+  it('should handle extruction instruction with empty args', () => {
+    const targetContract = new Address('0x1111111111111111111111111111111111111111')
+    const expected = `0x2114${targetContract.toString().slice(2)}`
+
+    const program = new RegularProgramBuilder()
+      .extruction({
+        target: targetContract,
+        extructionArgs: HexString.EMPTY,
+      })
+      .build()
+
+    expect(program.toString()).toBe(expected)
+
+    const decodedBuilder = RegularProgramBuilder.decode(new SwapVmProgram(expected))
+    expect(decodedBuilder.build().toString()).toBe(expected)
+
+    const ixs = decodedBuilder.getInstructions()
+    expect(ixs).toHaveLength(1)
+    expect(ixs[0].opcode.id.toString()).toContain('extruction')
+
+    const extructionArgs = ixs[0].args as extruction.ExtructionArgs
+    expect(extructionArgs.target.equal(targetContract)).toBe(true)
+    expect(extructionArgs.extructionArgs.isEmpty()).toBe(true)
+  })
+
   it('should handle all fee instructions', () => {
     const originalBuilder = new RegularProgramBuilder()
     const feeRecipient = new Address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45')
