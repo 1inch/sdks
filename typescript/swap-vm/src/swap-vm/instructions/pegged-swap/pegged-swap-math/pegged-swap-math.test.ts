@@ -5,6 +5,7 @@ import {
   linearWidthFromSymmetricRangePercent,
   MAX_LINEAR_WIDTH,
   normalizeReserve,
+  peggedSwapMarginalGtPerLt,
   peggedSwapMarginalGtPerLtE18,
   peggedSwapMarginalWeight,
   PEGGED_SWAP_ONE,
@@ -147,5 +148,19 @@ describe('peggedSwapMath', () => {
     )
     expect(offCenter).not.toBe(atCenter)
     expect(offCenter).toBeGreaterThan(atCenter)
+  })
+
+  it('marginal price fraction at center is y0·slope·rateLt / (x0·slope·rateGt)', () => {
+    // 100,000 lt (18 decimals) against 100,492.41 gt (2 decimals): rateLt = 1, rateGt = 1e16
+    const rateGt = 10n ** 16n
+    const x0 = 100_000n * 10n ** 18n
+    const y0 = 10_049_241n * rateGt
+    const slope = PEGGED_SWAP_ONE / 2n + LINEAR_WIDTH
+
+    expect(peggedSwapMarginalGtPerLt(x0, y0, x0, y0, LINEAR_WIDTH, 1n, rateGt)).toEqual({
+      numerator: y0 * slope,
+      denominator: x0 * slope * rateGt,
+    })
+    expect(peggedSwapMarginalGtPerLtE18(x0, y0, x0, y0, LINEAR_WIDTH, 1n, rateGt)).toBe(100n)
   })
 })

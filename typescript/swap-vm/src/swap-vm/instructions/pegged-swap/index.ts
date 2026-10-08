@@ -12,6 +12,7 @@ export { PeggedPrice } from './price'
 export type { PeggedInitialBalances, PeggedSwapCalculatorArgs } from './pegged-swap-calculator'
 export type {
   PeggedPriceJSON,
+  PeggedPriceLegacyJSON,
   PeggedPricePair,
   PeggedReservesInput,
   PeggedTokenRef,

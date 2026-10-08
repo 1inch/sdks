@@ -7,8 +7,8 @@ This calculator only covers the **pre-launch** case where `currentReserve = init
 ## Overview
 
 - **Token ordering**: Lt = lower address, Gt = higher address (same as on-chain `PeggedSwapMath`). `tokenA` / `tokenB` order in the constructor does not matter; use `tokenLt` / `tokenGt` getters if needed.
-- **Price convention**: Use `PeggedPrice` — human string is **quote per 1 base** (same as `Price` in concentrate). Internally the marginal rate is **tokenGt per tokenLt** in 1e18 fixed-point.
-- **At deployment center**: Spot does not depend on `linearWidth`; with equal normalization, `reserveGt ≈ reserveLt × spot` (in raw units, via `toGtPerLtE18()`). `linearWidth` still goes into `PeggedSwapArgs` and affects swaps after launch.
+- **Price convention**: Use `PeggedPrice` — human string is **quote per 1 base** (same as `Price` in concentrate). Internally the price is an exact fraction of **raw tokenGt units per raw tokenLt unit**; only converted amounts and display strings are rounded.
+- **At deployment center**: Spot does not depend on `linearWidth`; with equal normalization, `reserveGt ≈ reserveLt × spot` (in raw units, via `gtForLt()` / `ltForGt()`, rounded down). `linearWidth` still goes into `PeggedSwapArgs` and affects swaps after launch.
 
 ## On-chain curve (context)
 
@@ -107,7 +107,8 @@ The calculator does not compute spot from reserves; use **`PeggedPrice`**:
 |--------|---------|
 | `PeggedPrice.fromHuman(price, pair)` | Parse target quote-per-base (e.g. `'0.998'`, `'1.002'`). |
 | `PeggedPrice.fromReserves({ reserveA, reserveB, linearWidth })` | Marginal spot from initial/current reserves; set `currentReserve = initialReserve` before launch. |
-| `price.toHuman(quoteToken)` | Format for display. |
+| `price.toHuman(quoteToken)` | Format for display (rounded half-up to the quote token decimals). |
+| `price.gtForLt(amountLt)` / `price.ltForGt(amountGt)` | Convert raw amounts at the exact price (rounded down). |
 
 **Verify** allocation (optional):
 
