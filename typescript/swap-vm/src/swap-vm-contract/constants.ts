@@ -39,10 +39,10 @@ export const AQUA_SWAP_VM_CONTRACT_ADDRESSES: Record<NetworkEnum, Address> = {
 
 /**
  * EIP-712 domain `name` and `version` of the AquaSwapVMRouter deployments
- * from {@link AQUA_SWAP_VM_CONTRACT_ADDRESSES}, as reported by their on-chain `eip712Domain()`.
+ * from {@link AQUA_SWAP_VM_CONTRACT_ADDRESSES}, as returned by their on-chain `eip712Domain()`.
  *
  * The `version` is not the same on every chain: the Monad, Cronos, HyperEVM and Arc
- * deployments report `1.0`, all others report `1.0.2`.
+ * deployments use `1.0`, all others use `1.0.2`.
  *
  * @see getAquaSwapVmEip712Domain for the complete domain expected by `Order.hash()`
  */
