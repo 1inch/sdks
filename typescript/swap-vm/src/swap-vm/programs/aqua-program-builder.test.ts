@@ -47,4 +47,8 @@ describe('AquaProgramBuilder', () => {
     expect(decoded.build().toString()).toBe(program.toString())
     expect(decoded.getInstructions()).toHaveLength(18)
   })
+
+  it('should reject building an empty program', () => {
+    expect(() => new AquaProgramBuilder().build()).toThrow('Cannot build an empty program')
+  })
 })

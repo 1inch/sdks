@@ -71,6 +71,12 @@ export class MakerTraits {
      * If true, the order accepts `amountIn = 0`. This is useful for flows
      * where the effective input is determined by hooks or Aqua rather than the
      * taker-supplied amount.
+     *
+     * WARNING: in exact-out swaps the program computes the taker's payment
+     * (`amountIn`). If any execution path ends without computing it (e.g. a jump
+     * to the program end, or no swap instruction on that path), the taker
+     * receives the requested `amountOut` without paying when this flag is set.
+     * Only enable it when hooks or an `extruction` enforce the payment.
      */
     public readonly allowZeroAmountIn: boolean,
     /**

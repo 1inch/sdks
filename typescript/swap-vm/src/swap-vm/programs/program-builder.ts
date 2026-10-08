@@ -43,8 +43,17 @@ export class ProgramBuilder {
 
   /**
    * Builds the SwapVM program bytecode from accumulated instructions
+   *
+   * @throws if no instructions were added: SwapVM reverts every swap and quote of an
+   *         empty program (`RunLoopExcessiveCall`)
    **/
   public build(): SwapVmProgram {
+    if (!this.program.length) {
+      throw new Error(
+        'Cannot build an empty program: SwapVM reverts on programs without instructions (RunLoopExcessiveCall)',
+      )
+    }
+
     const builder = new BytesBuilder()
 
     for (const ix of this.program) {
