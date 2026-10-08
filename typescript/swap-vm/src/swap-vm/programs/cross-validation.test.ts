@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
-import { Address, AddressHalf } from '@1inch/sdk-core'
+import { Address } from '@1inch/sdk-core'
 import { RegularProgramBuilder } from './regular-program-builder'
 import { AquaProgramBuilder } from './aqua-program-builder'
 import { SwapVmProgram } from '../programs/swap-vm-program'
 import type * as balances from '../instructions/balances'
 import type * as controls from '../instructions/controls'
+import type * as limitSwap from '../instructions/limit-swap'
 
 describe('Cross-validation with Solidity', () => {
   it('should match Solidity test_PartialFillLimitOrder structure', () => {
@@ -23,11 +24,11 @@ describe('Cross-validation with Solidity', () => {
       .staticBalancesXD({
         tokenBalances: [
           {
-            tokenHalf: AddressHalf.fromAddress(tokenA),
+            token: tokenA,
             value: makerBalanceA,
           },
           {
-            tokenHalf: AddressHalf.fromAddress(tokenB),
+            token: tokenB,
             value: makerBalanceB,
           },
         ],
@@ -51,11 +52,36 @@ describe('Cross-validation with Solidity', () => {
 
     const balancesArgs = instructions[0].args as balances.BalancesArgs
     expect(balancesArgs.tokenBalances).toHaveLength(2)
+    expect(balancesArgs.tokenBalances[0].token.toString()).toBe(tokenA.toString())
     expect(balancesArgs.tokenBalances[0].value).toBe(makerBalanceA)
+    expect(balancesArgs.tokenBalances[1].token.toString()).toBe(tokenB.toString())
     expect(balancesArgs.tokenBalances[1].value).toBe(makerBalanceB)
 
     const saltArgs = instructions[3].args as controls.SaltArgs
     expect(saltArgs.salt).toBe(0x1235n)
+  })
+
+  it('should match exact staticBalancesXD and dynamicBalancesXD bytes from BalancesArgsBuilder', () => {
+    const tokenA = new Address('0x1111111111111111111111111111111111111111')
+    const tokenB = new Address('0x2222222222222222222222222222222222222222')
+    const tokenBalances = [
+      { token: tokenA, value: 100n * 10n ** 18n },
+      { token: tokenB, value: 200n * 10n ** 18n },
+    ]
+
+    // BalancesArgsBuilder.build([0x11..11, 0x22..22], [100e18, 200e18]), 106 (0x6a) bytes
+    const BALANCES_ARGS_HEX =
+      '0002' +
+      '11'.repeat(20) +
+      '22'.repeat(20) +
+      '0000000000000000000000000000000000000000000000056bc75e2d63100000' +
+      '00000000000000000000000000000000000000000000000ad78ebc5ac6200000'
+
+    const staticProgram = new RegularProgramBuilder().staticBalancesXD({ tokenBalances }).build()
+    const dynamicProgram = new RegularProgramBuilder().dynamicBalancesXD({ tokenBalances }).build()
+
+    expect(staticProgram.toString()).toBe('0x116a' + BALANCES_ARGS_HEX)
+    expect(dynamicProgram.toString()).toBe('0x126a' + BALANCES_ARGS_HEX)
   })
 
   it('should encode MinRate instruction correctly for Solidity', () => {
@@ -89,11 +115,11 @@ describe('Cross-validation with Solidity', () => {
       .staticBalancesXD({
         tokenBalances: [
           {
-            tokenHalf: AddressHalf.fromAddress(tokenA),
+            token: tokenA,
             value: 1000000n * 10n ** 6n,
           },
           {
-            tokenHalf: AddressHalf.fromAddress(tokenB),
+            token: tokenB,
             value: 500n * 10n ** 18n,
           },
         ],
@@ -120,14 +146,39 @@ describe('Cross-validation with Solidity', () => {
   })
 
   it('should match exact hex from test_LimitSwapWithoutInvalidator_ReusableOrder', () => {
-    // Exact hex from Solidity test
+    // Program of the Solidity test built with the on-chain builders:
+    // staticBalancesXD(BalancesArgsBuilder.build([tokenA, tokenB], [100e18, 200e18]))
+    // limitSwap1D(LimitSwapArgsBuilder.build(tokenB, tokenA))
     const SOLIDITY_HEX =
-      '0x1156000296098f7c7019b51a820aec51e99254cd3fb576a90000000000000000000000000000000000000000000000056bc75e2d6310000000000000000000000000000000000000000000000000000ad78ebc5ac62000001a0101'
+      '0x116a0002f62849f9a0b5bf2913b396098f7c7019b51a820a5991a2df15a8f6a256d3ec51e99254cd3fb576a90000000000000000000000000000000000000000000000056bc75e2d6310000000000000000000000000000000000000000000000000000ad78ebc5ac6200000190101'
+    const tokenA = new Address('0xF62849F9A0B5Bf2913b396098F7c7019b51A820a')
+    const tokenB = new Address('0x5991A2dF15A8F6A256D3Ec51E99254Cd3fb576A9')
 
     const decoded = RegularProgramBuilder.decode(new SwapVmProgram(SOLIDITY_HEX))
     const rebuilt = decoded.build()
 
     expect(rebuilt.toString().toLowerCase()).toBe(SOLIDITY_HEX.toLowerCase())
+
+    const [balancesIx, limitSwapIx] = decoded.getInstructions()
+    expect(balancesIx.opcode.id.toString()).toContain('staticBalancesXD')
+    expect((balancesIx.args as balances.BalancesArgs).tokenBalances).toEqual([
+      { token: tokenA, value: 100n * 10n ** 18n },
+      { token: tokenB, value: 200n * 10n ** 18n },
+    ])
+    expect(limitSwapIx.opcode.id.toString()).toContain('limitSwap1D')
+    expect((limitSwapIx.args as limitSwap.LimitSwapDirectionArgs).makerDirectionLt).toBe(true)
+
+    const built = new RegularProgramBuilder()
+      .staticBalancesXD({
+        tokenBalances: [
+          { token: tokenA, value: 100n * 10n ** 18n },
+          { token: tokenB, value: 200n * 10n ** 18n },
+        ],
+      })
+      .limitSwap1D({ makerDirectionLt: tokenB.lt(tokenA) })
+      .build()
+
+    expect(built.toString()).toBe(SOLIDITY_HEX)
   })
 })
 
@@ -142,11 +193,11 @@ describe('Cross-validation with Concentrate', () => {
       .dynamicBalancesXD({
         tokenBalances: [
           {
-            tokenHalf: AddressHalf.fromAddress(tokenA),
+            token: tokenA,
             value: balanceA,
           },
           {
-            tokenHalf: AddressHalf.fromAddress(tokenB),
+            token: tokenB,
             value: balanceB,
           },
         ],
