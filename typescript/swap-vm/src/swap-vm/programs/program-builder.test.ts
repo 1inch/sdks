@@ -103,6 +103,29 @@ describe('ProgramBuilder', () => {
     expect((ixs[5].args as controls.JumpArgs).nextPC).toBe(20n)
   })
 
+  it('should serialize jump instructions to JSON', () => {
+    const builder = new RegularProgramBuilder()
+      .jump({ nextPC: 20n })
+      .jumpIfTokenIn({ tokenTail: USDC_HALF, nextPC: 30n })
+      .jumpIfTokenOut({ tokenTail: WETH_HALF, nextPC: 40n })
+    const decoded = RegularProgramBuilder.decode(builder.build())
+
+    const json = JSON.stringify(builder.getInstructions())
+
+    expect(JSON.stringify(decoded.getInstructions())).toBe(json)
+    expect(JSON.parse(json)).toEqual([
+      { opcode: 'Symbol(Controls.jump)', args: { nextPC: '20' } },
+      {
+        opcode: 'Symbol(Controls.jumpIfTokenIn)',
+        args: { tokenTail: USDC_HALF.toString(), nextPC: '30' },
+      },
+      {
+        opcode: 'Symbol(Controls.jumpIfTokenOut)',
+        args: { tokenTail: WETH_HALF.toString(), nextPC: '40' },
+      },
+    ])
+  })
+
   it('should combine balances and control instructions', () => {
     const originalBuilder = new RegularProgramBuilder()
 

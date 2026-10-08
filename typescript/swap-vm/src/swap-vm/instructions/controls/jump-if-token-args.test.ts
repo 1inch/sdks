@@ -17,7 +17,7 @@ describe('JumpIfTokenArgs', () => {
     expect(decoded.nextPC).toBe(12n)
     expect(args.toJSON()).toEqual({
       tokenTail: tokenTail.toString(),
-      nextPC: 12n,
+      nextPC: '12',
     })
   })
 })

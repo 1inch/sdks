@@ -19,7 +19,7 @@ export class JumpIfTokenArgs implements IArgsData {
   toJSON(): Record<string, unknown> {
     return {
       tokenTail: this.tokenTail.toString(),
-      nextPC: this.nextPC,
+      nextPC: this.nextPC.toString(),
     }
   }
 }
