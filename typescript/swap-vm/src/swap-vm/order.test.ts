@@ -77,6 +77,33 @@ describe('Order', () => {
 
       expect(decoded).toEqual(original)
     })
+
+    it('should round-trip hooks with empty data without changing the encoding or hash', () => {
+      const maker = new Address('0x3333333333333333333333333333333333333333')
+      const target = new Address('0x4444444444444444444444444444444444444444')
+
+      const traits = MakerTraits.new({
+        shouldUnwrap: false,
+        useAquaInsteadOfSignature: true,
+        allowZeroAmountIn: false,
+        preTransferInHook: new Interaction(Address.ZERO_ADDRESS, new HexString('0xaaaa')),
+        postTransferInHook: new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+        preTransferOutHook: new Interaction(target, HexString.EMPTY),
+        postTransferOutHook: new Interaction(Address.ZERO_ADDRESS, new HexString('0xdddd')),
+      })
+
+      const original = new Order(maker, traits, createProgram('0x1100'))
+      const encoded = original.encode()
+      const decoded = Order.decode(encoded)
+
+      expect(decoded).toEqual(original)
+      expect(decoded.build().data).toBe('0xaaaa4444444444444444444444444444444444444444dddd1100')
+      expect(decoded.encode().toString()).toBe(encoded.toString())
+      expect(decoded.hash().toString()).toBe(original.hash().toString())
+      expect(decoded.hash().toString()).toBe(
+        '0xb2a0df79e94ea67a344251b1387fbc98fc3bb635db7dcc0b9876fc2c4aa07985',
+      )
+    })
   })
 
   describe('hash', () => {

@@ -19,4 +19,20 @@ describe('ExtructionArgs', () => {
       extructionArgs: payload.toString(),
     })
   })
+
+  it('should encode empty extruction args as the target only', () => {
+    const encoded = ExtructionArgs.CODER.encode(new ExtructionArgs(target, HexString.EMPTY))
+
+    expect(encoded.toString()).toBe(target.toString())
+  })
+
+  it('should round-trip empty extruction args', () => {
+    const args = new ExtructionArgs(target, HexString.EMPTY)
+    const encoded = ExtructionArgs.CODER.encode(args)
+    const decoded = ExtructionArgs.decode(encoded)
+
+    expect(decoded.target.equal(target)).toBe(true)
+    expect(decoded.extructionArgs.isEmpty()).toBe(true)
+    expect(ExtructionArgs.CODER.encode(decoded).equal(encoded)).toBe(true)
+  })
 })
