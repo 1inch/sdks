@@ -359,56 +359,76 @@ export class TakerTraits {
       throw new Error(`TakerTraitsAmountOutMustBeGreaterThanZero: amountOut ${amountOut}`)
     }
 
-    if (this.deadline > 0n) {
-      const timestamp = options.timestamp ?? BigInt(Math.floor(Date.now() / 1000))
-
-      if (timestamp > this.deadline) {
-        throw new Error(
-          `TakerTraitsDeadlineExpired: timestamp ${timestamp} > deadline ${this.deadline}`,
-        )
-      }
-    }
-
-    const { takerAmount } = options
-    const threshold = this.threshold
-    const hasThreshold = threshold > 0n
+    this.validateDeadline(options.timestamp)
 
     if (this.exactIn) {
-      if (takerAmount !== undefined && takerAmount !== amountIn) {
-        throw new Error(
-          `TakerTraitsTakerAmountInMismatch: takerAmount ${takerAmount} != amountIn ${amountIn}`,
-        )
-      }
-
-      if (hasThreshold && this.strictThreshold && amountOut !== threshold) {
-        throw new Error(
-          `TakerTraitsNonExactThresholdAmountOut: amountOut ${amountOut} != threshold ${threshold}`,
-        )
-      }
-
-      if (hasThreshold && !this.strictThreshold && amountOut < threshold) {
-        throw new Error(
-          `TakerTraitsInsufficientMinOutputAmount: amountOut ${amountOut} < threshold ${threshold}`,
-        )
-      }
+      this.validateExactIn(amountIn, amountOut, options.takerAmount)
     } else {
-      if (takerAmount !== undefined && takerAmount !== amountOut) {
-        throw new Error(
-          `TakerTraitsTakerAmountOutMismatch: takerAmount ${takerAmount} != amountOut ${amountOut}`,
-        )
-      }
+      this.validateExactOut(amountIn, amountOut, options.takerAmount)
+    }
+  }
 
-      if (hasThreshold && this.strictThreshold && amountIn !== threshold) {
-        throw new Error(
-          `TakerTraitsNonExactThresholdAmountIn: amountIn ${amountIn} != threshold ${threshold}`,
-        )
-      }
+  private validateDeadline(timestamp?: bigint): void {
+    if (this.deadline <= 0n) {
+      return
+    }
 
-      if (hasThreshold && !this.strictThreshold && amountIn > threshold) {
-        throw new Error(
-          `TakerTraitsExceedingMaxInputAmount: amountIn ${amountIn} > threshold ${threshold}`,
-        )
-      }
+    const now = timestamp ?? BigInt(Math.floor(Date.now() / 1000))
+
+    if (now > this.deadline) {
+      throw new Error(`TakerTraitsDeadlineExpired: timestamp ${now} > deadline ${this.deadline}`)
+    }
+  }
+
+  private validateExactIn(amountIn: bigint, amountOut: bigint, takerAmount?: bigint): void {
+    if (takerAmount !== undefined && takerAmount !== amountIn) {
+      throw new Error(
+        `TakerTraitsTakerAmountInMismatch: takerAmount ${takerAmount} != amountIn ${amountIn}`,
+      )
+    }
+
+    const { threshold } = this
+
+    if (threshold <= 0n) {
+      return
+    }
+
+    if (this.strictThreshold && amountOut !== threshold) {
+      throw new Error(
+        `TakerTraitsNonExactThresholdAmountOut: amountOut ${amountOut} != threshold ${threshold}`,
+      )
+    }
+
+    if (!this.strictThreshold && amountOut < threshold) {
+      throw new Error(
+        `TakerTraitsInsufficientMinOutputAmount: amountOut ${amountOut} < threshold ${threshold}`,
+      )
+    }
+  }
+
+  private validateExactOut(amountIn: bigint, amountOut: bigint, takerAmount?: bigint): void {
+    if (takerAmount !== undefined && takerAmount !== amountOut) {
+      throw new Error(
+        `TakerTraitsTakerAmountOutMismatch: takerAmount ${takerAmount} != amountOut ${amountOut}`,
+      )
+    }
+
+    const { threshold } = this
+
+    if (threshold <= 0n) {
+      return
+    }
+
+    if (this.strictThreshold && amountIn !== threshold) {
+      throw new Error(
+        `TakerTraitsNonExactThresholdAmountIn: amountIn ${amountIn} != threshold ${threshold}`,
+      )
+    }
+
+    if (!this.strictThreshold && amountIn > threshold) {
+      throw new Error(
+        `TakerTraitsExceedingMaxInputAmount: amountIn ${amountIn} > threshold ${threshold}`,
+      )
     }
   }
 }
