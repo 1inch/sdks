@@ -45,4 +45,27 @@ describe('SaltArgsCoder', () => {
 
     expect(encoded1.toString()).not.toBe(encoded2.toString())
   })
+
+  it('should encode an empty salt as zero-length args', () => {
+    expect(coder.encode(new SaltArgs(HexString.EMPTY)).toString()).toBe('0x')
+  })
+
+  it.each([
+    ['0 bytes', '0x'],
+    ['4 bytes', '0xdeadbeef'],
+    ['8 bytes', '0x0102030405060708'],
+    ['32 bytes', '0x' + '11'.repeat(32)],
+  ])('should decode salt args of %s without truncation', (_name, hex) => {
+    const decoded = coder.decode(new HexString(hex))
+
+    expect(decoded.bytes.toString()).toBe(hex)
+    expect(coder.encode(decoded).toString()).toBe(hex)
+  })
+
+  it('should decode an empty salt as zero', () => {
+    const decoded = coder.decode(HexString.EMPTY)
+
+    expect(decoded.salt).toBe(0n)
+    expect(decoded.bytes.isEmpty()).toBe(true)
+  })
 })

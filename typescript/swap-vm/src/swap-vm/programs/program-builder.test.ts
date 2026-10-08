@@ -697,6 +697,27 @@ describe('ProgramBuilder', () => {
     expect(decoded.getInstructions()[1].opcode.id.toString()).toContain('peggedSwap')
   })
 
+  it.each([
+    ['0 bytes', '0x', '0x2200'],
+    ['4 bytes', '0xdeadbeef', '0x2204deadbeef'],
+    ['8 bytes', '0x0102030405060708', '0x22080102030405060708'],
+    ['32 bytes', '0x' + 'ab'.repeat(32), '0x2220' + 'ab'.repeat(32)],
+  ])('should decode and rebuild a salt of %s byte-identically', (_name, salt, programHex) => {
+    const decoded = RegularProgramBuilder.decode(new SwapVmProgram(programHex))
+    const saltArgs = decoded.getInstructions()[0].args as controls.SaltArgs
+    const built = new RegularProgramBuilder().salt({ salt: new HexString(salt) }).build()
+
+    expect(decoded.build().toString()).toBe(programHex)
+    expect(saltArgs.bytes.toString()).toBe(salt)
+    expect(built.toString()).toBe(programHex)
+  })
+
+  it('should encode a bigint salt as 8 bytes', () => {
+    expect(new RegularProgramBuilder().salt({ salt: 42n }).build().toString()).toBe(
+      '0x2208000000000000002a',
+    )
+  })
+
   it('should reject reserved and unknown opcodes on decode', () => {
     expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x0000'))).toThrow(
       'Invalid opcode: 0',

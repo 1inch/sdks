@@ -5,7 +5,7 @@ import { Address, HexString, Interaction, NetworkEnum } from '@1inch/sdk-core'
 
 import { Order } from './order'
 import { MakerTraits } from './maker-traits'
-import { SwapVmProgram } from './programs'
+import { AquaProgramBuilder, RegularProgramBuilder, SwapVmProgram } from './programs'
 
 function createMaker(): Address {
   return Address.fromBigInt(1n)
@@ -108,6 +108,43 @@ describe('Order', () => {
       expect(hash.toString()).not.toBe(
         new Order(createMaker(), MakerTraits.default(), createProgram('0x01')).hash().toString(),
       )
+    })
+
+    it('should keep the Aqua hash after decode -> build of a program with a 32-byte salt', () => {
+      // xycSwapXD -> salt(32 bytes)
+      const program = createProgram('0x1100' + '1420' + 'ab'.repeat(32))
+      const rebuilt = AquaProgramBuilder.decode(program).build()
+
+      const original = new Order(createMaker(), MakerTraits.default(), program)
+      const restored = new Order(createMaker(), MakerTraits.default(), rebuilt)
+
+      expect(rebuilt.toString()).toBe(program.toString())
+      expect(restored.hash().toString()).toBe(original.hash().toString())
+    })
+
+    it('should keep the EIP-712 hash after decode -> build of a program with a 32-byte salt', () => {
+      const traits = MakerTraits.new({
+        useAquaInsteadOfSignature: false,
+        allowZeroAmountIn: false,
+        shouldUnwrap: false,
+      })
+      const domain = {
+        chainId: NetworkEnum.ETHEREUM,
+        name: '1inch SwapVM v1.0',
+        verifyingContract: new Address('0x111111338c5091e8440b67b168bae16a668ac0de'),
+        version: '1.0.2',
+      }
+      const program = new RegularProgramBuilder()
+        .limitSwap1D({ makerDirectionLt: true })
+        .salt({ salt: new HexString('0x' + 'cd'.repeat(32)) })
+        .build()
+      const rebuilt = RegularProgramBuilder.decode(program).build()
+
+      const original = new Order(createMaker(), traits, program)
+      const restored = new Order(createMaker(), traits, rebuilt)
+
+      expect(rebuilt.toString()).toBe(program.toString())
+      expect(restored.hash(domain).toString()).toBe(original.hash(domain).toString())
     })
   })
 })
