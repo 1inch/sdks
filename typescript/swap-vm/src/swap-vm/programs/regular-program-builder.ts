@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-import type { DataFor } from '@1inch/sdk-core'
+import type { DataFor, HexString } from '@1inch/sdk-core'
 import { ProgramBuilder } from './program-builder'
 import type { SwapVmProgram } from './swap-vm-program'
 import { _allInstructions } from '../instructions'
@@ -148,8 +148,9 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * No-op instruction used to add uniqueness to order hashes (prevents replay attacks)
+   * salt - uint64 value (encoded as 8 bytes) or raw salt bytes of any length (kept verbatim)
    **/
-  public salt(data: DataFor<controls.SaltArgs>): this {
+  public salt(data: { salt: bigint | HexString }): this {
     super.add(controls.salt.createIx(new controls.SaltArgs(data.salt)))
 
     return this
