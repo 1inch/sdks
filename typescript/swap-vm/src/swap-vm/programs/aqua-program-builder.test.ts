@@ -47,4 +47,29 @@ describe('AquaProgramBuilder', () => {
     expect(decoded.build().toString()).toBe(program.toString())
     expect(decoded.getInstructions()).toHaveLength(18)
   })
+
+  it('should serialize jump instructions to JSON', () => {
+    const usdcHalf = AddressHalf.fromAddress(USDC)
+    const wethHalf = AddressHalf.fromAddress(WETH)
+    const builder = new AquaProgramBuilder()
+      .jump({ nextPC: 5n })
+      .jumpIfTokenIn({ tokenTail: usdcHalf, nextPC: 6n })
+      .jumpIfTokenOut({ tokenTail: wethHalf, nextPC: 7n })
+    const decoded = AquaProgramBuilder.decode(builder.build())
+
+    const json = JSON.stringify(builder.getInstructions())
+
+    expect(JSON.stringify(decoded.getInstructions())).toBe(json)
+    expect(JSON.parse(json)).toEqual([
+      { opcode: 'Symbol(Controls.jump)', args: { nextPC: '5' } },
+      {
+        opcode: 'Symbol(Controls.jumpIfTokenIn)',
+        args: { tokenTail: usdcHalf.toString(), nextPC: '6' },
+      },
+      {
+        opcode: 'Symbol(Controls.jumpIfTokenOut)',
+        args: { tokenTail: wethHalf.toString(), nextPC: '7' },
+      },
+    ])
+  })
 })
