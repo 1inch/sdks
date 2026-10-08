@@ -74,19 +74,32 @@ describe('ProtocolFeeArgs', () => {
     )
   })
 
-  it('should reject a zero fee recipient', () => {
-    expect(() => new ProtocolFeeArgs(1000000n, Address.ZERO_ADDRESS)).toThrow(
-      'Invalid fee recipient (to). Must be non zero address',
+  it('should reject a zero fee recipient when the fee is non zero', () => {
+    expect(() => new ProtocolFeeArgs(1n, Address.ZERO_ADDRESS)).toThrow(
+      'Invalid fee recipient (to). Must be non zero address when fee > 0',
     )
-    expect(() => new ProtocolFeeArgs(0n, Address.ZERO_ADDRESS)).toThrow(
-      'Invalid fee recipient (to). Must be non zero address',
+    expect(() => new ProtocolFeeArgs(1000000n, Address.ZERO_ADDRESS)).toThrow(
+      'Invalid fee recipient (to). Must be non zero address when fee > 0',
     )
     expect(() => ProtocolFeeArgs.fromBps(10, Address.ZERO_ADDRESS)).toThrow(
-      'Invalid fee recipient (to). Must be non zero address',
+      'Invalid fee recipient (to). Must be non zero address when fee > 0',
     )
   })
 
-  it('should reject a 100% fee or a zero fee recipient when decoding', () => {
+  it('should accept a zero fee recipient when the fee is zero', () => {
+    const args = new ProtocolFeeArgs(0n, Address.ZERO_ADDRESS)
+
+    const encoded = ProtocolFeeArgs.CODER.encode(args)
+    expect(encoded.toString()).toBe('0x00000000' + '00'.repeat(20))
+
+    const decoded = ProtocolFeeArgs.decode(encoded)
+    expect(decoded.fee).toBe(0n)
+    expect(decoded.to.isZero()).toBe(true)
+
+    expect(ProtocolFeeArgs.fromBps(0, Address.ZERO_ADDRESS).fee).toBe(0n)
+  })
+
+  it('should reject a 100% fee or a zero recipient for a non zero fee when decoding', () => {
     const fullFee = new HexString('0x3b9aca00' + '68b3465833fb72a70ecdf485e0e4c7bd8665fc45')
     const zeroRecipient = new HexString('0x00989680' + '00'.repeat(20))
 
@@ -94,7 +107,7 @@ describe('ProtocolFeeArgs', () => {
       'Fee out of range: 1000000000. Must be < 1000000000',
     )
     expect(() => ProtocolFeeArgs.decode(zeroRecipient)).toThrow(
-      'Invalid fee recipient (to). Must be non zero address',
+      'Invalid fee recipient (to). Must be non zero address when fee > 0',
     )
   })
 

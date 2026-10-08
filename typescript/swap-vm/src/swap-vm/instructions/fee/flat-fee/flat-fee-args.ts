@@ -9,7 +9,7 @@ import type { IArgsCoder, IArgsData } from '../../types'
 const FEE_100_PERCENT = 1e9 // 1e9 = 100%
 
 /**
- * Arguments for flat fee instructions (flatFeeAmountInXD)
+ * Arguments for flat fee instructions (flatFeeAmountInXD, flatFeeAmountOutXD)
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L66
  **/
 export class FlatFeeArgs implements IArgsData {

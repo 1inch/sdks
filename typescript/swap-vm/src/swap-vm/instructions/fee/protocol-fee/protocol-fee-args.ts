@@ -17,7 +17,7 @@ export class ProtocolFeeArgs implements IArgsData {
 
   /**
    * fee - 1e9 = 100% (uint32)
-   * to - address to send pulled tokens to (20 bytes)
+   * to - address to send pulled tokens to (20 bytes), may be zero only when fee is 0
    **/
   constructor(
     public readonly fee: bigint,
@@ -25,7 +25,10 @@ export class ProtocolFeeArgs implements IArgsData {
   ) {
     assert(fee >= 0n && fee <= UINT_32_MAX, `Invalid fee: ${fee}. Must be a valid uint32`)
     assert(fee < BigInt(FEE_100_PERCENT), `Fee out of range: ${fee}. Must be < ${FEE_100_PERCENT}`)
-    assert(!to.isZero(), 'Invalid fee recipient (to). Must be non zero address')
+    assert(
+      fee === 0n || !to.isZero(),
+      'Invalid fee recipient (to). Must be non zero address when fee > 0',
+    )
   }
 
   /**

@@ -16,7 +16,7 @@ import type * as minRate from '../instructions/min-rate'
 import type * as dutchAuction from '../instructions/dutch-auction'
 import type * as baseFeeAdjuster from '../instructions/base-fee-adjuster'
 import type * as twapSwap from '../instructions/twap-swap'
-import type * as fee from '../instructions/fee'
+import * as fee from '../instructions/fee'
 import type * as extruction from '../instructions/extruction'
 
 describe('ProgramBuilder', () => {
@@ -639,10 +639,64 @@ describe('ProgramBuilder', () => {
     expect((ixs[7].args as fee.FlatFeeArgs).fee).toBe(35000000n)
 
     expect(ixs[8].opcode.id.toString()).toContain('progressiveFeeInXD')
-    expect((ixs[8].args as fee.FlatFeeArgs).fee).toBe(45000000n)
+    expect(ixs[8].args).toBeInstanceOf(fee.ProgressiveFeeArgs)
+    expect((ixs[8].args as fee.ProgressiveFeeArgs).fee).toBe(45000000n)
 
     expect(ixs[9].opcode.id.toString()).toContain('progressiveFeeOutXD')
-    expect((ixs[9].args as fee.FlatFeeArgs).fee).toBe(55000000n)
+    expect(ixs[9].args).toBeInstanceOf(fee.ProgressiveFeeArgs)
+    expect((ixs[9].args as fee.ProgressiveFeeArgs).fee).toBe(55000000n)
+  })
+
+  it('should accept progressive fees up to 100%', () => {
+    const FEE_100_PERCENT = 1000000000n
+
+    const program = new RegularProgramBuilder()
+      .progressiveFeeInXD({ fee: FEE_100_PERCENT })
+      .progressiveFeeOutXD({ fee: FEE_100_PERCENT })
+      .build()
+
+    // progressiveFeeInXD (0x25) | progressiveFeeOutXD (0x26)
+    expect(program.toString()).toBe('0x25043b9aca00' + '26043b9aca00')
+
+    const decoded = RegularProgramBuilder.decode(program)
+    expect(decoded.build().toString()).toBe(program.toString())
+
+    const ixs = decoded.getInstructions()
+    expect(ixs).toHaveLength(2)
+    expect(ixs[0].opcode.id.toString()).toContain('progressiveFeeInXD')
+    expect(ixs[1].opcode.id.toString()).toContain('progressiveFeeOutXD')
+    ixs.forEach((ix) => {
+      expect(ix.args).toBeInstanceOf(fee.ProgressiveFeeArgs)
+      expect((ix.args as fee.ProgressiveFeeArgs).fee).toBe(FEE_100_PERCENT)
+    })
+
+    expect(() =>
+      new RegularProgramBuilder().progressiveFeeInXD({ fee: FEE_100_PERCENT + 1n }),
+    ).toThrow('Fee out of range: 1000000001. Must be <= 1000000000')
+    expect(() =>
+      new RegularProgramBuilder().progressiveFeeOutXD({ fee: FEE_100_PERCENT + 1n }),
+    ).toThrow('Fee out of range: 1000000001. Must be <= 1000000000')
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x25043b9aca01'))).toThrow(
+      'Fee out of range: 1000000001. Must be <= 1000000000',
+    )
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x26043b9aca01'))).toThrow(
+      'Fee out of range: 1000000001. Must be <= 1000000000',
+    )
+  })
+
+  it('should reject a 100% flat fee in both directions', () => {
+    const FEE_100_PERCENT = 1000000000n
+
+    expect(() => new RegularProgramBuilder().flatFeeAmountInXD({ fee: FEE_100_PERCENT })).toThrow(
+      'Fee out of range: 1000000000. Must be < 1000000000',
+    )
+    expect(() => new RegularProgramBuilder().flatFeeAmountOutXD({ fee: FEE_100_PERCENT })).toThrow(
+      'Fee out of range: 1000000000. Must be < 1000000000',
+    )
+    // flatFeeAmountOutXD (0x24)
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x24043b9aca00'))).toThrow(
+      'Fee out of range: 1000000000. Must be < 1000000000',
+    )
   })
 
   it('should handle complex program with new instructions', () => {
