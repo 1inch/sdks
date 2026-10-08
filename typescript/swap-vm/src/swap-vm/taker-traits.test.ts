@@ -122,9 +122,9 @@ describe('TakerTraits', () => {
       expect(withThreshold.threshold !== undefined && withThreshold.threshold > 0n).toBe(true)
       expect(withThreshold.threshold).toBe(threshold)
 
-      const withoutThreshold = withThreshold.with({ threshold: undefined })
-      expect(!withoutThreshold.threshold || withoutThreshold.threshold === 0n).toBe(true)
-      expect(withoutThreshold.threshold).toBe(undefined)
+      const withoutThreshold = withThreshold.with({ threshold: 0n })
+      expect(withoutThreshold.threshold).toBe(0n)
+      expect(withThreshold.threshold).toBe(threshold)
     })
   })
 
@@ -138,9 +138,127 @@ describe('TakerTraits', () => {
       ).toBe(true)
       expect(withReceiver.customReceiver?.toString()).toBe(mockReceiver.toString())
 
-      const withoutReceiver = withReceiver.with({ customReceiver: undefined })
-      expect(!withoutReceiver.customReceiver || withoutReceiver.customReceiver.isZero()).toBe(true)
-      expect(withoutReceiver.customReceiver).toBe(undefined)
+      const withoutReceiver = withReceiver.with({ customReceiver: Address.ZERO_ADDRESS })
+      expect(withoutReceiver.customReceiver.isZero()).toBe(true)
+      expect(withReceiver.customReceiver.toString()).toBe(mockReceiver.toString())
+    })
+  })
+
+  describe('with', () => {
+    const receiverA = Address.fromBigInt(0xaaaan)
+    const receiverB = Address.fromBigInt(0xbbbbn)
+
+    it('should return a new instance and leave the original unchanged', () => {
+      const base = TakerTraits.new({
+        threshold: 1000n,
+        customReceiver: receiverA,
+        deadline: 1735689600n,
+        instructionsArgs: new HexString('0x0102'),
+      })
+      const baseEncoded = base.encode().toString()
+
+      const derived = base.with({ exactIn: false, customReceiver: receiverB })
+
+      expect(derived).toBeInstanceOf(TakerTraits)
+      expect(derived).not.toBe(base)
+      expect(derived.exactIn).toBe(false)
+      expect(derived.customReceiver.equal(receiverB)).toBe(true)
+      expect(derived.threshold).toBe(1000n)
+      expect(derived.deadline).toBe(1735689600n)
+      expect(derived.instructionsArgs.toString()).toBe('0x0102')
+
+      expect(base.exactIn).toBe(true)
+      expect(base.customReceiver.equal(receiverA)).toBe(true)
+      expect(base.encode().toString()).toBe(baseEncoded)
+    })
+
+    it('should derive independent instances from the same base', () => {
+      const base = TakerTraits.default()
+
+      const toA = base.with({ customReceiver: receiverA })
+      const toB = base.with({ customReceiver: receiverB })
+
+      expect(toA).not.toBe(toB)
+      expect(toA.customReceiver.equal(receiverA)).toBe(true)
+      expect(toB.customReceiver.equal(receiverB)).toBe(true)
+      expect(base.customReceiver.isZero()).toBe(true)
+
+      expect(TakerTraits.decode(toA.encode()).customReceiver.equal(receiverA)).toBe(true)
+      expect(TakerTraits.decode(toB.encode()).customReceiver.equal(receiverB)).toBe(true)
+      expect(base.encode().toString()).toBe(TakerTraits.default().encode().toString())
+    })
+
+    it('should return an equal copy when no fields are updated', () => {
+      const base = TakerTraits.new({ threshold: 5n, signature: new HexString('0xabcd') })
+
+      const copy = base.with({})
+
+      expect(copy).not.toBe(base)
+      expect(copy).toEqual(base)
+      expect(copy.encode().toString()).toBe(base.encode().toString())
+    })
+
+    it('should keep current values for keys set to undefined', () => {
+      const base = TakerTraits.new({
+        exactIn: false,
+        threshold: 1000n,
+        customReceiver: receiverA,
+        deadline: 1735689600n,
+        preTransferInHookData: new HexString('0x1234'),
+        signature: new HexString('0xabcd'),
+      })
+
+      const updated = base.with({
+        exactIn: undefined,
+        threshold: undefined,
+        customReceiver: undefined,
+        deadline: undefined,
+        preTransferInHookData: undefined,
+        signature: undefined,
+        shouldUnwrap: true,
+      })
+
+      expect(updated.exactIn).toBe(false)
+      expect(updated.threshold).toBe(1000n)
+      expect(updated.customReceiver.equal(receiverA)).toBe(true)
+      expect(updated.deadline).toBe(1735689600n)
+      expect(updated.preTransferInHookData.toString()).toBe('0x1234')
+      expect(updated.signature.toString()).toBe('0xabcd')
+      expect(updated.shouldUnwrap).toBe(true)
+      expect(updated.encode().toString()).toBe(
+        base.with({ shouldUnwrap: true }).encode().toString(),
+      )
+    })
+
+    it('should encode after updating fields with undefined values', () => {
+      const traits = TakerTraits.default().with({
+        customReceiver: undefined,
+        threshold: undefined,
+        deadline: undefined,
+        signature: undefined,
+      })
+
+      expect(() => traits.encode()).not.toThrow()
+      expect(traits.encode().toString()).toBe(TakerTraits.default().encode().toString())
+    })
+
+    it('should support chaining from default()', () => {
+      const traits = TakerTraits.default()
+        .with({ exactIn: false, threshold: 2000n })
+        .with({ customReceiver: receiverA })
+        .with({ strictThreshold: true })
+
+      expect(traits.exactIn).toBe(false)
+      expect(traits.threshold).toBe(2000n)
+      expect(traits.customReceiver.equal(receiverA)).toBe(true)
+      expect(traits.strictThreshold).toBe(true)
+      expect(traits.useTransferFromAndAquaPush).toBe(true)
+
+      const decoded = TakerTraits.decode(traits.encode())
+      expect(decoded.exactIn).toBe(false)
+      expect(decoded.threshold).toBe(2000n)
+      expect(decoded.customReceiver.equal(receiverA)).toBe(true)
+      expect(decoded.strictThreshold).toBe(true)
     })
   })
 

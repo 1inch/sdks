@@ -250,13 +250,20 @@ export class TakerTraits {
   }
 
   /**
-   * Creates a new instance with updated fields.
-   * Useful for creating modified versions of existing TakerTraits.
+   * Returns a new TakerTraits instance with the given fields replaced.
+   * The current instance is not modified, so it can be reused as a template
+   * for several derived traits.
+   *
+   * Keys whose value is `undefined` are ignored and keep their current value.
+   * To clear an optional field, pass its empty value explicitly
+   * (e.g. `threshold: 0n`, `customReceiver: Address.ZERO_ADDRESS`, `HexString.EMPTY`).
    */
-  public with(data: Partial<DataFor<TakerTraits>>): this {
-    Object.assign(this, data)
+  public with(data: Partial<DataFor<TakerTraits>>): TakerTraits {
+    const updates: Partial<DataFor<TakerTraits>> = Object.fromEntries(
+      Object.entries(data).filter(([, value]) => value !== undefined),
+    )
 
-    return this
+    return TakerTraits.new({ ...this, ...updates })
   }
 
   /**
