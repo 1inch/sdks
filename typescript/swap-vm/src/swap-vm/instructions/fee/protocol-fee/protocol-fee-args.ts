@@ -2,9 +2,9 @@
 
 import type { Address, HexString } from '@1inch/sdk-core'
 import { UINT_32_MAX } from '@1inch/byte-utils'
-import assert from 'assert'
 import { ProtocolFeeArgsCoder } from './protocol-fee-args-coder'
 import type { IArgsCoder, IArgsData } from '../../types'
+import { assert } from '../../../../utils/assert'
 
 const FEE_100_PERCENT = 1e9 // 1e9 = 100%
 

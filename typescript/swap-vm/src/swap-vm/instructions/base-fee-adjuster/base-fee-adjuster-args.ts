@@ -2,9 +2,9 @@
 
 import type { HexString } from '@1inch/sdk-core'
 import { UINT_24_MAX, UINT_64_MAX, UINT_96_MAX } from '@1inch/byte-utils'
-import assert from 'assert'
 import { BaseFeeAdjusterArgsCoder } from './base-fee-adjuster-args-coder'
 import type { IArgsCoder, IArgsData } from '../types'
+import { assert } from '../../../utils/assert'
 
 /**
  * @notice Base Fee Gas Price Adjuster instruction for dynamic price adjustment based on network gas costs

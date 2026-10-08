@@ -2,9 +2,9 @@
 
 import type { Address, HexString } from '@1inch/sdk-core'
 import { UINT_8_MAX, UINT_16_MAX, UINT_64_MAX } from '@1inch/byte-utils'
-import assert from 'assert'
 import { OraclePriceAdjusterArgsCoder } from './oracle-price-adjuster-args-coder'
 import type { IArgsCoder, IArgsData } from '../types'
+import { assert } from '../../../utils/assert'
 
 /**
  * @notice Oracle Price Adjuster instruction for dynamic price adjustment based on Chainlink price feeds

@@ -3,9 +3,9 @@
 import type { DataFor, Hex, NetworkEnum } from '@1inch/sdk-core'
 import { Address, HexString } from '@1inch/sdk-core'
 import { keccak256, encodeAbiParameters, hashTypedData, decodeAbiParameters } from 'viem'
-import assert from 'assert'
 import { MakerTraits } from './maker-traits'
 import { SwapVmProgram } from './programs'
+import { assert } from '../utils/assert'
 
 /**
  * Internal ABI-ready representation of an order.

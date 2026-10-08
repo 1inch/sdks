@@ -2,9 +2,9 @@
 
 import type { HexString } from '@1inch/sdk-core'
 import { UINT_64_MAX } from '@1inch/byte-utils'
-import assert from 'assert'
 import { SaltArgsCoder } from './salt-args-coder'
 import type { IArgsCoder, IArgsData } from '../types'
+import { assert } from '../../../utils/assert'
 
 /**
  * Arguments for salt instruction used to add uniqueness to order hashes
