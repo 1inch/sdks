@@ -36,8 +36,8 @@ describe('ConcentrateLiquidityCalculator', () => {
     const fixedLt = 100n * ONE_E18
     const allocation = calculator.computeFixedAllocation(prices, TOKEN_A, fixedLt)
 
-    // L = 100 * 1.1 / (1.1 - 1) = 1100, bGt = L * (1 - 0.9); bLt rounds up vs fixed input
-    expect(allocation.token0Reserve).toBe(100000000000000001000n)
+    // L = 100 * 1.1 / (1.1 - 1) = 1100, bGt = L * (1 - 0.9)
+    expect(allocation.token0Reserve).toBe(fixedLt)
     expect(allocation.token1Reserve).toBe(110n * ONE_E18)
   })
 
@@ -46,8 +46,8 @@ describe('ConcentrateLiquidityCalculator', () => {
     const fixedGt = 80n * ONE_E18
     const allocation = calculator.computeFixedAllocation(prices, TOKEN_B, fixedGt)
 
-    // L = 80 / (1 - 0.9) = 800, bLt = L * (1.1 - 1) / 1.1 (contract rounding)
-    expect(allocation.token0Reserve).toBe(72727272727272728000n)
+    // L = 80 / (1 - 0.9) = 800, bLt = L * (1.1 - 1) / 1.1
+    expect(allocation.token0Reserve).toBe(72727272727272727272n)
     expect(allocation.token1Reserve).toBe(fixedGt)
   })
 
@@ -66,10 +66,7 @@ describe('ConcentrateLiquidityCalculator', () => {
       const calculator = ConcentrateLiquidityCalculator.new({ tokenA, tokenB })
       const allocation = calculator.computeFixedAllocation(atMin, TOKEN_A, 100n * ONE_E18)
 
-      expect(allocation).toEqual({
-        token0Reserve: 100000000000000000395n,
-        token1Reserve: 0n,
-      })
+      expect(allocation).toEqual({ token0Reserve: 100n * ONE_E18, token1Reserve: 0n })
     })
 
     it('should throw when token0 is fixed at spot == maxPrice', () => {

@@ -408,7 +408,7 @@ describe('concentrate-liquidity-math', () => {
 
       expect(targetL).toBe(495n * ONE_E18)
       expect(computeBalances(targetL, sqrtPmin, sqrtPmin, sqrtPmax)).toEqual({
-        bLt: 100000000000000000395n,
+        bLt: availableLt,
         bGt: 0n,
       })
     })
