@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
-import { Address, AddressHalf, HexString } from '@1inch/sdk-core'
+import { Address, HexString } from '@1inch/sdk-core'
 import { RegularProgramBuilder } from './regular-program-builder'
 import { SwapVmProgram } from './swap-vm-program'
 import { PeggedSwapArgs } from '../instructions/pegged-swap'
@@ -25,18 +25,14 @@ describe('ProgramBuilder', () => {
   const DAI = new Address('0x6B175474E89094C44Da98b954EedeAC495271d0F')
   const LINK = new Address('0x514910771AF9Ca656af840dff83E8264EcF986CA')
 
-  const LINK_HALF = AddressHalf.fromAddress(LINK)
-  const USDC_HALF = AddressHalf.fromAddress(USDC)
-  const WETH_HALF = AddressHalf.fromAddress(WETH)
-
   it('should encode and decode program correctly for REGULAR', () => {
     const originalBuilder = new RegularProgramBuilder()
 
     const program = originalBuilder
       .staticBalancesXD({
         tokenBalances: [
-          { tokenHalf: USDC_HALF, value: 2000n * 10n ** 6n },
-          { tokenHalf: WETH_HALF, value: 1n * 10n ** 18n },
+          { token: USDC, value: 2000n * 10n ** 6n },
+          { token: WETH, value: 1n * 10n ** 18n },
         ],
       })
       .build()
@@ -47,7 +43,10 @@ describe('ProgramBuilder', () => {
     const ixs = decodedBuilder.getInstructions()
     expect(ixs).toHaveLength(1)
     expect(ixs[0].opcode.id.toString()).toContain('staticBalancesXD')
-    expect((ixs[0].args as balances.BalancesArgs).tokenBalances).toHaveLength(2)
+    const { tokenBalances } = ixs[0].args as balances.BalancesArgs
+    expect(tokenBalances).toHaveLength(2)
+    expect(tokenBalances[0].token.toString()).toBe(USDC.toString())
+    expect(tokenBalances[1].token.toString()).toBe(WETH.toString())
   })
 
   it('should handle complex control flow operations', () => {
@@ -60,7 +59,7 @@ describe('ProgramBuilder', () => {
         token: USDC,
         minAmount: 1000n * 10n ** 6n,
       })
-      .jumpIfTokenIn({ tokenTail: AddressHalf.fromAddress(WETH), nextPC: 10n })
+      .jumpIfTokenIn({ token: WETH, nextPC: 10n })
       .onlyTakerTokenSupplyShareGte({
         token: DAI,
         minShareE18: 10n ** 15n,
@@ -90,9 +89,7 @@ describe('ProgramBuilder', () => {
 
     expect(ixs[3].opcode.id.toString()).toContain('jumpIfTokenIn')
     expect((ixs[3].args as controls.JumpIfTokenArgs).nextPC).toBe(10n)
-    expect((ixs[3].args as controls.JumpIfTokenArgs).tokenTail.toString()).toBe(
-      AddressHalf.fromAddress(WETH).toString(),
-    )
+    expect((ixs[3].args as controls.JumpIfTokenArgs).token.toString()).toBe(WETH.toString())
 
     expect(ixs[4].opcode.id.toString()).toContain('onlyTakerTokenSupplyShareGte')
     const supplyShareArgs = ixs[4].args as controls.OnlyTakerTokenSupplyShareGteArgs
@@ -110,18 +107,18 @@ describe('ProgramBuilder', () => {
       .salt({ salt: 5n })
       .staticBalancesXD({
         tokenBalances: [
-          { tokenHalf: USDC_HALF, value: 5000n * 10n ** 6n },
-          { tokenHalf: WETH_HALF, value: 2n * 10n ** 18n },
-          { tokenHalf: LINK_HALF, value: 100n * 10n ** 18n },
+          { token: USDC, value: 5000n * 10n ** 6n },
+          { token: WETH, value: 2n * 10n ** 18n },
+          { token: LINK, value: 100n * 10n ** 18n },
         ],
       })
       .onlyTakerTokenBalanceGte({
         token: USDC,
         minAmount: 100n * 10n ** 6n,
       })
-      .jumpIfTokenOut({ tokenTail: AddressHalf.fromAddress(DAI), nextPC: 15n })
+      .jumpIfTokenOut({ token: DAI, nextPC: 15n })
       .dynamicBalancesXD({
-        tokenBalances: [{ tokenHalf: WETH_HALF, value: 10n ** 18n }],
+        tokenBalances: [{ token: WETH, value: 10n ** 18n }],
       })
       .onlyTakerTokenSupplyShareGte({
         token: LINK,
@@ -154,9 +151,7 @@ describe('ProgramBuilder', () => {
 
     expect(ixs[3].opcode.id.toString()).toContain('jumpIfTokenOut')
     expect((ixs[3].args as controls.JumpIfTokenArgs).nextPC).toBe(15n)
-    expect((ixs[3].args as controls.JumpIfTokenArgs).tokenTail.toString()).toBe(
-      AddressHalf.fromAddress(DAI).toString(),
-    )
+    expect((ixs[3].args as controls.JumpIfTokenArgs).token.toString()).toBe(DAI.toString())
 
     expect(ixs[4].opcode.id.toString()).toContain('dynamicBalancesXD')
     const balancesArgs = ixs[4].args as balances.BalancesArgs
@@ -211,15 +206,15 @@ describe('ProgramBuilder', () => {
       .invalidateBit1D({ bitIndex: 1024n })
       .staticBalancesXD({
         tokenBalances: [
-          { tokenHalf: USDC_HALF, value: 10000n * 10n ** 6n },
-          { tokenHalf: WETH_HALF, value: 5n * 10n ** 18n },
+          { token: USDC, value: 10000n * 10n ** 6n },
+          { token: WETH, value: 5n * 10n ** 18n },
         ],
       })
       .onlyTakerTokenBalanceNonZero({ token: WETH })
       .invalidateTokenIn1D()
-      .jumpIfTokenIn({ tokenTail: AddressHalf.fromAddress(USDC), nextPC: 20n })
+      .jumpIfTokenIn({ token: USDC, nextPC: 20n })
       .dynamicBalancesXD({
-        tokenBalances: [{ tokenHalf: LINK_HALF, value: 50n * 10n ** 18n }],
+        tokenBalances: [{ token: LINK, value: 50n * 10n ** 18n }],
       })
       .onlyTakerTokenBalanceGte({
         token: DAI,
@@ -260,9 +255,7 @@ describe('ProgramBuilder', () => {
 
     expect(ixs[5].opcode.id.toString()).toContain('jumpIfTokenIn')
     expect((ixs[5].args as controls.JumpIfTokenArgs).nextPC).toBe(20n)
-    expect((ixs[5].args as controls.JumpIfTokenArgs).tokenTail.toString()).toBe(
-      AddressHalf.fromAddress(USDC).toString(),
-    )
+    expect((ixs[5].args as controls.JumpIfTokenArgs).token.toString()).toBe(USDC.toString())
 
     expect(ixs[6].opcode.id.toString()).toContain('dynamicBalancesXD')
     const readBalances = ixs[6].args as balances.BalancesArgs
@@ -291,8 +284,8 @@ describe('ProgramBuilder', () => {
     const program = originalBuilder
       .staticBalancesXD({
         tokenBalances: [
-          { tokenHalf: USDC_HALF, value: 2000n * 10n ** 6n },
-          { tokenHalf: WETH_HALF, value: 1n * 10n ** 18n },
+          { token: USDC, value: 2000n * 10n ** 6n },
+          { token: WETH, value: 1n * 10n ** 18n },
         ],
       })
       .xycSwapXD()
@@ -335,12 +328,12 @@ describe('ProgramBuilder', () => {
       .invalidateBit1D({ bitIndex: 512n })
       .staticBalancesXD({
         tokenBalances: [
-          { tokenHalf: USDC_HALF, value: 50000n * 10n ** 6n },
-          { tokenHalf: WETH_HALF, value: 25n * 10n ** 18n },
-          { tokenHalf: LINK_HALF, value: 1000n * 10n ** 18n },
+          { token: USDC, value: 50000n * 10n ** 6n },
+          { token: WETH, value: 25n * 10n ** 18n },
+          { token: LINK, value: 1000n * 10n ** 18n },
         ],
       })
-      .jumpIfTokenIn({ tokenTail: AddressHalf.fromAddress(WETH), nextPC: 10n })
+      .jumpIfTokenIn({ token: WETH, nextPC: 10n })
       .decayXD({ decayPeriod: 43200n }) // 12 hours (must be <= 65535)
       .xycSwapXD()
       .invalidateTokenIn1D()
@@ -369,9 +362,7 @@ describe('ProgramBuilder', () => {
 
     expect(ixs[3].opcode.id.toString()).toContain('jumpIfTokenIn')
     expect((ixs[3].args as controls.JumpIfTokenArgs).nextPC).toBe(10n)
-    expect((ixs[3].args as controls.JumpIfTokenArgs).tokenTail.toString()).toBe(
-      AddressHalf.fromAddress(WETH).toString(),
-    )
+    expect((ixs[3].args as controls.JumpIfTokenArgs).token.toString()).toBe(WETH.toString())
 
     expect(ixs[4].opcode.id.toString()).toContain('decayXD')
     expect((ixs[4].args as decay.DecayXDArgs).decayPeriod).toBe(43200n)
@@ -397,8 +388,8 @@ describe('ProgramBuilder', () => {
     const program = originalBuilder
       .staticBalancesXD({
         tokenBalances: [
-          { tokenHalf: USDC_HALF, value: 3000n * 10n ** 6n },
-          { tokenHalf: WETH_HALF, value: 1n * 10n ** 18n },
+          { token: USDC, value: 3000n * 10n ** 6n },
+          { token: WETH, value: 1n * 10n ** 18n },
         ],
       })
       .limitSwap1D({ makerDirectionLt: true })
@@ -441,7 +432,7 @@ describe('ProgramBuilder', () => {
 
     const program = originalBuilder
       .staticBalancesXD({
-        tokenBalances: [{ tokenHalf: USDC_HALF, value: 1000n * 10n ** 6n }],
+        tokenBalances: [{ token: USDC, value: 1000n * 10n ** 6n }],
       })
       .dutchAuctionBalanceIn1D({
         startTime,
@@ -651,8 +642,8 @@ describe('ProgramBuilder', () => {
       .salt({ salt: 12345n })
       .staticBalancesXD({
         tokenBalances: [
-          { tokenHalf: USDC_HALF, value: 10000n * 10n ** 6n },
-          { tokenHalf: WETH_HALF, value: 3n * 10n ** 18n },
+          { token: USDC, value: 10000n * 10n ** 6n },
+          { token: WETH, value: 3n * 10n ** 18n },
         ],
       })
       .limitSwap1D({ makerDirectionLt: true })
