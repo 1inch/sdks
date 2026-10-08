@@ -95,6 +95,13 @@ export class TWAPSwapArgs implements IArgsData {
       minTradeAmountOut >= 0n && minTradeAmountOut <= UINT_256_MAX,
       `Invalid minTradeAmountOut: ${minTradeAmountOut}. Must be >= 0 and <= UINT_256_MAX`,
     )
+    assert(balanceIn > 0n, `Invalid balanceIn: ${balanceIn}. Must be > 0`)
+    assert(balanceOut > 0n, `Invalid balanceOut: ${balanceOut}. Must be > 0`)
+    assert(duration > 0n, `Invalid duration: ${duration}. Must be > 0`)
+    assert(
+      priceBumpAfterIlliquidity >= 10n ** 18n,
+      `Invalid priceBumpAfterIlliquidity: ${priceBumpAfterIlliquidity}. Must be >= 1e18 (1e18 = no bump)`,
+    )
   }
 
   /**

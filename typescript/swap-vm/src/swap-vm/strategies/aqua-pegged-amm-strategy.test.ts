@@ -50,4 +50,14 @@ describe('AquaPeggedAmmStrategy', () => {
         .length,
     )
   })
+
+  it('should reject a zero decay period instead of omitting decayXD', () => {
+    const strategy = AquaPeggedAmmStrategy.new({
+      tokenA,
+      tokenB,
+      linearWidth: LINEAR_WIDTH,
+    }).withDecayPeriod(0n)
+
+    expect(() => strategy.build()).toThrow('Invalid decayPeriod value: 0. Must be > 0')
+  })
 })

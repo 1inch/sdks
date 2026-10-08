@@ -24,10 +24,8 @@ export class ProtocolFeeArgs implements IArgsData {
     public readonly to: Address,
   ) {
     assert(fee >= 0n && fee <= UINT_32_MAX, `Invalid fee: ${fee}. Must be a valid uint32`)
-    assert(
-      fee <= BigInt(FEE_100_PERCENT),
-      `Fee out of range: ${fee}. Must be <= ${FEE_100_PERCENT}`,
-    )
+    assert(fee < BigInt(FEE_100_PERCENT), `Fee out of range: ${fee}. Must be < ${FEE_100_PERCENT}`)
+    assert(!to.isZero(), 'Invalid fee recipient (to). Must be non zero address')
   }
 
   /**

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
+import { HexString } from '@1inch/sdk-core'
 import { FlatFeeArgs } from './flat-fee-args'
 
 describe('FlatFeeArgs', () => {
@@ -15,13 +16,14 @@ describe('FlatFeeArgs', () => {
     expect(decoded.fee).toBe(fee)
   })
 
-  it('should handle maximum fee (100%)', () => {
-    const maxFee = 1000000000n
+  it('should handle maximum fee (just below 100%)', () => {
+    const maxFee = 999999999n
     const args = new FlatFeeArgs(maxFee)
 
     const encoded = FlatFeeArgs.CODER.encode(args)
-    const decoded = FlatFeeArgs.decode(encoded)
+    expect(encoded.toString()).toBe('0x3b9ac9ff')
 
+    const decoded = FlatFeeArgs.decode(encoded)
     expect(decoded.fee).toBe(maxFee)
   })
 
@@ -53,6 +55,7 @@ describe('FlatFeeArgs', () => {
 
     expect(() => new FlatFeeArgs(maxUint32 + 1n)).toThrow()
 
+    expect(() => new FlatFeeArgs(FEE_100_PERCENT)).toThrow('Fee out of range')
     expect(() => new FlatFeeArgs(FEE_100_PERCENT + 1n)).toThrow('Fee out of range')
   })
 
@@ -75,13 +78,22 @@ describe('FlatFeeArgs', () => {
     })
   })
 
-  it('should enforce fee limit (100%)', () => {
+  it('should enforce fee limit (below 100%)', () => {
     const FEE_100_PERCENT = 1000000000n
 
-    expect(() => new FlatFeeArgs(FEE_100_PERCENT)).not.toThrow()
+    expect(() => new FlatFeeArgs(FEE_100_PERCENT - 1n)).not.toThrow()
 
+    expect(() => new FlatFeeArgs(FEE_100_PERCENT)).toThrow(
+      'Fee out of range: 1000000000. Must be < 1000000000',
+    )
     expect(() => new FlatFeeArgs(FEE_100_PERCENT + 1n)).toThrow()
     expect(() => new FlatFeeArgs(2n * FEE_100_PERCENT)).toThrow()
+  })
+
+  it('should reject a 100% fee when decoding', () => {
+    expect(() => FlatFeeArgs.decode(new HexString('0x3b9aca00'))).toThrow(
+      'Fee out of range: 1000000000. Must be < 1000000000',
+    )
   })
 
   it('should create from basis points correctly', () => {
@@ -94,7 +106,7 @@ describe('FlatFeeArgs', () => {
       { bps: 250, expectedFee: 25000000n },
       { bps: 500, expectedFee: 50000000n },
       { bps: 1000, expectedFee: 100000000n },
-      { bps: 10000, expectedFee: 1000000000n },
+      { bps: 9999, expectedFee: 999900000n },
     ]
 
     testCases.forEach(({ bps, expectedFee }) => {
@@ -107,6 +119,8 @@ describe('FlatFeeArgs', () => {
       const decoded = FlatFeeArgs.decode(encoded)
       expect(decoded.fee).toBe(expectedFee)
     })
+
+    expect(() => FlatFeeArgs.fromBps(10000)).toThrow('Fee out of range')
   })
 
   it('should create from percent correctly and be consistent with fromBps', () => {
@@ -116,7 +130,7 @@ describe('FlatFeeArgs', () => {
       { percent: 1, expectedFee: 10000000n },
       { percent: 2.5, expectedFee: 25000000n },
       { percent: 10, expectedFee: 100000000n },
-      { percent: 100, expectedFee: 1000000000n },
+      { percent: 50, expectedFee: 500000000n },
     ]
 
     testCases.forEach(({ percent, expectedFee }) => {
@@ -124,6 +138,8 @@ describe('FlatFeeArgs', () => {
       expect(args).toBeInstanceOf(FlatFeeArgs)
       expect(args.fee).toBe(expectedFee)
     })
+
+    expect(() => FlatFeeArgs.fromPercent(100)).toThrow('Fee out of range')
 
     const percent1 = FlatFeeArgs.fromPercent(1)
     const bps100 = FlatFeeArgs.fromBps(100)

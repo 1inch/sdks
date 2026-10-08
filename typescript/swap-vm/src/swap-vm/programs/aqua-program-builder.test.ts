@@ -3,6 +3,7 @@
 import { describe, it, expect } from 'vitest'
 import { Address } from '@1inch/sdk-core'
 import { AquaProgramBuilder } from './aqua-program-builder'
+import { SwapVmProgram } from './swap-vm-program'
 import { PeggedSwapArgs } from '../instructions/pegged-swap'
 import type { JumpIfTokenArgs } from '../instructions/controls'
 
@@ -66,5 +67,24 @@ describe('AquaProgramBuilder', () => {
     expect((jumpIn.args as JumpIfTokenArgs).nextPC).toBe(6n)
     expect((jumpOut.args as JumpIfTokenArgs).token.equal(WETH)).toBe(true)
     expect((jumpOut.args as JumpIfTokenArgs).nextPC).toBe(7n)
+  })
+
+  it('should apply instruction args validation when decoding programs', () => {
+    const valid = new AquaProgramBuilder()
+      .decayXD({ decayPeriod: 3600n })
+      .aquaProtocolFeeAmountInXD({ fee: 100000n, to: RECEIVER })
+      .build()
+
+    // decayXD (0x13) | aquaProtocolFeeAmountInXD (0x1c)
+    expect(valid.toString()).toBe(
+      '0x13020e10' + '1c18' + '000186a0' + '0000000000000000000000000000000000000001',
+    )
+
+    expect(() => AquaProgramBuilder.decode(new SwapVmProgram('0x13020000'))).toThrow(
+      'Invalid decayPeriod value: 0',
+    )
+    expect(() =>
+      AquaProgramBuilder.decode(new SwapVmProgram('0x1c18' + '000186a0' + '00'.repeat(20))),
+    ).toThrow('Invalid fee recipient (to). Must be non zero address')
   })
 })

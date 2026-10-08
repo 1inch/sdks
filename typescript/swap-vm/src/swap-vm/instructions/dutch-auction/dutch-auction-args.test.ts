@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
+import { HexString } from '@1inch/sdk-core'
 import { DutchAuctionArgs } from './dutch-auction-args'
 
 describe('DutchAuctionArgs', () => {
@@ -58,5 +59,36 @@ describe('DutchAuctionArgs', () => {
 
     expect(() => new DutchAuctionArgs(100n, 100n, -1n)).toThrow()
     expect(() => new DutchAuctionArgs(100n, 100n, maxUint64 + 1n)).toThrow()
+  })
+
+  it('should reject zero duration', () => {
+    expect(() => new DutchAuctionArgs(1700000000n, 0n, 999000000n)).toThrow(
+      'Invalid duration: 0. Must be > 0',
+    )
+  })
+
+  it('should reject zero decay factor', () => {
+    expect(() => new DutchAuctionArgs(1700000000n, 3600n, 0n)).toThrow(
+      'Invalid decayFactor: 0. Must be > 0',
+    )
+  })
+
+  it('should accept the smallest non-zero duration and decay factor', () => {
+    const args = new DutchAuctionArgs(1700000000n, 1n, 1n)
+    const decoded = DutchAuctionArgs.decode(DutchAuctionArgs.CODER.encode(args))
+
+    expect(decoded.duration).toBe(1n)
+    expect(decoded.decayFactor).toBe(1n)
+  })
+
+  it('should reject zero duration and decay factor when decoding', () => {
+    // startTime (uint40) | duration (uint16) | decayFactor (uint64)
+    const zeroDuration = new HexString('0x' + '006553f100' + '0000' + '000000003b8b87c0')
+    const zeroDecayFactor = new HexString('0x' + '006553f100' + '0e10' + '0000000000000000')
+
+    expect(() => DutchAuctionArgs.decode(zeroDuration)).toThrow('Invalid duration: 0. Must be > 0')
+    expect(() => DutchAuctionArgs.decode(zeroDecayFactor)).toThrow(
+      'Invalid decayFactor: 0. Must be > 0',
+    )
   })
 })

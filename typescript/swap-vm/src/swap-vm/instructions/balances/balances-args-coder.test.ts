@@ -71,47 +71,66 @@ describe('BalancesArgsCoder', () => {
   })
 
   it('should use coder through BalancesArgs methods', () => {
-    const args = new BalancesArgs([{ token: USDC, value: 2000n }])
+    const args = new BalancesArgs([
+      { token: USDC, value: 2000n },
+      { token: WETH, value: 3000n },
+    ])
 
     const coder = BalancesArgs.CODER
     expect(coder).toBeDefined()
 
     const encoded = coder.encode(args)
-    expect(encoded.toString()).toContain('0x0001')
+    expect(encoded.toString()).toContain('0x0002')
 
     const decoded = BalancesArgs.decode(encoded)
-    expect(decoded.tokenBalances).toHaveLength(1)
+    expect(decoded.tokenBalances).toHaveLength(2)
     expect(decoded.tokenBalances[0].value).toBe(2000n)
+    expect(decoded.tokenBalances[1].value).toBe(3000n)
   })
 
   it('should encode full 20-byte token addresses', () => {
-    const args = new BalancesArgs([{ token: USDC, value: 100n }])
+    const args = new BalancesArgs([
+      { token: USDC, value: 100n },
+      { token: WETH, value: 200n },
+    ])
 
     const encoded = BalancesArgs.CODER.encode(args)
     const hex = encoded.toString()
 
-    expect(hex.substring(0, 6)).toBe('0x0001') // Count
+    expect(hex.substring(0, 6)).toBe('0x0002') // Count
     expect(hex.substring(6, 46)).toBe('a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')
+    expect(hex.substring(46, 86)).toBe('c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')
 
-    const amountHex = hex.substring(46)
-    expect(amountHex).toBe('0000000000000000000000000000000000000000000000000000000000000064')
+    const amountsHex = hex.substring(86)
+    expect(amountsHex).toBe(
+      '0000000000000000000000000000000000000000000000000000000000000064' +
+        '00000000000000000000000000000000000000000000000000000000000000c8',
+    )
   })
 
   it('should reject data using truncated 10-byte token tails', () => {
     const truncatedLayout = new HexString(
-      '0x0001' +
+      '0x0002' +
         '9d4a2e9eb0ce3606eb48' +
-        '0000000000000000000000000000000000000000000000000000000000000064',
+        '5c4f27ead9083c756cc2' +
+        '0000000000000000000000000000000000000000000000000000000000000064' +
+        '00000000000000000000000000000000000000000000000000000000000000c8',
     )
 
     expect(() => BalancesArgs.decode(truncatedLayout)).toThrow('Can not consume 32 bytes')
   })
 
   it('should convert balances to JSON', () => {
-    const args = new BalancesArgs([{ token: USDC, value: 2000n }])
+    const args = new BalancesArgs([
+      { token: USDC, value: 2000n },
+      { token: WETH, value: 1n },
+    ])
 
     expect(args.toJSON()).toEqual({
-      tokenBalances: [{ token: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', value: '2000' }],
+      tokenBalances: [
+        { token: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', value: '2000' },
+        { token: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', value: '1' },
+      ],
     })
   })
 })

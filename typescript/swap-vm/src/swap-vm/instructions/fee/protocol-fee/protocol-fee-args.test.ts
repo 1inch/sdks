@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
-import { Address } from '@1inch/sdk-core'
+import { Address, HexString } from '@1inch/sdk-core'
 import { ProtocolFeeArgs } from './protocol-fee-args'
 
 describe('ProtocolFeeArgs', () => {
@@ -20,7 +20,7 @@ describe('ProtocolFeeArgs', () => {
   })
 
   it('should handle maximum fee with different addresses', () => {
-    const maxFee = 1000000000n
+    const maxFee = 999999999n
     const addresses = [
       '0x0000000000000000000000000000000000000001',
       '0xffffffffffffffffffffffffffffffffffffffff',
@@ -68,8 +68,33 @@ describe('ProtocolFeeArgs', () => {
 
     expect(() => new ProtocolFeeArgs(maxUint32 + 1n, feeRecipient)).toThrow()
 
+    expect(() => new ProtocolFeeArgs(FEE_100_PERCENT, feeRecipient)).toThrow('Fee out of range')
     expect(() => new ProtocolFeeArgs(FEE_100_PERCENT + 1n, feeRecipient)).toThrow(
       'Fee out of range',
+    )
+  })
+
+  it('should reject a zero fee recipient', () => {
+    expect(() => new ProtocolFeeArgs(1000000n, Address.ZERO_ADDRESS)).toThrow(
+      'Invalid fee recipient (to). Must be non zero address',
+    )
+    expect(() => new ProtocolFeeArgs(0n, Address.ZERO_ADDRESS)).toThrow(
+      'Invalid fee recipient (to). Must be non zero address',
+    )
+    expect(() => ProtocolFeeArgs.fromBps(10, Address.ZERO_ADDRESS)).toThrow(
+      'Invalid fee recipient (to). Must be non zero address',
+    )
+  })
+
+  it('should reject a 100% fee or a zero fee recipient when decoding', () => {
+    const fullFee = new HexString('0x3b9aca00' + '68b3465833fb72a70ecdf485e0e4c7bd8665fc45')
+    const zeroRecipient = new HexString('0x00989680' + '00'.repeat(20))
+
+    expect(() => ProtocolFeeArgs.decode(fullFee)).toThrow(
+      'Fee out of range: 1000000000. Must be < 1000000000',
+    )
+    expect(() => ProtocolFeeArgs.decode(zeroRecipient)).toThrow(
+      'Invalid fee recipient (to). Must be non zero address',
     )
   })
 
@@ -88,7 +113,7 @@ describe('ProtocolFeeArgs', () => {
       {
         desc: 'Staking rewards',
         fee: 1000000n,
-        recipient: '0x0000000000000000000000000000000000000000',
+        recipient: '0x3333333333333333333333333333333333333333',
       },
     ]
 
@@ -103,11 +128,14 @@ describe('ProtocolFeeArgs', () => {
     })
   })
 
-  it('should enforce fee limit (100%)', () => {
+  it('should enforce fee limit (below 100%)', () => {
     const FEE_100_PERCENT = 1000000000n
 
-    expect(() => new ProtocolFeeArgs(FEE_100_PERCENT, feeRecipient)).not.toThrow()
+    expect(() => new ProtocolFeeArgs(FEE_100_PERCENT - 1n, feeRecipient)).not.toThrow()
 
+    expect(() => new ProtocolFeeArgs(FEE_100_PERCENT, feeRecipient)).toThrow(
+      'Fee out of range: 1000000000. Must be < 1000000000',
+    )
     expect(() => new ProtocolFeeArgs(FEE_100_PERCENT + 1n, feeRecipient)).toThrow()
     expect(() => new ProtocolFeeArgs(2n * FEE_100_PERCENT, feeRecipient)).toThrow()
   })
@@ -142,6 +170,8 @@ describe('ProtocolFeeArgs', () => {
       expect(decoded.fee).toBe(expectedFee)
       expect(decoded.to.toString()).toBe(feeRecipient.toString())
     })
+
+    expect(() => ProtocolFeeArgs.fromBps(10000, feeRecipient)).toThrow('Fee out of range')
   })
 
   it('should create from percent correctly and be consistent with fromBps', () => {

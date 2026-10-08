@@ -118,7 +118,10 @@ describe('ProgramBuilder', () => {
       })
       .jumpIfTokenOut({ token: DAI, nextPC: 15n })
       .dynamicBalancesXD({
-        tokenBalances: [{ token: WETH, value: 10n ** 18n }],
+        tokenBalances: [
+          { token: WETH, value: 10n ** 18n },
+          { token: DAI, value: 3000n * 10n ** 18n },
+        ],
       })
       .onlyTakerTokenSupplyShareGte({
         token: LINK,
@@ -155,8 +158,9 @@ describe('ProgramBuilder', () => {
 
     expect(ixs[4].opcode.id.toString()).toContain('dynamicBalancesXD')
     const balancesArgs = ixs[4].args as balances.BalancesArgs
-    expect(balancesArgs.tokenBalances).toHaveLength(1)
+    expect(balancesArgs.tokenBalances).toHaveLength(2)
     expect(balancesArgs.tokenBalances[0].value).toBe(10n ** 18n)
+    expect(balancesArgs.tokenBalances[1].value).toBe(3000n * 10n ** 18n)
 
     expect(ixs[5].opcode.id.toString()).toContain('onlyTakerTokenSupplyShareGte')
     const supplyShare = ixs[5].args as controls.OnlyTakerTokenSupplyShareGteArgs
@@ -214,7 +218,10 @@ describe('ProgramBuilder', () => {
       .invalidateTokenIn1D()
       .jumpIfTokenIn({ token: USDC, nextPC: 20n })
       .dynamicBalancesXD({
-        tokenBalances: [{ token: LINK, value: 50n * 10n ** 18n }],
+        tokenBalances: [
+          { token: LINK, value: 50n * 10n ** 18n },
+          { token: USDC, value: 750n * 10n ** 6n },
+        ],
       })
       .onlyTakerTokenBalanceGte({
         token: DAI,
@@ -259,8 +266,9 @@ describe('ProgramBuilder', () => {
 
     expect(ixs[6].opcode.id.toString()).toContain('dynamicBalancesXD')
     const readBalances = ixs[6].args as balances.BalancesArgs
-    expect(readBalances.tokenBalances).toHaveLength(1)
+    expect(readBalances.tokenBalances).toHaveLength(2)
     expect(readBalances.tokenBalances[0].value).toBe(50n * 10n ** 18n)
+    expect(readBalances.tokenBalances[1].value).toBe(750n * 10n ** 6n)
 
     expect(ixs[7].opcode.id.toString()).toContain('onlyTakerTokenBalanceGte')
     const balanceGte = ixs[7].args as controls.OnlyTakerTokenBalanceGteArgs
@@ -432,7 +440,10 @@ describe('ProgramBuilder', () => {
 
     const program = originalBuilder
       .staticBalancesXD({
-        tokenBalances: [{ token: USDC, value: 1000n * 10n ** 6n }],
+        tokenBalances: [
+          { token: USDC, value: 1000n * 10n ** 6n },
+          { token: WETH, value: 1n * 10n ** 18n },
+        ],
       })
       .dutchAuctionBalanceIn1D({
         startTime,
@@ -686,6 +697,35 @@ describe('ProgramBuilder', () => {
     expect(decoded.getInstructions()).toHaveLength(2)
     expect(decoded.getInstructions()[0].opcode.id.toString()).toContain('deadline')
     expect(decoded.getInstructions()[1].opcode.id.toString()).toContain('peggedSwap')
+  })
+
+  it('should apply instruction args validation when decoding programs', () => {
+    const valid = new RegularProgramBuilder()
+      .deadline({ deadline: 1735689600n })
+      .decayXD({ decayPeriod: 3600n })
+      .flatFeeAmountInXD({ fee: 30000000n })
+      .build()
+
+    // deadline (0x0d) | decayXD (0x18) | flatFeeAmountInXD (0x23)
+    expect(valid.toString()).toBe('0x0d050067748580' + '18020e10' + '230401c9c380')
+
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x0d050000000000'))).toThrow(
+      'Invalid deadline: 0',
+    )
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x18020000'))).toThrow(
+      'Invalid decayPeriod value: 0',
+    )
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x23043b9aca00'))).toThrow(
+      'Fee out of range: 1000000000',
+    )
+
+    // staticBalancesXD (0x11) setting a balance for a single token
+    const singleTokenBalances = new SwapVmProgram(
+      '0x1136' + '0001' + USDC.toString().slice(2) + '00'.repeat(31) + '01',
+    )
+    expect(() => RegularProgramBuilder.decode(singleTokenBalances)).toThrow(
+      'Invalid tokenBalances length: 1',
+    )
   })
 
   it('should reject reserved and unknown opcodes on decode', () => {
