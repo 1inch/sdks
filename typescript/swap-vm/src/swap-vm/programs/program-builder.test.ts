@@ -643,6 +643,28 @@ describe('ProgramBuilder', () => {
     expect((ixs[9].args as fee.FlatFeeArgs).fee).toBe(55000000n)
   })
 
+  it('should round-trip dynamic protocol fees with a zero fee provider', () => {
+    const zeroProvider = '00'.repeat(20)
+    const program = new RegularProgramBuilder()
+      .dynamicProtocolFeeAmountInXD({ feeProvider: Address.ZERO_ADDRESS })
+      .aquaDynamicProtocolFeeAmountInXD({ feeProvider: Address.ZERO_ADDRESS })
+      .build()
+
+    expect(program.toString()).toBe('0x' + '2c14' + zeroProvider + '2d14' + zeroProvider)
+
+    const decodedBuilder = RegularProgramBuilder.decode(new SwapVmProgram(program.toString()))
+    expect(decodedBuilder.build().toString()).toBe(program.toString())
+
+    const ixs = decodedBuilder.getInstructions()
+    expect(ixs).toHaveLength(2)
+
+    expect(ixs[0].opcode.id.toString()).toContain('dynamicProtocolFeeAmountInXD')
+    expect((ixs[0].args as fee.DynamicProtocolFeeArgs).feeProvider.isZero()).toBe(true)
+
+    expect(ixs[1].opcode.id.toString()).toContain('aquaDynamicProtocolFeeAmountInXD')
+    expect((ixs[1].args as fee.DynamicProtocolFeeArgs).feeProvider.isZero()).toBe(true)
+  })
+
   it('should handle complex program with new instructions', () => {
     const originalBuilder = new RegularProgramBuilder()
     const feeRecipient = new Address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45')

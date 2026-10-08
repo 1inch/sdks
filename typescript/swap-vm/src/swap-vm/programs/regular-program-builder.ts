@@ -424,7 +424,8 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Applies protocol fee, fetched from external contract, to amountIn with direct transfer
+   * Applies protocol fee, fetched from external contract, to amountIn with direct transfer.
+   * A zero `feeProvider` disables the fee (the provider is not called and no fee is charged)
    **/
   public dynamicProtocolFeeAmountInXD(data: DataFor<fee.DynamicProtocolFeeArgs>): this {
     super.add(
@@ -435,7 +436,8 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Applies protocol fee, fetched from external contract, to amountIn through Aqua protocol
+   * Applies protocol fee, fetched from external contract, to amountIn through Aqua protocol.
+   * A zero `feeProvider` disables the fee (the provider is not called and no fee is charged)
    **/
   public aquaDynamicProtocolFeeAmountInXD(data: DataFor<fee.DynamicProtocolFeeArgs>): this {
     super.add(
