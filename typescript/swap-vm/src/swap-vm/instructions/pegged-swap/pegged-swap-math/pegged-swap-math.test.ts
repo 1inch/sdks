@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
+import { UINT_256_MAX } from '@1inch/byte-utils'
 import { describe, expect, it } from 'vitest'
 import {
   linearWidthFromSymmetricRangePercent,
@@ -106,6 +107,11 @@ describe('peggedSwapMath', () => {
   it('normalizeReserve is ONE when current equals initial', () => {
     const initial = 10n ** 18n
     expect(normalizeReserve(initial, initial)).toBe(PEGGED_SWAP_ONE)
+  })
+
+  it('normalizeReserve rejects a zero initial reserve and results above uint256', () => {
+    expect(() => normalizeReserve(10n ** 18n, 0n)).toThrow('mulDiv: division by zero')
+    expect(() => normalizeReserve(UINT_256_MAX, 1n)).toThrow('exceeds UINT_256_MAX')
   })
 
   it('marginal weight at u = ONE', () => {

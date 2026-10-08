@@ -79,6 +79,13 @@ describe('concentrate-liquidity-math', () => {
       expect(result.actualLt).toBe(bLt)
       expect(result.actualGt).toBe(999999999999999999999n)
     })
+
+    it('should throw when a balance exceeds uint256', () => {
+      // bGt = L * (3 - 1) = 2 * UINT_256_MAX
+      expect(() => computeBalances(UINT_256_MAX, 3n * ONE_E18, ONE_E18, 4n * ONE_E18)).toThrow(
+        'exceeds UINT_256_MAX',
+      )
+    })
   })
 
   describe('computeLiquidityFromAmounts', () => {
@@ -260,7 +267,7 @@ describe('concentrate-liquidity-math', () => {
       expect(actualGt).toBe(330119361793825978647n)
     })
 
-    it('should compute available liquidity for the given price range and one specified amount', () => {
+    it('should reject UINT_256_MAX as a placeholder for an unspecified amount, like the contract', () => {
       // USDC < WETH
       const USDC_DECIMALS = 6n
       const WETH_DECIMALS = 18n
@@ -284,18 +291,24 @@ describe('concentrate-liquidity-math', () => {
 
       const maxAvailableBalanceWETH = parseUnits('400', 18)
 
-      const { actualLt, actualGt } = computeLiquidityFromAmounts(
-        UINT_256_MAX,
-        maxAvailableBalanceWETH,
-        sqrtPriceSpot,
-        sqrtPriceMin,
-        sqrtPriceMax,
-      )
+      // L implied by UINT_256_MAX USDC does not fit uint256, so Math.mulDiv reverts on-chain
+      expect(() =>
+        computeLiquidityFromAmounts(
+          UINT_256_MAX,
+          maxAvailableBalanceWETH,
+          sqrtPriceSpot,
+          sqrtPriceMin,
+          sqrtPriceMax,
+        ),
+      ).toThrow('exceeds UINT_256_MAX')
+    })
 
-      // 1_211_682.943485 USDC
-      expect(actualLt).toBe(1211682943485n)
-      // 399.999999999999998795n WETH
-      expect(actualGt).toBe(399999999999999998795n)
+    it('should throw when the implied liquidity exceeds uint256', () => {
+      const half = UINT_256_MAX / 2n
+
+      expect(() =>
+        computeLiquidityFromAmounts(half, half, ONE_E18, 9n * 10n ** 17n, 11n * 10n ** 17n),
+      ).toThrow('exceeds UINT_256_MAX')
     })
 
     it('should reject inverted price bounds', () => {
@@ -353,6 +366,13 @@ describe('concentrate-liquidity-math', () => {
         'sqrtPspot should be less than sqrtPmax',
       )
     })
+
+    it('should throw when L exceeds uint256', () => {
+      // L = UINT_256_MAX / 2 * 1.1 / (1.1 - 1)
+      expect(() => computeLiquidityFromLt(UINT_256_MAX / 2n, ONE_E18, sqrtPmax)).toThrow(
+        'exceeds UINT_256_MAX',
+      )
+    })
   })
 
   describe('computeLiquidityFromGt', () => {
@@ -398,6 +418,13 @@ describe('concentrate-liquidity-math', () => {
       )
       expect(() => computeLiquidityFromGt(100n * ONE_E18, sqrtPmin - 1n, sqrtPmin)).toThrow(
         'sqrtPspot should be greater than sqrtPmin',
+      )
+    })
+
+    it('should throw when L exceeds uint256', () => {
+      // L = UINT_256_MAX / 2 / (1 - 0.9)
+      expect(() => computeLiquidityFromGt(UINT_256_MAX / 2n, ONE_E18, sqrtPmin)).toThrow(
+        'exceeds UINT_256_MAX',
       )
     })
 
