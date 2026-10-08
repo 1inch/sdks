@@ -222,4 +222,95 @@ describe('MakerTraits', () => {
 
     expect(decoded).toEqual(traits)
   })
+
+  describe('decode validation', () => {
+    const HAS_PRE_TRANSFER_IN_HOOK = 252n
+    const HAS_POST_TRANSFER_IN_HOOK = 251n
+    const PRE_TRANSFER_IN_HOOK_HAS_TARGET = 248n
+    const POST_TRANSFER_IN_HOOK_HAS_TARGET = 247n
+
+    function packTraits(flagBits: bigint[], offsets: [number, number, number, number]): bigint {
+      const flags = flagBits.reduce((acc, bit) => acc | (1n << bit), 0n)
+
+      return offsets.reduce(
+        (acc, offset, i) => acc | (BigInt(offset) << (160n + 16n * BigInt(i))),
+        flags,
+      )
+    }
+
+    it('should decode valid encodings with absent hooks between present ones', () => {
+      const maker = Address.fromBigInt(7n)
+      const traits = MakerTraits.new({
+        shouldUnwrap: false,
+        useAquaInsteadOfSignature: true,
+        allowZeroAmountIn: false,
+        preTransferInHook: new Interaction(Address.fromBigInt(20n), new HexString('0xaaaa')),
+        postTransferOutHook: new Interaction(Address.ZERO_ADDRESS, new HexString('0xdddd')),
+      })
+
+      const { traits: encodedTraits, hooksData } = traits.encode(maker)
+      const orderData = hooksData.concat(new HexString('0x1100'))
+
+      expect(MakerTraits.decode(encodedTraits, hooksData)).toEqual(traits)
+      expect(MakerTraits.decode(encodedTraits, orderData)).toEqual(traits)
+    })
+
+    it('should reject a flagged hook whose data ends beyond the provided data', () => {
+      const traits = packTraits([HAS_PRE_TRANSFER_IN_HOOK], [500, 500, 500, 500])
+
+      expect(() => MakerTraits.decode(traits, new HexString('0xabcd'))).toThrow(
+        'MakerTraitsMissingHookData: preTransferInHook data ends at byte 500, but only 2 bytes are provided',
+      )
+    })
+
+    it('should reject a flagged hook whose start offset is greater than its end offset', () => {
+      const traits = packTraits([HAS_POST_TRANSFER_IN_HOOK], [4, 2, 4, 4])
+
+      expect(() => MakerTraits.decode(traits, new HexString('0xabcdef01'))).toThrow(
+        'Invalid postTransferInHook data offsets: start 4 is greater than end 2',
+      )
+    })
+
+    it('should reject a hook with the target flag and fewer than 20 bytes of data', () => {
+      const traits = packTraits(
+        [HAS_POST_TRANSFER_IN_HOOK, POST_TRANSFER_IN_HOOK_HAS_TARGET],
+        [0, 19, 19, 19],
+      )
+
+      expect(() => MakerTraits.decode(traits, new HexString(`0x${'11'.repeat(19)}`))).toThrow(
+        'MakerTraitsMissingHookTarget: postTransferInHook has the target flag set, but its data is only 19 bytes long',
+      )
+    })
+
+    it('should reject a first hook with the target flag and an empty data slice', () => {
+      const traits = packTraits(
+        [HAS_PRE_TRANSFER_IN_HOOK, PRE_TRANSFER_IN_HOOK_HAS_TARGET],
+        [0, 0, 0, 0],
+      )
+
+      expect(() => MakerTraits.decode(traits, new HexString(`0x${'22'.repeat(20)}1100`))).toThrow(
+        'MakerTraitsMissingHookTarget: preTransferInHook has the target flag set, but its data is only 0 bytes long',
+      )
+    })
+
+    it('should reject a zero target when the target flag is set', () => {
+      const traits = packTraits(
+        [HAS_POST_TRANSFER_IN_HOOK, POST_TRANSFER_IN_HOOK_HAS_TARGET],
+        [0, 22, 22, 22],
+      )
+      const hooksData = new HexString(`${Address.ZERO_ADDRESS.toString()}abcd`)
+
+      expect(() => MakerTraits.decode(traits, hooksData)).toThrow(
+        'Invalid postTransferInHook target: the target flag is set, but the target is the zero address',
+      )
+    })
+
+    it('should reject hooks data that ends beyond the provided data', () => {
+      const traits = packTraits([], [0, 0, 0, 10])
+
+      expect(() => MakerTraits.decode(traits, new HexString('0x1100'))).toThrow(
+        'Invalid hooks data offsets: hooks data ends at byte 10, but only 2 bytes are provided',
+      )
+    })
+  })
 })

@@ -2,6 +2,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { Address, HexString, Interaction, NetworkEnum } from '@1inch/sdk-core'
+import { encodeAbiParameters } from 'viem'
 
 import { Order } from './order'
 import { MakerTraits } from './maker-traits'
@@ -76,6 +77,45 @@ describe('Order', () => {
       const decoded = Order.decode(encoded)
 
       expect(decoded).toEqual(original)
+    })
+
+    it('should reject an order whose data ends inside a hook', () => {
+      const maker = createMaker()
+      const traits = MakerTraits.new({
+        shouldUnwrap: false,
+        useAquaInsteadOfSignature: true,
+        allowZeroAmountIn: false,
+        preTransferInHook: new Interaction(Address.ZERO_ADDRESS, new HexString('0xaaaa')),
+        postTransferInHook: new Interaction(Address.fromBigInt(2n), new HexString('0xbbbb')),
+      })
+      const { traits: encodedTraits, hooksData } = traits.encode(maker)
+      const encoded = encodeAbiParameters(
+        [Order.ABI],
+        [
+          {
+            maker: maker.toString(),
+            traits: encodedTraits,
+            data: hooksData.sliceBytes(0, hooksData.bytesCount() - 1).toString(),
+          },
+        ],
+      )
+
+      expect(() => Order.decode(new HexString(encoded))).toThrow(
+        'MakerTraitsMissingHookData: postTransferInHook data ends at byte 24, but only 23 bytes are provided',
+      )
+    })
+
+    it('should reject an order whose program offset is beyond its data', () => {
+      const traits = 10n << 208n
+      const encoded = encodeAbiParameters(
+        [Order.ABI],
+        [{ maker: createMaker().toString(), traits, data: '0x1100' }],
+      )
+
+      expect(MakerTraits.hooksDataEndsAtByte(traits)).toBe(10)
+      expect(() => Order.decode(new HexString(encoded))).toThrow(
+        'Invalid hooks data offsets: hooks data ends at byte 10, but only 2 bytes are provided',
+      )
     })
   })
 
