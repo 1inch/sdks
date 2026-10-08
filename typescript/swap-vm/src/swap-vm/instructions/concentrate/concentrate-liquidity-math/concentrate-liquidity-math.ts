@@ -33,17 +33,69 @@ export function computeLiquidityFromAmounts(
   }
 
   const lFromLt =
-    sqrtPmax > sqrtPspot
-      ? mulDiv(availableLt, mulDiv(sqrtPmax, sqrtPspot, ONE), sqrtPmax - sqrtPspot)
-      : UINT_256_MAX
+    sqrtPmax > sqrtPspot ? computeLiquidityFromLt(availableLt, sqrtPspot, sqrtPmax) : UINT_256_MAX
 
   const lFromGt =
-    sqrtPspot > sqrtPmin ? mulDiv(availableGt, ONE, sqrtPspot - sqrtPmin) : UINT_256_MAX
+    sqrtPspot > sqrtPmin ? computeLiquidityFromGt(availableGt, sqrtPspot, sqrtPmin) : UINT_256_MAX
 
   const targetL = lFromLt < lFromGt ? lFromLt : lFromGt
   const { bLt: actualLt, bGt: actualGt } = computeBalances(targetL, sqrtPspot, sqrtPmin, sqrtPmax)
 
   return { targetL, actualLt, actualGt }
+}
+
+/**
+ * Compute L implied by an amount of the token with lower address at a given spot price:
+ *   L = availableLt * (sqrtPmax * sqrtPspot / ONE) / (sqrtPmax - sqrtPspot)
+ *
+ * Mirrors the `lFromLt` term of XYCConcentrateArgsBuilder.computeLiquidityFromAmounts
+ * in XYCConcentrate.sol.
+ *
+ * @param availableLt Amount of token with lower address
+ * @param sqrtPspot sqrt(P_spot) in 1e18 fixed-point, must be < sqrtPmax
+ * @param sqrtPmax sqrt(P_max) in 1e18 fixed-point
+ * @returns L backed by availableLt
+ * @throws if sqrtPspot >= sqrtPmax (the range holds no tokenLt at this spot price)
+ */
+export function computeLiquidityFromLt(
+  availableLt: bigint,
+  sqrtPspot: bigint,
+  sqrtPmax: bigint,
+): bigint {
+  if (sqrtPspot >= sqrtPmax) {
+    throw new Error(
+      'sqrtPspot should be less than sqrtPmax: the range holds no tokenLt at this spot price',
+    )
+  }
+
+  return mulDiv(availableLt, mulDiv(sqrtPmax, sqrtPspot, ONE), sqrtPmax - sqrtPspot)
+}
+
+/**
+ * Compute L implied by an amount of the token with higher address at a given spot price:
+ *   L = availableGt * ONE / (sqrtPspot - sqrtPmin)
+ *
+ * Mirrors the `lFromGt` term of XYCConcentrateArgsBuilder.computeLiquidityFromAmounts
+ * in XYCConcentrate.sol.
+ *
+ * @param availableGt Amount of token with higher address
+ * @param sqrtPspot sqrt(P_spot) in 1e18 fixed-point, must be > sqrtPmin
+ * @param sqrtPmin sqrt(P_min) in 1e18 fixed-point
+ * @returns L backed by availableGt
+ * @throws if sqrtPspot <= sqrtPmin (the range holds no tokenGt at this spot price)
+ */
+export function computeLiquidityFromGt(
+  availableGt: bigint,
+  sqrtPspot: bigint,
+  sqrtPmin: bigint,
+): bigint {
+  if (sqrtPspot <= sqrtPmin) {
+    throw new Error(
+      'sqrtPspot should be greater than sqrtPmin: the range holds no tokenGt at this spot price',
+    )
+  }
+
+  return mulDiv(availableGt, ONE, sqrtPspot - sqrtPmin)
 }
 
 /**

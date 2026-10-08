@@ -1,6 +1,6 @@
 # PriceRange
 
-Valid **min / spot / max** band for one pair (`Price` = `sqrt(P)*1e18` + token0/token1). Uses `computeLiquidityFromAmounts` / `computeLiquidityAndPrice` from `concentrate-liquidity-math`. `toJSON` / `fromJSON` use decimal **strings** for bigints.
+Valid **min / spot / max** band for one pair (`Price` = `sqrt(P)*1e18` + token0/token1). Uses `computeLiquidityFromAmounts` / `computeLiquidityFromLt` / `computeLiquidityFromGt` / `computeLiquidityAndPrice` from `concentrate-liquidity-math`. `toJSON` / `fromJSON` use decimal **strings** for bigints.
 
 **Rules**
 
@@ -26,7 +26,7 @@ Valid **min / spot / max** band for one pair (`Price` = `sqrt(P)*1e18` + token0/
 | `PriceRange.fromJSON(json)` | Deserialize `PriceRangeJSON`. |
 | `PriceRange.fromPriceBounds(bounds, reserves)` | Implied spot from balances + bounds (`computeLiquidityAndPrice`). |
 | `computeMaxAllocation({ reserveA, reserveB })` | Max **L** using both caps. |
-| `computeFixedAllocation(fixedReserve)` | One token amount fixed; other side unconstrained (`UINT_256_MAX` internally). |
+| `computeFixedAllocation(fixedReserve)` | One token amount fixed; **L** is derived from that token alone and the other leg follows. |
 | `toJSON()` | Persist-friendly JSON. |
 | `token0` / `token1` | `PriceToken` metadata for the pair. |
 
@@ -56,6 +56,8 @@ const max = range.computeMaxAllocation({
 ### Fixed allocation
 
 Fix **exactly one** token amount (e.g. “deposit 1 WETH”); the other leg is computed for the same liquidity **L** (integer math may shave a few wei off the fixed side).
+
+When the spot sits on a bound the range is one-sided: at `maxPrice` it holds only token1, at `minPrice` only token0 (e.g. ranges from `fromPriceBounds` with one zero reserve). Fixing the held token returns `0` for the other leg; fixing the token the range does not hold throws, fix the other token instead.
 
 ```ts
 const range = PriceRange.new({

@@ -7,6 +7,8 @@ import {
   computeBalances,
   computeLiquidityAndPrice,
   computeLiquidityFromAmounts,
+  computeLiquidityFromGt,
+  computeLiquidityFromLt,
 } from './concentrate-liquidity-math'
 import { ONE_E18 } from '../concentrate-grow-liquidity-2d-args'
 import { bigintSqrt } from '../../utils/bigint-sqrt'
@@ -375,6 +377,117 @@ describe('concentrate-liquidity-math', () => {
       expect(() => computeBalances(1n, ONE_E18, ONE_E18, ONE_E18)).toThrow(
         'sqrtPmax should be greater than sqrtPmin',
       )
+    })
+  })
+
+  describe('computeLiquidityFromLt', () => {
+    const sqrtPmin = 9n * 10n ** 17n
+    const sqrtPmax = 11n * 10n ** 17n
+
+    it('should compute L = availableLt * (sqrtPmax * sqrtPspot / ONE) / (sqrtPmax - sqrtPspot)', () => {
+      // 100 * 1.1 / (1.1 - 1)
+      expect(computeLiquidityFromLt(100n * ONE_E18, ONE_E18, sqrtPmax)).toBe(1100n * ONE_E18)
+    })
+
+    it('should match targetL of computeLiquidityFromAmounts when tokenLt is limiting', () => {
+      const availableLt = 50n * ONE_E18
+      const { targetL } = computeLiquidityFromAmounts(
+        availableLt,
+        10_000n * ONE_E18,
+        ONE_E18,
+        sqrtPmin,
+        sqrtPmax,
+      )
+
+      expect(computeLiquidityFromLt(availableLt, ONE_E18, sqrtPmax)).toBe(targetL)
+    })
+
+    it('should accept spot at the min bound, where the range holds only tokenLt', () => {
+      const availableLt = 100n * ONE_E18
+      const targetL = computeLiquidityFromLt(availableLt, sqrtPmin, sqrtPmax)
+
+      expect(targetL).toBe(495n * ONE_E18)
+      expect(computeBalances(targetL, sqrtPmin, sqrtPmin, sqrtPmax)).toEqual({
+        bLt: availableLt,
+        bGt: 0n,
+      })
+    })
+
+    it('should return 0 for a zero amount', () => {
+      expect(computeLiquidityFromLt(0n, ONE_E18, sqrtPmax)).toBe(0n)
+    })
+
+    it('should throw when spot is at or above the max bound (range holds no tokenLt)', () => {
+      expect(() => computeLiquidityFromLt(100n * ONE_E18, sqrtPmax, sqrtPmax)).toThrow(
+        'sqrtPspot should be less than sqrtPmax',
+      )
+      expect(() => computeLiquidityFromLt(100n * ONE_E18, sqrtPmax + 1n, sqrtPmax)).toThrow(
+        'sqrtPspot should be less than sqrtPmax',
+      )
+    })
+  })
+
+  describe('computeLiquidityFromGt', () => {
+    const sqrtPmin = 9n * 10n ** 17n
+    const sqrtPmax = 11n * 10n ** 17n
+
+    it('should compute L = availableGt * ONE / (sqrtPspot - sqrtPmin)', () => {
+      // 25 / (1 - 0.9)
+      expect(computeLiquidityFromGt(25n * ONE_E18, ONE_E18, sqrtPmin)).toBe(250n * ONE_E18)
+    })
+
+    it('should match targetL of computeLiquidityFromAmounts when tokenGt is limiting', () => {
+      const availableGt = 25n * ONE_E18
+      const { targetL } = computeLiquidityFromAmounts(
+        10_000n * ONE_E18,
+        availableGt,
+        ONE_E18,
+        sqrtPmin,
+        sqrtPmax,
+      )
+
+      expect(computeLiquidityFromGt(availableGt, ONE_E18, sqrtPmin)).toBe(targetL)
+    })
+
+    it('should accept spot at the max bound, where the range holds only tokenGt', () => {
+      const availableGt = 100n * ONE_E18
+      const targetL = computeLiquidityFromGt(availableGt, sqrtPmax, sqrtPmin)
+
+      expect(targetL).toBe(500n * ONE_E18)
+      expect(computeBalances(targetL, sqrtPmax, sqrtPmin, sqrtPmax)).toEqual({
+        bLt: 0n,
+        bGt: availableGt,
+      })
+    })
+
+    it('should return 0 for a zero amount', () => {
+      expect(computeLiquidityFromGt(0n, ONE_E18, sqrtPmin)).toBe(0n)
+    })
+
+    it('should throw when spot is at or below the min bound (range holds no tokenGt)', () => {
+      expect(() => computeLiquidityFromGt(100n * ONE_E18, sqrtPmin, sqrtPmin)).toThrow(
+        'sqrtPspot should be greater than sqrtPmin',
+      )
+      expect(() => computeLiquidityFromGt(100n * ONE_E18, sqrtPmin - 1n, sqrtPmin)).toThrow(
+        'sqrtPspot should be greater than sqrtPmin',
+      )
+    })
+
+    it('should derive the full allocation from one fixed tokenGt amount', () => {
+      // USDC < WETH, range 2000 -> 3000 USDC per 1 WETH, spot 2500
+      const toSqrt = (usdcPerWeth: bigint): bigint =>
+        bigintSqrt(((10n ** 18n * ONE_E18) / (usdcPerWeth * 10n ** 6n)) * ONE_E18)
+      const sqrtPriceMin = toSqrt(3000n)
+      const sqrtPriceSpot = toSqrt(2500n)
+      const sqrtPriceMax = toSqrt(2000n)
+
+      const targetL = computeLiquidityFromGt(parseUnits('400', 18), sqrtPriceSpot, sqrtPriceMin)
+      const { bLt, bGt } = computeBalances(targetL, sqrtPriceSpot, sqrtPriceMin, sqrtPriceMax)
+
+      // 1_211_682.943485 USDC
+      expect(bLt).toBe(1211682943485n)
+      // 399.999999999999998795 WETH
+      expect(bGt).toBe(399999999999999998795n)
     })
   })
 })
