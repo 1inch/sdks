@@ -2,8 +2,11 @@
 
 import { describe, it, expect } from 'vitest'
 import { Address, AddressHalf, HexString } from '@1inch/sdk-core'
+import { AquaProgramBuilder } from './aqua-program-builder'
 import { RegularProgramBuilder } from './regular-program-builder'
 import { SwapVmProgram } from './swap-vm-program'
+import * as debug from '../instructions/debug/opcodes'
+import { EMPTY_OPCODE } from '../instructions/empty'
 import { PeggedSwapArgs } from '../instructions/pegged-swap'
 import type * as balances from '../instructions/balances'
 import type * as controls from '../instructions/controls'
@@ -703,6 +706,197 @@ describe('ProgramBuilder', () => {
     )
     expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0xfe00'))).toThrow(
       'Opcode at index 254 is missing',
+    )
+  })
+
+  const toOpcodeByte = (opcodeIdx: number): string => opcodeIdx.toString(16).padStart(2, '0')
+
+  it.each([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])(
+    'should reject reserved regular opcode %i on decode',
+    (opcodeIdx) => {
+      const program = new SwapVmProgram(`0x${toOpcodeByte(opcodeIdx)}00`)
+
+      expect(() => RegularProgramBuilder.decode(program)).toThrow(
+        `Invalid opcode: ${opcodeIdx} (NOT_INSTRUCTION) at offset 0`,
+      )
+    },
+  )
+
+  it.each([0, 9, 22, 23, 24, 25, 26])(
+    'should reject reserved aqua opcode %i on decode',
+    (opcodeIdx) => {
+      const program = new SwapVmProgram(`0x${toOpcodeByte(opcodeIdx)}00`)
+
+      expect(() => AquaProgramBuilder.decode(program)).toThrow(
+        `Invalid opcode: ${opcodeIdx} (NOT_INSTRUCTION) at offset 0`,
+      )
+    },
+  )
+
+  it('should reject a reserved opcode carrying args instead of dropping them', () => {
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x0503aabbcc1600'))).toThrow(
+      'Invalid opcode: 5 (NOT_INSTRUCTION) at offset 0',
+    )
+  })
+
+  it('should report the offset of a reserved opcode inside the program', () => {
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x16000a020005030100'))).toThrow(
+      'Invalid opcode: 3 (NOT_INSTRUCTION) at offset 6',
+    )
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x1600fe00'))).toThrow(
+      'Opcode at index 254 is missing (instruction at offset 2)',
+    )
+  })
+
+  it('should decode opcode bytes against the builder opcode table', () => {
+    const regular = RegularProgramBuilder.decode(new SwapVmProgram('0x1600'))
+
+    expect(regular.getInstructions()).toHaveLength(1)
+    expect(regular.getInstructions()[0].opcode).toBe(xycSwap.xycSwapXD)
+    expect(() => AquaProgramBuilder.decode(new SwapVmProgram('0x1600'))).toThrow(
+      'Invalid opcode: 22 (NOT_INSTRUCTION) at offset 0',
+    )
+
+    const aqua = AquaProgramBuilder.decode(new SwapVmProgram('0x1100'))
+
+    expect(aqua.getInstructions()[0].opcode).toBe(xycSwap.xycSwapXD)
+    expect(aqua.build().toString()).toBe('0x1100')
+  })
+
+  it('should reject args with trailing bytes on decode', () => {
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x190201ff'))).toThrow(
+      'Non-canonical args for opcode 25 (Symbol(LimitSwap.limitSwap1D)) at offset 0: 0x01ff re-encodes as 0x01',
+    )
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x0a03000aff'))).toThrow(
+      'Non-canonical args for opcode 10 (Symbol(Controls.jump)) at offset 0',
+    )
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x16001601aa'))).toThrow(
+      'Non-canonical args for opcode 22 (Symbol(XYCSwap.xycSwapXD)) at offset 2: 0xaa re-encodes as 0x',
+    )
+  })
+
+  it('should reject limit swap direction bytes other than 0x00 and 0x01 on decode', () => {
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x190102'))).toThrow(
+      'Invalid makerDirectionLt byte: 0x02',
+    )
+    expect(RegularProgramBuilder.decode(new SwapVmProgram('0x190101')).build().toString()).toBe(
+      '0x190101',
+    )
+    expect(RegularProgramBuilder.decode(new SwapVmProgram('0x1a0100')).build().toString()).toBe(
+      '0x1a0100',
+    )
+  })
+
+  it('should compare re-encoded args case-insensitively', () => {
+    const program = new RegularProgramBuilder()
+      .staticBalancesXD({
+        tokenBalances: [
+          { tokenHalf: USDC_HALF, value: 0xabcdefn },
+          { tokenHalf: WETH_HALF, value: 0xfedcban },
+        ],
+      })
+      .jumpIfTokenIn({ tokenTail: WETH_HALF, nextPC: 0xaan })
+      .salt({ salt: 0xdeadbeefn })
+      .extruction({ target: Address.fromBigInt(1n), extructionArgs: new HexString('0xabcdef') })
+      .build()
+    const upperCased = new SwapVmProgram(`0x${program.toString().slice(2).toUpperCase()}`)
+
+    const decoded = RegularProgramBuilder.decode(upperCased)
+
+    expect(decoded.getInstructions()).toHaveLength(4)
+    expect(decoded.build().toString().toLowerCase()).toBe(program.toString().toLowerCase())
+  })
+
+  it('should leave the builder unchanged when decode fails', () => {
+    const builder = new RegularProgramBuilder().xycSwapXD()
+
+    expect(() => builder.decode(new SwapVmProgram('0x16000100'))).toThrow(
+      'Invalid opcode: 1 (NOT_INSTRUCTION) at offset 2',
+    )
+    expect(builder.getInstructions()).toHaveLength(1)
+    expect(builder.build().toString()).toBe('0x1600')
+  })
+
+  it('should round-trip debug programs starting with byte 0x00 after withDebug()', () => {
+    const program = new RegularProgramBuilder()
+      .withDebug()
+      .debugPrintSwapRegisters()
+      .xycSwapXD()
+      .debugPrintContext()
+      .build()
+
+    expect(program.toString()).toBe('0x000016000200')
+    expect(() => RegularProgramBuilder.decode(program)).toThrow(
+      'Invalid opcode: 0 (NOT_INSTRUCTION) at offset 0',
+    )
+
+    const decoded = new RegularProgramBuilder().withDebug().decode(program)
+    const ixs = decoded.getInstructions()
+
+    expect(decoded.build().toString()).toBe(program.toString())
+    expect(ixs).toHaveLength(3)
+    expect(ixs[0].opcode).toBe(debug.printSwapRegisters)
+    expect(ixs[1].opcode).toBe(xycSwap.xycSwapXD)
+    expect(ixs[2].opcode).toBe(debug.printContext)
+
+    const aquaProgram = new AquaProgramBuilder()
+      .withDebug()
+      .debugPrintSwapRegisters()
+      .debugPrintSwapQuery()
+      .xycSwapXD()
+      .build()
+
+    expect(aquaProgram.toString()).toBe('0x000001001100')
+    expect(new AquaProgramBuilder().withDebug().decode(aquaProgram).build().toString()).toBe(
+      aquaProgram.toString(),
+    )
+  })
+
+  it('should reject EMPTY_OPCODE instructions on add', () => {
+    const builder = new RegularProgramBuilder()
+
+    expect(() =>
+      builder.add(EMPTY_OPCODE.createIx(EMPTY_OPCODE.coder.decode(HexString.EMPTY))),
+    ).toThrow(
+      'Invalid opcode Symbol(empty): EMPTY_OPCODE marks a reserved slot and is not an instruction',
+    )
+    expect(builder.getInstructions()).toHaveLength(0)
+  })
+
+  it('should not list reserved slots as supported opcodes', () => {
+    const ix = new RegularProgramBuilder().invalidateTokenIn1D().getInstructions()[0]
+    let message = ''
+
+    try {
+      new AquaProgramBuilder().add(ix)
+    } catch (error) {
+      message = (error as Error).message
+    }
+
+    expect(message).toMatch(
+      /^Invalid opcode Symbol\(Invalidators\.invalidateTokenIn1D\): Supported opcodes: Symbol\(Controls\.jump\), /,
+    )
+    expect(message).toContain('Symbol(Controls.onlyTxOriginTokenBalanceNonZero)')
+    expect(message).not.toContain('Symbol(empty)')
+  })
+
+  it('should refuse to build instructions that do not map to an instruction slot', () => {
+    const withEmpty = new RegularProgramBuilder().xycSwapXD()
+    withEmpty
+      .getInstructions()
+      .push(EMPTY_OPCODE.createIx(EMPTY_OPCODE.coder.decode(HexString.EMPTY)))
+
+    expect(() => withEmpty.build()).toThrow(
+      'Opcode Symbol(empty) does not map to an instruction slot of this opcode table',
+    )
+
+    const withForeignOpcode = new AquaProgramBuilder()
+    withForeignOpcode
+      .getInstructions()
+      .push(new RegularProgramBuilder().invalidateTokenIn1D().getInstructions()[0])
+
+    expect(() => withForeignOpcode.build()).toThrow(
+      'Opcode Symbol(Invalidators.invalidateTokenIn1D) does not map to an instruction slot of this opcode table',
     )
   })
 
