@@ -92,8 +92,30 @@ describe('DynamicProtocolFeeArgs', () => {
     expect(decoded.feeProvider.toString().toLowerCase()).toBe(feeProvider.toString().toLowerCase())
   })
 
-  it('should not allow zero address', () => {
-    const zero = new Address('0x0000000000000000000000000000000000000000')
-    expect(() => new DynamicProtocolFeeArgs(zero)).toThrow()
+  describe('zero fee provider (fee disabled)', () => {
+    const zeroProviderHex = '0x' + '00'.repeat(20)
+
+    it('should allow the zero address', () => {
+      const args = new DynamicProtocolFeeArgs(Address.ZERO_ADDRESS)
+
+      expect(args.feeProvider.isZero()).toBe(true)
+      expect(args.toJSON()).toEqual({ feeProvider: zeroProviderHex })
+    })
+
+    it('should encode the zero address as 20 zero bytes', () => {
+      const encoded = DynamicProtocolFeeArgs.CODER.encode(
+        new DynamicProtocolFeeArgs(Address.ZERO_ADDRESS),
+      )
+
+      expect(encoded.toString()).toBe(zeroProviderHex)
+    })
+
+    it('should decode 20 zero bytes', () => {
+      const decoded = DynamicProtocolFeeArgs.decode(new HexString(zeroProviderHex))
+
+      expect(decoded).toBeInstanceOf(DynamicProtocolFeeArgs)
+      expect(decoded.feeProvider.isZero()).toBe(true)
+      expect(DynamicProtocolFeeArgs.CODER.encode(decoded).toString()).toBe(zeroProviderHex)
+    })
   })
 })

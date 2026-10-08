@@ -3,7 +3,9 @@
 import { describe, it, expect } from 'vitest'
 import { Address, AddressHalf } from '@1inch/sdk-core'
 import { AquaProgramBuilder } from './aqua-program-builder'
+import { SwapVmProgram } from './swap-vm-program'
 import { PeggedSwapArgs } from '../instructions/pegged-swap'
+import * as fee from '../instructions/fee'
 
 const USDC = new Address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
 const WETH = new Address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2')
@@ -46,5 +48,25 @@ describe('AquaProgramBuilder', () => {
 
     expect(decoded.build().toString()).toBe(program.toString())
     expect(decoded.getInstructions()).toHaveLength(18)
+  })
+
+  it('should round-trip dynamic protocol fees with a zero fee provider', () => {
+    const zeroProvider = '00'.repeat(20)
+    const program = new AquaProgramBuilder()
+      .dynamicProtocolFeeAmountInXD({ feeProvider: Address.ZERO_ADDRESS })
+      .aquaDynamicProtocolFeeAmountInXD({ feeProvider: Address.ZERO_ADDRESS })
+      .xycSwapXD()
+      .build()
+
+    expect(program.toString()).toBe('0x' + '1d14' + zeroProvider + '1e14' + zeroProvider + '1100')
+
+    const decoded = AquaProgramBuilder.decode(new SwapVmProgram(program.toString()))
+    const [dynamicFee, aquaDynamicFee] = decoded.getInstructions()
+
+    expect(dynamicFee.opcode.id).toBe(fee.dynamicProtocolFeeAmountInXD.id)
+    expect((dynamicFee.args as fee.DynamicProtocolFeeArgs).feeProvider.isZero()).toBe(true)
+    expect(aquaDynamicFee.opcode.id).toBe(fee.aquaDynamicProtocolFeeAmountInXD.id)
+    expect((aquaDynamicFee.args as fee.DynamicProtocolFeeArgs).feeProvider.isZero()).toBe(true)
+    expect(decoded.build().toString()).toBe(program.toString())
   })
 })
