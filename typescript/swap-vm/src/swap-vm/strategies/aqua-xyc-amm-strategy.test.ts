@@ -4,6 +4,11 @@ import { describe, it, expect } from 'vitest'
 import { Address } from '@1inch/sdk-core'
 import { AquaXYCAmmStrategy } from './aqua-xyc-amm-strategy'
 import { AquaProgramBuilder } from '../programs/aqua-program-builder'
+import * as concentrate from '../instructions/concentrate'
+import * as controls from '../instructions/controls'
+import * as decay from '../instructions/decay'
+import * as fee from '../instructions/fee'
+import * as xycSwap from '../instructions/xyc-swap'
 
 describe('AquaXYCAMMStrategy', () => {
   describe('buildProgram', () => {
@@ -30,6 +35,50 @@ describe('AquaXYCAMMStrategy', () => {
       const decoded = AquaProgramBuilder.decode(program)
       const rebuilt = decoded.build()
       expect(rebuilt.toString()).toBe(program.toString())
+    })
+
+    it('should emit every instruction in the documented order', () => {
+      const program = AquaXYCAmmStrategy.newConcentrate({
+        sqrtPriceMin: 100000n,
+        sqrtPriceMax: 200000n,
+      })
+        .withSalt(12345n)
+        .withFeeTokenIn(0.5)
+        .withDecayPeriod(3600n)
+        .withProtocolFee(0.1, new Address('0x0000000000000000000000000000000000000002'))
+        .withTxOriginAccessToken(new Address('0x0000000000000000000000000000000000000001'))
+        .build()
+
+      const ids = AquaProgramBuilder.decode(program)
+        .getInstructions()
+        .map((ix) => ix.opcode.id)
+      expect(ids).toEqual([
+        controls.onlyTxOriginTokenBalanceNonZero.id,
+        fee.aquaProtocolFeeAmountInXD.id,
+        decay.decayXD.id,
+        concentrate.concentrateGrowLiquidity2D.id,
+        fee.flatFeeAmountInXD.id,
+        xycSwap.xycSwapXD.id,
+        controls.salt.id,
+      ])
+    })
+
+    it('should emit decay before concentrate', () => {
+      const program = AquaXYCAmmStrategy.newConcentrate({
+        sqrtPriceMin: 100000n,
+        sqrtPriceMax: 200000n,
+      })
+        .withDecayPeriod(3600n)
+        .build()
+
+      const ids = AquaProgramBuilder.decode(program)
+        .getInstructions()
+        .map((ix) => ix.opcode.id)
+      expect(ids).toEqual([
+        decay.decayXD.id,
+        concentrate.concentrateGrowLiquidity2D.id,
+        xycSwap.xycSwapXD.id,
+      ])
     })
 
     it('should add concentrate when deltas are non-zero', () => {
