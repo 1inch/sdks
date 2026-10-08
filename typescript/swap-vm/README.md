@@ -275,6 +275,8 @@ The generic [`ProgramBuilder`](./src/swap-vm/programs/program-builder.ts):
 - `ProgramBuilder.add(ix)` validates that the instruction’s opcode is present in the provided `ixsSet`.  
   - If you accidentally mix instructions from a different set, it throws with the list of supported opcode IDs.
 - `ProgramBuilder.decode(program)` uses the same `ixsSet` to map opcode indices back to instruction definitions, so your **off-chain opcode table must match the on-chain contract layout**.
+  - Decoding is relative to the builder's opcode table: the same bytes can mean different instructions under different tables (e.g. byte `0x16` is `xycSwapXD` in `_allInstructions` but a reserved slot in `aquaInstructions`). Always decode a program with the table of the router it targets, e.g. `AquaProgramBuilder.decode(program)` for `AquaSwapVMRouter` programs.
+  - `decode` throws on opcode bytes that are missing from the table or map to a reserved `EMPTY_OPCODE` slot, and on instructions whose args do not re-encode to exactly the original bytes. Programs containing debug opcodes decode only on a builder with `withDebug()` enabled.
 
 This makes it safe to:
 
