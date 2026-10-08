@@ -175,6 +175,55 @@ describe('MakerTraits', () => {
 
       encodeDecodeTest(traits, maker)
     })
+
+    it('should encode and decode hooks with empty data after a non-empty first hook', () => {
+      const maker = Address.fromBigInt(7n)
+      const target = Address.fromBigInt(30n)
+
+      const traits = MakerTraits.new({
+        shouldUnwrap: false,
+        useAquaInsteadOfSignature: true,
+        allowZeroAmountIn: false,
+        preTransferInHook: new Interaction(Address.ZERO_ADDRESS, new HexString('0xaaaa')),
+        postTransferInHook: new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+        preTransferOutHook: new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+        postTransferOutHook: new Interaction(target, HexString.EMPTY),
+      })
+
+      const { hooksData } = traits.encode(maker)
+
+      expect(hooksData.toString()).toBe(`0xaaaa${target.toString().slice(2)}`)
+
+      const decoded = encodeDecodeTest(traits, maker)
+
+      expect(decoded.postTransferInHook?.data.isEmpty()).toBe(true)
+      expect(decoded.preTransferOutHook?.data.isEmpty()).toBe(true)
+      expect(decoded.postTransferOutHook?.target).toEqual(target)
+      expect(decoded.postTransferOutHook?.data.isEmpty()).toBe(true)
+    })
+
+    it('should match MakerTraitsLib.build output for hooks with empty data', () => {
+      const maker = new Address('0x3333333333333333333333333333333333333333')
+      const target = new Address('0x4444444444444444444444444444444444444444')
+      const onChainTraits =
+        42630485978982730269626159077550656080137343507199255245084254063879318929408n
+      const onChainHooksData = new HexString('0xaaaa4444444444444444444444444444444444444444dddd')
+      const program = new HexString('0x1100')
+
+      const traits = MakerTraits.new({
+        shouldUnwrap: false,
+        useAquaInsteadOfSignature: true,
+        allowZeroAmountIn: false,
+        preTransferInHook: new Interaction(Address.ZERO_ADDRESS, new HexString('0xaaaa')),
+        postTransferInHook: new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+        preTransferOutHook: new Interaction(target, HexString.EMPTY),
+        postTransferOutHook: new Interaction(Address.ZERO_ADDRESS, new HexString('0xdddd')),
+      })
+
+      expect(traits.encode(maker)).toEqual({ traits: onChainTraits, hooksData: onChainHooksData })
+      expect(MakerTraits.decode(onChainTraits, onChainHooksData.concat(program))).toEqual(traits)
+      expect(MakerTraits.hooksDataEndsAtByte(onChainTraits)).toBe(onChainHooksData.bytesCount())
+    })
   })
 
   it('should encode hooks where target is maker', () => {
