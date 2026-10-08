@@ -340,6 +340,20 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * Calls external contract to perform custom logic
+   *
+   * The target is called with the current `nextPC`, the swap registers (balances and amounts) and
+   * the remaining taker instruction args, and returns a new `nextPC`, new registers and how many
+   * taker args bytes it consumed, so it can change control flow and swap amounts. `quote()` calls
+   * it through the view-only `IStaticExtruction`, `swap()` through the state-changing `IExtruction`.
+   *
+   * WARNING:
+   * - Both implementations must be deterministic and return the same results for the same inputs,
+   *   otherwise quotes do not match swaps
+   * - The target should be immutable (non-upgradeable), so its logic cannot change between quote
+   *   and swap
+   * - Takers/resolvers must validate strategies that use this instruction (target code,
+   *   upgradeability, quote/swap consistency) before routing to them
+   * - Makers must not use backward jumps to this instruction, it breaks quote/swap consistency
    **/
   public extruction(data: DataFor<extruction.ExtructionArgs>): this {
     super.add(
@@ -389,6 +403,14 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * Applies protocol fee to amountIn with direct transfer
+   *
+   * The fee is transferred in `tokenIn` from the maker to `to` during program execution, before the
+   * taker's `tokenIn` is received, so the maker must already hold the fee amount of `tokenIn` and
+   * have approved the router to spend it, otherwise the swap reverts.
+   *
+   * WARNING:
+   * - `quote()` skips the transfer, so a quote can succeed while the swap reverts
+   * - Makers must not use backward jumps to this instruction, it can break quote/swap consistency
    **/
   public protocolFeeAmountInXD(data: DataFor<fee.ProtocolFeeArgs>): this {
     super.add(fee.protocolFeeAmountInXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
@@ -398,6 +420,15 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * Applies protocol fee to amountOut with direct transfer
+   *
+   * The fee is transferred in `tokenOut` from the maker to `to` during program execution, so the
+   * maker must hold the fee on top of the swap output and have approved the router to spend it,
+   * otherwise the swap reverts.
+   *
+   * WARNING:
+   * - `quote()` skips the transfer, so a quote can succeed while the swap reverts
+   * - Makers must not use backward jumps to this instruction, it can break quote/swap consistency
+   * @experimental FeeExperimental opcode, not recommended for production
    **/
   public protocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
     super.add(fee.protocolFeeAmountOutXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
@@ -407,6 +438,17 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * Applies protocol fee to amountIn through Aqua protocol
+   *
+   * The fee is pulled in `tokenIn` from the maker's Aqua balance for this strategy to `to` during
+   * program execution, before the taker's `tokenIn` is received, so it can only be covered by the
+   * balance the maker already has. If the maker cannot cover it, v1.0.2 routers proceed without the
+   * fee and emit `ProtocolFeeSkipped` (swap amounts are the same either way), while earlier router
+   * versions revert the swap. On v1.0.2 a non-zero fee with a zero `to` always reverts.
+   *
+   * WARNING:
+   * - `quote()` skips the pull, so it cannot tell whether the fee will be collected (v1.0.2), and
+   *   on earlier router versions a quote can succeed while the swap reverts
+   * - Makers must not use backward jumps to this instruction, it can break quote/swap consistency
    **/
   public aquaProtocolFeeAmountInXD(data: DataFor<fee.ProtocolFeeArgs>): this {
     super.add(fee.aquaProtocolFeeAmountInXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
@@ -416,6 +458,15 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * Applies protocol fee to amountOut through Aqua protocol
+   *
+   * The fee is pulled in `tokenOut` from the maker's Aqua balance for this strategy to `to` during
+   * program execution, so that balance must cover the fee on top of the swap output. Unlike the
+   * amountIn Aqua fees, a shortfall reverts the swap on v1.0.2 routers too.
+   *
+   * WARNING:
+   * - `quote()` skips the pull, so a quote can succeed while the swap reverts
+   * - Makers must not use backward jumps to this instruction, it can break quote/swap consistency
+   * @experimental FeeExperimental opcode, not recommended for production
    **/
   public aquaProtocolFeeAmountOutXD(data: DataFor<fee.ProtocolFeeArgs>): this {
     super.add(fee.aquaProtocolFeeAmountOutXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
@@ -425,6 +476,17 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * Applies protocol fee, fetched from external contract, to amountIn with direct transfer
+   *
+   * The fee and its recipient come from a staticcall to the maker-chosen `feeProvider`. The fee is
+   * transferred in `tokenIn` from the maker during program execution, before the taker's `tokenIn`
+   * is received, so the maker must already hold the fee amount of `tokenIn` and have approved the
+   * router to spend it, otherwise the swap reverts.
+   *
+   * WARNING:
+   * - `quote()` skips the transfer, so a quote can succeed while the swap reverts
+   * - Takers should verify the fee provider before executing: a malicious provider can return
+   *   large data to burn gas
+   * - Makers must not use backward jumps to this instruction, it can break quote/swap consistency
    **/
   public dynamicProtocolFeeAmountInXD(data: DataFor<fee.DynamicProtocolFeeArgs>): this {
     super.add(
@@ -436,6 +498,20 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * Applies protocol fee, fetched from external contract, to amountIn through Aqua protocol
+   *
+   * The fee and its recipient come from a staticcall to the maker-chosen `feeProvider`. The fee is
+   * pulled in `tokenIn` from the maker's Aqua balance for this strategy during program execution,
+   * before the taker's `tokenIn` is received, so it can only be covered by the balance the maker
+   * already has. If the maker cannot cover it, v1.0.2 routers proceed without the fee and emit
+   * `ProtocolFeeSkipped` (swap amounts are the same either way), while earlier router versions
+   * revert the swap.
+   *
+   * WARNING:
+   * - `quote()` skips the pull, so it cannot tell whether the fee will be collected (v1.0.2), and
+   *   on earlier router versions a quote can succeed while the swap reverts
+   * - Takers should verify the fee provider before executing: a malicious provider can return
+   *   large data to burn gas
+   * - Makers must not use backward jumps to this instruction, it can break quote/swap consistency
    **/
   public aquaDynamicProtocolFeeAmountInXD(data: DataFor<fee.DynamicProtocolFeeArgs>): this {
     super.add(
