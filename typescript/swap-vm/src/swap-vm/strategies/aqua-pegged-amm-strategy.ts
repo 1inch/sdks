@@ -5,7 +5,6 @@ import type { PeggedArgs, PeggedTokenInfo } from './types'
 import { AquaProgramBuilder } from '../programs/aqua-program-builder'
 import type { SwapVmProgram } from '../programs'
 import * as fee from '../instructions/fee'
-import { FlatFeeArgs } from '../instructions/fee'
 import { PeggedSwapArgs } from '../instructions/pegged-swap'
 
 export class AquaPeggedAmmStrategy extends AquaAMMStrategy {
@@ -28,18 +27,20 @@ export class AquaPeggedAmmStrategy extends AquaAMMStrategy {
       builder.onlyTxOriginTokenBalanceNonZero({ token: this.accessToken })
     }
 
-    if (this.protocolFee) {
-      const data = fee.ProtocolFeeArgs.fromBps(this.protocolFee.bps, this.protocolFee.receiver)
-      builder.add(fee.aquaProtocolFeeAmountInXD.createIx(data))
+    const protocolFee = this.protocolFeeArgs()
+
+    if (protocolFee) {
+      builder.add(fee.aquaProtocolFeeAmountInXD.createIx(protocolFee))
     }
 
     if (this.decayPeriod) {
       builder.decayXD({ decayPeriod: this.decayPeriod })
     }
 
-    if (this.feeBpsIn) {
-      const data = FlatFeeArgs.fromBps(this.feeBpsIn)
-      builder.add(fee.flatFeeAmountInXD.createIx(data))
+    const feeTokenIn = this.feeTokenInArgs()
+
+    if (feeTokenIn?.fee) {
+      builder.add(fee.flatFeeAmountInXD.createIx(feeTokenIn))
     }
 
     const peggedArgs = PeggedSwapArgs.fromTokens(

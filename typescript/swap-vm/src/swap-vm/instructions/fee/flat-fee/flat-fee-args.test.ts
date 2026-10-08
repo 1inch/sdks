@@ -137,4 +137,29 @@ describe('FlatFeeArgs', () => {
     const bps1000 = FlatFeeArgs.fromBps(1000)
     expect(percent10.fee).toBe(bps1000.fee)
   })
+
+  it('should create from fractional basis points and percent exactly', () => {
+    expect(FlatFeeArgs.fromBps(1.1).fee).toBe(110000n)
+    expect(FlatFeeArgs.fromBps(2.3).fee).toBe(230000n)
+    expect(FlatFeeArgs.fromBps(0.00001).fee).toBe(1n)
+    expect(FlatFeeArgs.fromPercent(0.011).fee).toBe(110000n)
+    expect(FlatFeeArgs.fromPercent(0.57).fee).toBe(5700000n)
+    expect(FlatFeeArgs.fromPercent(0.0000001).fee).toBe(1n)
+
+    expect(FlatFeeArgs.CODER.encode(FlatFeeArgs.fromBps(1.1)).toString()).toBe('0x0001adb0')
+  })
+
+  it('should reject unrepresentable basis points and percent', () => {
+    expect(() => FlatFeeArgs.fromBps(1.234567)).toThrow('Must be a multiple of 0.00001 bps')
+    expect(() => FlatFeeArgs.fromPercent(0.00000001)).toThrow('Must be a multiple of 0.0000001%')
+    expect(() => FlatFeeArgs.fromBps(NaN)).toThrow('Must be a finite number')
+    expect(() => FlatFeeArgs.fromPercent(Infinity)).toThrow('Must be a finite number')
+    expect(() => FlatFeeArgs.fromBps(-1)).toThrow('Must be non-negative')
+    expect(() => FlatFeeArgs.fromPercent(-0.1)).toThrow('Must be non-negative')
+  })
+
+  it('should reject basis points and percent above 100%', () => {
+    expect(() => FlatFeeArgs.fromBps(10000.00001)).toThrow('Fee out of range')
+    expect(() => FlatFeeArgs.fromPercent(100.1)).toThrow('Fee out of range')
+  })
 })

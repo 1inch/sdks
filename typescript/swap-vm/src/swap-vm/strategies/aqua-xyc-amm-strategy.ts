@@ -6,7 +6,6 @@ import { AquaProgramBuilder } from '../programs/aqua-program-builder'
 import type { SwapVmProgram } from '../programs'
 import * as concentrate from '../instructions/concentrate'
 import * as fee from '../instructions/fee'
-import { FlatFeeArgs } from '../instructions/fee'
 
 export class AquaXYCAmmStrategy extends AquaAMMStrategy {
   constructor(public readonly xycConcentrateArgs?: concentrate.ConcentrateGrowLiquidity2DArgs) {
@@ -46,9 +45,10 @@ export class AquaXYCAmmStrategy extends AquaAMMStrategy {
       builder.onlyTxOriginTokenBalanceNonZero({ token: this.accessToken })
     }
 
-    if (this.protocolFee) {
-      const data = fee.ProtocolFeeArgs.fromBps(this.protocolFee.bps, this.protocolFee.receiver)
-      builder.add(fee.aquaProtocolFeeAmountInXD.createIx(data))
+    const protocolFee = this.protocolFeeArgs()
+
+    if (protocolFee) {
+      builder.add(fee.aquaProtocolFeeAmountInXD.createIx(protocolFee))
     }
 
     if (this.xycConcentrateArgs) {
@@ -59,9 +59,10 @@ export class AquaXYCAmmStrategy extends AquaAMMStrategy {
       builder.decayXD({ decayPeriod: this.decayPeriod })
     }
 
-    if (this.feeBpsIn) {
-      const data = FlatFeeArgs.fromBps(this.feeBpsIn)
-      builder.add(fee.flatFeeAmountInXD.createIx(data))
+    const feeTokenIn = this.feeTokenInArgs()
+
+    if (feeTokenIn?.fee) {
+      builder.add(fee.flatFeeAmountInXD.createIx(feeTokenIn))
     }
 
     builder.xycSwapXD()
