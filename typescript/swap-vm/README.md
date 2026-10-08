@@ -41,11 +41,17 @@ const maker = '0xmaker_address'
 const USDC = new Address('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')
 const WETH = new Address('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')
 
-// Price range as P = tokenGt/tokenLt (1e18). E.g. 1500–3000 USDC per WETH → rawPriceMin = 1e18/3000, rawPriceMax = 1e18/1500
-const { ONE_E18 } = instructions.concentrate
+// Price range: 1500–3000 USDC per WETH. `Price.fromHuman` applies the token decimals and `toSqrt()`
+// returns the on-chain bound sqrt(P * 1e18), with P = tokenGt/tokenLt in token base units (1e18 fixed-point).
+// USDC < WETH by address, so P is WETH per USDC and the higher USDC price (3000) is the lower bound
+const { Price } = instructions.concentrate
+const usdcPerWeth = {
+  quoteToken: { address: USDC, decimals: 6n },
+  baseToken: { address: WETH, decimals: 18n }
+}
 const program = AquaXYCAmmStrategy.newConcentrate({
-  rawPriceMin: ONE_E18 / 3000n,
-  rawPriceMax: ONE_E18 / 1500n
+  sqrtPriceMin: Price.fromHuman('3000', usdcPerWeth).toSqrt(),
+  sqrtPriceMax: Price.fromHuman('1500', usdcPerWeth).toSqrt()
 }).build()
 
 const order = Order.new({
@@ -336,6 +342,7 @@ For example:
 ```typescript
 import type { SwapVmProgram } from '@1inch/swap-vm-sdk'
 import { AquaProgramBuilder, instructions, Address, Order, MakerTraits } from '@1inch/swap-vm-sdk'
+import { parseUnits } from 'viem'
 const { concentrate, fee } = instructions
 
 /**
@@ -358,7 +365,8 @@ export class SimpleAmmStrategy {
 
   /**
    * Sets the concentrated liquidity price range.
-   * Prices are P = tokenGt/tokenLt in 1e18 fixed-point (e.g. WETH per USDC when USDC < WETH).
+   * Prices are P = tokenGt/tokenLt in 1e18 fixed-point, as a ratio of token base units
+   * (e.g. WETH wei per USDC unit when USDC < WETH), so they depend on both tokens' decimals.
    */
   public withPriceRange(rawPriceMin: bigint, rawPriceMax: bigint): this {
     this.rawPriceMin = rawPriceMin
@@ -404,12 +412,17 @@ export class SimpleAmmStrategy {
   }
 }
 
-// Example usage (price range: e.g. 1500–3000 USDC per WETH → P = WETH per USDC = 1/3000 .. 1/1500 in 1e18):
+// Example usage: 1500–3000 USDC per WETH. USDC < WETH by address, so each raw price is
+// (1 WETH in wei) * 1e18 / (price in USDC units), and the higher USDC price (3000) is the lower bound
 
 const { ONE_E18 } = concentrate
+const oneWeth = parseUnits('1', 18)
 
 const strategy = new SimpleAmmStrategy(USDC, WETH)
-  .withPriceRange(ONE_E18 / 3000n, ONE_E18 / 1500n) // 1500–3000 USDC per WETH
+  .withPriceRange(
+    (oneWeth * ONE_E18) / parseUnits('3000', 6), // rawPriceMin: 3000 USDC per WETH
+    (oneWeth * ONE_E18) / parseUnits('1500', 6), // rawPriceMax: 1500 USDC per WETH
+  )
   .withFeeTokenIn(5) // 5 bps taker fee on input (optional)
 
 const program = strategy.build()
