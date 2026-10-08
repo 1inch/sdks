@@ -140,8 +140,8 @@ describe('AquaXYCAMMStrategy', () => {
         '0x1504' + '00000001' + '1100',
       )
       expect(
-        AquaXYCAmmStrategy.new().withProtocolFeeRaw(1_000_000_000n, receiver).build().toString(),
-      ).toBe('0x1c18' + '3b9aca00' + receiverHex + '1100')
+        AquaXYCAmmStrategy.new().withProtocolFeeRaw(999_999_999n, receiver).build().toString(),
+      ).toBe('0x1c18' + '3b9ac9ff' + receiverHex + '1100')
 
       const raw = AquaXYCAmmStrategy.new()
         .withProtocolFeeRaw(230000n, receiver)
