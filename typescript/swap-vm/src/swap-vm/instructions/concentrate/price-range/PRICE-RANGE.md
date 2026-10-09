@@ -25,8 +25,8 @@ Valid **min / spot / max** band for one pair (`Price` = `sqrt(P)*1e18` + token0/
 | `PriceRange.new(range)` | Normalize bounds + validate spot ∈ [min,max] in sqrt space. |
 | `PriceRange.fromJSON(json)` | Deserialize `PriceRangeJSON`. |
 | `PriceRange.fromPriceBounds(bounds, reserves)` | Implied spot from balances + bounds (`computeLiquidityAndPrice`). |
-| `computeMaxAllocation({ reserveA, reserveB })` | Max **L** using both caps. |
-| `computeFixedAllocation(fixedReserve)` | One token amount fixed; **L** is derived from that token alone and the other leg follows. |
+| `computeMaxAllocation({ reserveA, reserveB })` | Max **L** using both caps; neither reserve exceeds its cap. |
+| `computeFixedAllocation(fixedReserve)` | One token amount fixed; **L** is derived from that token alone and the other leg follows. The fixed side is never exceeded. |
 | `toJSON()` | Persist-friendly JSON. |
 | `token0` / `token1` | `PriceToken` metadata for the pair. |
 
@@ -55,7 +55,7 @@ const max = range.computeMaxAllocation({
 
 ### Fixed allocation
 
-Fix **exactly one** token amount (e.g. “deposit 1 WETH”); the other leg is computed for the same liquidity **L** (integer math may shave a few wei off the fixed side).
+Fix **exactly one** token amount (e.g. “deposit 1 WETH”); the other leg is computed for the same liquidity **L**. **L** is the largest integer liquidity whose reserves fit within the fixed amount: the fixed side is used in full whenever the liquidity grid allows it and is never exceeded (integer math may leave it a few wei short for a cheap token with many decimals).
 
 When the spot sits on a bound the range is one-sided: at `maxPrice` it holds only token1, at `minPrice` only token0 (e.g. ranges from `fromPriceBounds` with one zero reserve). Fixing the held token returns `0` for the other leg; fixing the token the range does not hold throws, fix the other token instead.
 
@@ -73,7 +73,7 @@ const fixedWeth = TokenReserve.new({
 
 const out = range.computeFixedAllocation(fixedWeth)
 // out.reserve0 — USDC amount needed (if token0 is USDC)
-// out.reserve1 — WETH amount (≈ 1e18, may differ by dust)
+// out.reserve1 — WETH amount (<= 1e18, equal unless the grid makes it dust short)
 ```
 
 ### Spot from balances

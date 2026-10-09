@@ -320,7 +320,7 @@ describe('SwapVM', () => {
 
     const price = +formatUnits(srcAmount, 6) / +formatUnits(dstAmount, 18)
 
-    expect(price).to.equal(2500.000263932153)
+    expect(price).to.equal(2500.000263931884)
   })
 
   test('should swap by AquaXYCAmmStrategy Concentrated (2000 - 3000 range) with 2500 spot price (WETH -> USDC)', async () => {
@@ -653,7 +653,7 @@ describe('SwapVM', () => {
 
     const price = +formatUnits(srcAmount, 6) / +formatUnits(dstAmount, 18)
 
-    expect(price).to.equal(2500.000263931915)
+    expect(price).to.equal(2500.0002639317904)
   })
 
   test('should swap by AquaXYCAmmStrategy Concentrated (2000 - 3000 range) with 2500 spot price (USDT -> WBTC)', async () => {

@@ -2,9 +2,16 @@
 
 /**
  * Differential test: the pinned SwapVM contract is the single source of truth for the
- * concentrated-liquidity math. Every SDK helper in `concentrate-liquidity-math.ts` must
- * reproduce `XYCConcentrateArgsBuilder` (XYCConcentrate.sol) to the wei — the SDK sizes the
- * reserves makers actually ship, and any rounding drift opens pools away from the target spot.
+ * concentrated-liquidity math. `computeBalances` and `computeLiquidityAndPrice` in
+ * `concentrate-liquidity-math.ts` must reproduce `XYCConcentrateArgsBuilder`
+ * (XYCConcentrate.sol) to the wei — the SDK sizes the reserves makers actually ship, and any
+ * rounding drift opens pools away from the target spot.
+ *
+ * `computeLiquidityFromAmounts` is checked against the contract's `computeBalances` instead of
+ * its own helper: the helper's product-form `lFromLt` term is not the inverse of its
+ * reciprocal-form `computeBalances`, so the reserves it sizes exceed the available tokenLt (by
+ * wei on same-decimals pairs, ~1e-13 relative on USDC/WETH) and collapse for a cheap tokenLt.
+ * The SDK returns the largest L whose on-chain reserves fit within the available amounts.
  *
  * Runs against a local Anvil with no mainnet fork: the harness is pure math, so this suite
  * needs Docker but no FORK_URL.
@@ -178,7 +185,28 @@ describe('concentrate-liquidity-math vs pinned XYCConcentrateArgsBuilder', () =>
 
     for (const [regimeName, prices] of Object.entries(REGIMES)) {
       for (const [amountsName, amounts] of Object.entries(AMOUNTS)) {
-        it(`matches the contract to the wei (${regimeName}, ${amountsName})`, async () => {
+        it(`sizes the largest reserves the contract fits within the amounts (${regimeName}, ${amountsName})`, async () => {
+          const sdk = computeLiquidityFromAmounts(
+            amounts.availableLt,
+            amounts.availableGt,
+            prices.sqrtPspot,
+            prices.sqrtPmin,
+            prices.sqrtPmax,
+          )
+          const [bLt, bGt] = await contractBalances(sdk.targetL, prices)
+          const [nextLt, nextGt] = await contractBalances(sdk.targetL + 1n, prices)
+
+          // The reserves are exactly what the contract derives for this L ...
+          expect(sdk.actualLt).toBe(bLt)
+          expect(sdk.actualGt).toBe(bGt)
+          // ... they fit within the available amounts ...
+          expect(sdk.actualLt).toBeLessThanOrEqual(amounts.availableLt)
+          expect(sdk.actualGt).toBeLessThanOrEqual(amounts.availableGt)
+          // ... and one more unit of L no longer fits
+          expect(nextLt > amounts.availableLt || nextGt > amounts.availableGt).toBe(true)
+        })
+
+        it(`backs at least the L of the contract helper when that one fits (${regimeName}, ${amountsName})`, async () => {
           const sdk = computeLiquidityFromAmounts(
             amounts.availableLt,
             amounts.availableGt,
@@ -192,9 +220,9 @@ describe('concentrate-liquidity-math vs pinned XYCConcentrateArgsBuilder', () =>
             prices,
           )
 
-          expect(sdk.targetL).toBe(targetL)
-          expect(sdk.actualLt).toBe(actualLt)
-          expect(sdk.actualGt).toBe(actualGt)
+          if (actualLt <= amounts.availableLt && actualGt <= amounts.availableGt) {
+            expect(sdk.targetL).toBeGreaterThanOrEqual(targetL)
+          }
         })
       }
     }
