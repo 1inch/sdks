@@ -162,3 +162,70 @@ export const aquaInstructions: Opcode<IArgsData>[] = [
   extruction.extruction, // 33
   controls.onlyTxOriginTokenBalanceNonZero, // 34
 ] as const
+
+/**
+ * Limit opcodes array - matching LimitSwapVMRouter contract (41 opcodes)
+ * @see https://github.com/1inch/swap-vm/blob/v1.0.2/src/opcodes/LimitOpcodes.sol#L41
+ */
+export const limitInstructions: Opcode<IArgsData>[] = [
+  /**
+   * Debug slots (1-10) - reserved for debugging
+   */
+  EMPTY_OPCODE, // 1
+  EMPTY_OPCODE, // 2
+  EMPTY_OPCODE, // 3
+  EMPTY_OPCODE, // 4
+  EMPTY_OPCODE, // 5
+  EMPTY_OPCODE, // 6
+  EMPTY_OPCODE, // 7
+  EMPTY_OPCODE, // 8
+  EMPTY_OPCODE, // 9
+  EMPTY_OPCODE, // 10
+
+  /**
+   * Controls (11-17)
+   */
+  controls.jump, // 11
+  controls.jumpIfTokenIn, // 12
+  controls.jumpIfTokenOut, // 13
+  controls.deadline, // 14
+  controls.onlyTakerTokenBalanceNonZero, // 15
+  controls.onlyTakerTokenBalanceGte, // 16
+  controls.onlyTakerTokenSupplyShareGte, // 17
+
+  /**
+   * Balances (18)
+   */
+  balances.staticBalancesXD, // 18
+
+  /**
+   * Invalidators (19-21)
+   */
+  invalidators.invalidateBit1D, // 19
+  invalidators.invalidateTokenIn1D, // 20
+  invalidators.invalidateTokenOut1D, // 21
+
+  /**
+   * Trading instructions (22+)
+   */
+  limitSwap.limitSwap1D, // 22
+  limitSwap.limitSwapOnlyFull1D, // 23
+  minRate.requireMinRate1D, // 24
+  minRate.adjustMinRate1D, // 25
+  dutchAuction.dutchAuctionBalanceIn1D, // 26
+  dutchAuction.dutchAuctionBalanceOut1D, // 27
+  baseFeeAdjuster.baseFeeAdjuster1D, // 28
+  twapSwap.twap, // 29
+  extruction.extruction, // 30
+  controls.salt, // 31
+  fee.flatFeeAmountInXD, // 32
+  fee.flatFeeAmountOutXD, // 33
+  fee.progressiveFeeInXD, // 34
+  fee.progressiveFeeOutXD, // 35
+  fee.protocolFeeAmountOutXD, // 36
+  fee.aquaProtocolFeeAmountOutXD, // 37
+  fee.protocolFeeAmountInXD, // 38
+  fee.aquaProtocolFeeAmountInXD, // 39
+  fee.dynamicProtocolFeeAmountInXD, // 40
+  fee.aquaDynamicProtocolFeeAmountInXD, // 41
+] as const
