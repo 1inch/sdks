@@ -47,7 +47,9 @@ export class HexString {
   }
 
   sliceBytes(start: number, end?: number): HexString {
-    return new HexString('0x' + this.hexString.slice(start * 2 + 2, end ? end * 2 + 2 : undefined))
+    return new HexString(
+      '0x' + this.hexString.slice(start * 2 + 2, end === undefined ? undefined : end * 2 + 2),
+    )
   }
 
   equal(other: HexString): boolean {

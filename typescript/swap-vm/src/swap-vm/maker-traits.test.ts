@@ -224,6 +224,50 @@ describe('MakerTraits', () => {
       expect(MakerTraits.decode(onChainTraits, onChainHooksData.concat(program))).toEqual(traits)
       expect(MakerTraits.hooksDataEndsAtByte(onChainTraits)).toBe(onChainHooksData.bytesCount())
     })
+
+    it('should decode an empty first hook from MakerTraitsLib.build output', () => {
+      const maker = new Address('0x3333333333333333333333333333333333333333')
+      const onChainTraits =
+        39803530675328264941685581732473515572931709543860161877349024523970154594304n
+      const onChainData = new HexString('0xabcd1100')
+
+      const decoded = MakerTraits.decode(onChainTraits, onChainData)
+
+      expect(decoded).toEqual(
+        MakerTraits.new({
+          shouldUnwrap: false,
+          useAquaInsteadOfSignature: true,
+          allowZeroAmountIn: false,
+          preTransferInHook: new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+          postTransferInHook: new Interaction(Address.ZERO_ADDRESS, new HexString('0xabcd')),
+        }),
+      )
+      expect(onChainData.sliceBytes(MakerTraits.hooksDataEndsAtByte(onChainTraits))).toEqual(
+        new HexString('0x1100'),
+      )
+      expect(decoded.encode(maker)).toEqual({
+        traits: onChainTraits,
+        hooksData: new HexString('0xabcd'),
+      })
+    })
+
+    it('should decode empty hooks as empty data when the program follows the hooks data', () => {
+      const traits = MakerTraits.new({
+        shouldUnwrap: false,
+        useAquaInsteadOfSignature: true,
+        allowZeroAmountIn: false,
+        preTransferInHook: new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+        postTransferInHook: new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+        preTransferOutHook: new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+        postTransferOutHook: new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+      })
+
+      const { traits: encodedTraits, hooksData } = traits.encode()
+      const orderData = hooksData.concat(new HexString('0x1100'))
+
+      expect(hooksData.isEmpty()).toBe(true)
+      expect(MakerTraits.decode(encodedTraits, orderData)).toEqual(traits)
+    })
   })
 
   it('should encode hooks where target is maker', () => {
