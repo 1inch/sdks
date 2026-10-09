@@ -89,7 +89,7 @@ calculator.token1  // ConcentrateTokenInfo
 
 ### `computeMaxAllocation(scaledPrices)`
 
-Uses `token0.maxAvailableLiquidity` and `token1.maxAvailableLiquidity` to maximize L over the given range. Returns sqrt prices and the token0/token1 reserves that achieve that maximum.
+Uses `token0.maxAvailableLiquidity` and `token1.maxAvailableLiquidity` to maximize L over the given range. Returns sqrt prices and the token0/token1 reserves that achieve that maximum. Neither reserve ever exceeds its `maxAvailableLiquidity`; the limiting token is used in full whenever the integer liquidity grid allows it.
 
 **Use case**: “Deposit all my available USDC and WETH into this range.”
 
@@ -112,7 +112,7 @@ const result = calculator.computeMaxAllocation(prices)
 
 Fixes the amount of one token to `fixedReserve` and computes the required amount of the other token so that the position has the same liquidity L. Returns the same shape as `computeMaxAllocation`.
 
-**Precision**: Due to integer math (floor division, sqrt), the fixed asset amount in the result may be less than requested by a few wei.
+**Precision**: The fixed asset amount in the result is never more than requested. L is the largest integer liquidity whose reserves fit within `fixedReserve`, so the result equals the requested amount whenever the liquidity grid allows it, and lands at most one grid step below it otherwise (a few wei for a cheap token with many decimals).
 
 **One-sided ranges**: With the spot on `maxPrice` the range holds only token1, with the spot on `minPrice` only token0. Fixing the held token returns `0` for the other one; fixing the token the range does not hold throws.
 
