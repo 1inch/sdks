@@ -49,6 +49,10 @@ describe('AquaProgramBuilder', () => {
     expect(decoded.getInstructions()).toHaveLength(18)
   })
 
+  it('should reject building an empty program', () => {
+    expect(() => new AquaProgramBuilder().build()).toThrow('Cannot build an empty program')
+  })
+
   it('should encode jumpIfTokenIn and jumpIfTokenOut with full token addresses', () => {
     const program = new AquaProgramBuilder()
       .jumpIfTokenIn({ token: USDC, nextPC: 6n })

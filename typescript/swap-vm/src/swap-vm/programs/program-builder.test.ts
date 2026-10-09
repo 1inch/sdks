@@ -2,8 +2,10 @@
 
 import { describe, it, expect } from 'vitest'
 import { Address, HexString } from '@1inch/sdk-core'
+import { ProgramBuilder } from './program-builder'
 import { RegularProgramBuilder } from './regular-program-builder'
 import { SwapVmProgram } from './swap-vm-program'
+import { _allInstructions } from '../instructions'
 import { PeggedSwapArgs } from '../instructions/pegged-swap'
 import type * as balances from '../instructions/balances'
 import type * as controls from '../instructions/controls'
@@ -686,6 +688,20 @@ describe('ProgramBuilder', () => {
     expect(decoded.getInstructions()).toHaveLength(2)
     expect(decoded.getInstructions()[0].opcode.id.toString()).toContain('deadline')
     expect(decoded.getInstructions()[1].opcode.id.toString()).toContain('peggedSwap')
+  })
+
+  it('should reject building an empty program', () => {
+    const error = 'Cannot build an empty program'
+
+    expect(() => new ProgramBuilder(_allInstructions).build()).toThrow(error)
+    expect(() => new RegularProgramBuilder().build()).toThrow(error)
+  })
+
+  it('should build a program with a single instruction without args', () => {
+    const program = new RegularProgramBuilder().xycSwapXD().build()
+
+    expect(program.toString()).toBe('0x1600')
+    expect(RegularProgramBuilder.decode(program).build().toString()).toBe(program.toString())
   })
 
   it('should reject reserved and unknown opcodes on decode', () => {
