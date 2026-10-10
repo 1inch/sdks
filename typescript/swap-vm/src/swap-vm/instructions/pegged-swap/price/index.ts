@@ -3,6 +3,7 @@
 export { PeggedPrice } from './pegged-price'
 export type {
   PeggedPriceJSON,
+  PeggedPriceLegacyJSON,
   PeggedPricePair,
   PeggedReservesInput,
   PeggedTokenRef,

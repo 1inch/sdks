@@ -3,21 +3,40 @@
 import { Address } from '@1inch/sdk-core'
 import { formatUnits, parseUnits } from 'viem'
 import assert from 'assert'
-import type { PeggedPriceJSON, PeggedPricePair, PeggedReservesInput, PeggedTokenRef } from './types'
-import { peggedSwapMarginalGtPerLtE18 } from '../pegged-swap-math/pegged-swap-math'
+import type {
+  PeggedPriceJSON,
+  PeggedPriceLegacyJSON,
+  PeggedPricePair,
+  PeggedReservesInput,
+  PeggedTokenRef,
+} from './types'
+import { peggedSwapMarginalGtPerLt } from '../pegged-swap-math/pegged-swap-math'
 import { truncateHumanDecimalString } from '../../utils'
 import { resolveRate } from '../rate-resolver'
 
 const ONE_E18 = 10n ** 18n
 
+/**
+ * Pegged pair spot price, held exactly as `numerator / denominator` raw tokenGt units per raw
+ * tokenLt unit (in lowest terms). Only converted amounts and display strings are rounded.
+ */
 export class PeggedPrice {
+  private readonly numerator: bigint
+
+  private readonly denominator: bigint
+
   private constructor(
-    private readonly gtPerLtRaw: bigint,
+    numerator: bigint,
+    denominator: bigint,
     public readonly tokenLt: PeggedTokenRef,
     public readonly tokenGt: PeggedTokenRef,
   ) {
-    assert(gtPerLtRaw > 0n, 'price must be positive')
+    assert(numerator > 0n && denominator > 0n, 'price must be positive')
     assert(tokenLt.address.lt(tokenGt.address), 'internal pair order violated')
+
+    const divisor = gcd(numerator, denominator)
+    this.numerator = numerator / divisor
+    this.denominator = denominator / divisor
   }
 
   /**
@@ -45,7 +64,7 @@ export class PeggedPrice {
     const initialLtNorm = reserveLt.initialReserve * rateLt
     const initialGtNorm = reserveGt.initialReserve * rateGt
 
-    const marginalE18 = peggedSwapMarginalGtPerLtE18(
+    const { numerator, denominator } = peggedSwapMarginalGtPerLt(
       reserveLt.currentReserve * rateLt,
       reserveGt.currentReserve * rateGt,
       initialLtNorm,
@@ -55,7 +74,7 @@ export class PeggedPrice {
       rateGt,
     )
 
-    return PeggedPrice.fromGtPerLtE18(marginalE18, reserveLt, reserveGt)
+    return new PeggedPrice(numerator, denominator, reserveLt, reserveGt)
   }
 
   /**
@@ -74,21 +93,23 @@ export class PeggedPrice {
 
     const parsed = parseUnits(price.trim(), Number(pair.quoteToken.decimals))
 
-    const ltDecimals = BigInt(tokenLt.decimals)
-    const gtDecimals = BigInt(tokenGt.decimals)
+    const ltUnit = 10n ** BigInt(tokenLt.decimals)
+    const gtUnit = 10n ** BigInt(tokenGt.decimals)
 
-    // Canonical rate is RAW gt-per-lt in 1e18 fixed-point:
-    // raw = human gt-per-lt * 10^(gtDecimals - ltDecimals) * 1e18.
+    // Raw gt-per-lt = human gt-per-lt * 10^gtDecimals / 10^ltDecimals.
     // lt quote: parsed = H * 10^ltDecimals with H = human lt-per-gt = 1/humanGtPerLt,
-    // so raw = 10^(18 + gtDecimals) / parsed.
-    const marginalE18 = quoteToBase
-      ? 10n ** (18n + gtDecimals) / parsed
-      : (parsed * ONE_E18) / 10n ** ltDecimals
-
-    return PeggedPrice.fromGtPerLtE18(marginalE18, tokenLt, tokenGt)
+    // so raw = 10^gtDecimals / parsed.
+    // gt quote: parsed = human gt-per-lt * 10^gtDecimals, so raw = parsed / 10^ltDecimals.
+    return quoteToBase
+      ? new PeggedPrice(gtUnit, parsed, tokenLt, tokenGt)
+      : new PeggedPrice(parsed, ltUnit, tokenLt, tokenGt)
   }
 
-  static fromJSON(input: PeggedPriceJSON): PeggedPrice {
+  /**
+   * Restores a price from {@link PeggedPrice.toJSON} output. Also accepts the legacy
+   * `{ gtPerLtRaw, tokenLt, tokenGt }` snapshot.
+   */
+  static fromJSON(input: PeggedPriceJSON | PeggedPriceLegacyJSON): PeggedPrice {
     const tokenLt: PeggedTokenRef = {
       address: new Address(input.tokenLt.address),
       decimals: Number(input.tokenLt.decimals),
@@ -102,20 +123,13 @@ export class PeggedPrice {
       'tokenLt address must be less than tokenGt (canonical order)',
     )
 
-    return new PeggedPrice(BigInt(input.gtPerLtRaw), tokenLt, tokenGt)
-  }
+    if ('numerator' in input) {
+      return new PeggedPrice(BigInt(input.numerator), BigInt(input.denominator), tokenLt, tokenGt)
+    }
 
-  private static fromGtPerLtE18(
-    marginalGtPerLtE18: bigint,
-    tokenLt: PeggedTokenRef,
-    tokenGt: PeggedTokenRef,
-  ): PeggedPrice {
-    assert(marginalGtPerLtE18 > 0n, 'marginal rate must be positive')
+    const legacyScale = 10n ** BigInt(tokenLt.decimals + tokenGt.decimals)
 
-    const scale = BigInt(tokenLt.decimals + tokenGt.decimals)
-    const gtPerLtRaw = (marginalGtPerLtE18 * 10n ** scale) / ONE_E18
-
-    return new PeggedPrice(gtPerLtRaw, tokenLt, tokenGt)
+    return new PeggedPrice(BigInt(input.gtPerLtRaw), legacyScale, tokenLt, tokenGt)
   }
 
   matchesTokens(tokenA: Address, tokenB: Address): boolean {
@@ -127,12 +141,30 @@ export class PeggedPrice {
 
   equals(other: PeggedPrice): boolean {
     return (
-      this.gtPerLtRaw === other.gtPerLtRaw &&
+      this.numerator * other.denominator === other.numerator * this.denominator &&
       this.tokenLt.address.equal(other.tokenLt.address) &&
       this.tokenGt.address.equal(other.tokenGt.address) &&
       BigInt(this.tokenLt.decimals) === BigInt(other.tokenLt.decimals) &&
       BigInt(this.tokenGt.decimals) === BigInt(other.tokenGt.decimals)
     )
+  }
+
+  /**
+   * Raw tokenGt amount worth `amountLt` raw tokenLt at this price, rounded down.
+   */
+  gtForLt(amountLt: bigint): bigint {
+    assert(amountLt >= 0n, 'amount must be non-negative')
+
+    return (amountLt * this.numerator) / this.denominator
+  }
+
+  /**
+   * Raw tokenLt amount worth `amountGt` raw tokenGt at this price, rounded down.
+   */
+  ltForGt(amountGt: bigint): bigint {
+    assert(amountGt >= 0n, 'amount must be non-negative')
+
+    return (amountGt * this.denominator) / this.numerator
   }
 
   /**
@@ -146,33 +178,36 @@ export class PeggedPrice {
 
     const isQuoteLt = quoteToken.equal(this.tokenLt.address)
 
-    const quoteDecimals = isQuoteLt ? this.tokenLt.decimals : this.tokenGt.decimals
-    const ltDecimals = BigInt(this.tokenLt.decimals)
-    const gtDecimals = BigInt(this.tokenGt.decimals)
-    const marginalE18 = this.toGtPerLtE18()
+    const quoteDecimals = Number(isQuoteLt ? this.tokenLt.decimals : this.tokenGt.decimals)
+    const ltUnit = 10n ** BigInt(this.tokenLt.decimals)
+    const gtUnit = 10n ** BigInt(this.tokenGt.decimals)
 
-    // marginalE18 is the RAW gt-per-lt rate in 1e18 fixed-point.
-    // lt quote: human lt-per-gt = 1e18 * 10^(gtDecimals - ltDecimals) / marginalE18;
-    // at display scale 10^ltDecimals that is 10^(18 + gtDecimals) / marginalE18.
-    const scaled = quoteToken.equal(this.tokenGt.address)
-      ? (marginalE18 * 10n ** ltDecimals) / ONE_E18
-      : 10n ** (18n + gtDecimals) / marginalE18
+    // Quote per base at display scale 10^quoteDecimals, from raw = numerator / denominator:
+    // lt quote: human lt-per-gt * 10^ltDecimals = 10^gtDecimals / raw;
+    // gt quote: human gt-per-lt * 10^gtDecimals = raw * 10^ltDecimals.
+    // One extra floored digit is enough to round half-up at quoteDecimals.
+    const scaledWithRoundingDigit = isQuoteLt
+      ? (gtUnit * this.denominator * 10n) / this.numerator
+      : (ltUnit * this.numerator * 10n) / this.denominator
 
-    const full = formatUnits(scaled, Number(quoteDecimals))
+    const full = formatUnits(scaledWithRoundingDigit, quoteDecimals + 1)
 
-    return truncateHumanDecimalString(full, Number(quoteDecimals))
+    return truncateHumanDecimalString(full, quoteDecimals)
   }
 
-  /** Marginal gt-per-lt rate in 1e18 fixed-point. */
+  /**
+   * Raw gt-per-lt rate in 1e18 fixed-point, rounded down. Coarse when the raw rate is small
+   * (tokenLt has many more decimals than tokenGt); convert amounts with
+   * {@link PeggedPrice.gtForLt} / {@link PeggedPrice.ltForGt} instead.
+   */
   toGtPerLtE18(): bigint {
-    const scale = BigInt(this.tokenLt.decimals + this.tokenGt.decimals)
-
-    return (this.gtPerLtRaw * ONE_E18) / 10n ** scale
+    return (this.numerator * ONE_E18) / this.denominator
   }
 
   toJSON(): PeggedPriceJSON {
     return {
-      gtPerLtRaw: this.gtPerLtRaw.toString(),
+      numerator: this.numerator.toString(),
+      denominator: this.denominator.toString(),
       tokenLt: {
         address: this.tokenLt.address.toString(),
         decimals: String(this.tokenLt.decimals),
@@ -183,4 +218,17 @@ export class PeggedPrice {
       },
     }
   }
+}
+
+function gcd(a: bigint, b: bigint): bigint {
+  let x = a
+  let y = b
+
+  while (y > 0n) {
+    const remainder = x % y
+    x = y
+    y = remainder
+  }
+
+  return x
 }

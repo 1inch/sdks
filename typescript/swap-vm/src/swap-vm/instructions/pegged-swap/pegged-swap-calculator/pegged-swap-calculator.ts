@@ -5,8 +5,6 @@ import assert from 'assert'
 import type { PeggedInitialBalances, PeggedSwapCalculatorArgs } from './types'
 import type { PeggedPrice, PeggedTokenRef } from '../price'
 
-const MARGINAL_PRICE_ONE = 10n ** 18n
-
 export class PeggedSwapCalculator {
   constructor(
     private readonly tokenA: PeggedTokenRef,
@@ -29,7 +27,7 @@ export class PeggedSwapCalculator {
 
   /**
    * Initial balances before deployment (`currentReserve = initialReserve`, u = v = 1).
-   * Given spot price and one raw initial reserve, returns the other.
+   * Given spot price and one raw initial reserve, returns the other (rounded down).
    */
   computeFixedAllocation(
     spotPrice: PeggedPrice,
@@ -42,18 +40,16 @@ export class PeggedSwapCalculator {
       'spot price must match calculator token pair',
     )
 
-    const marginalE18 = spotPrice.toGtPerLtE18()
-
     if (fixedReserveForToken.equal(this.tokenLt.address)) {
       return {
         reserveLt: fixedReserve,
-        reserveGt: (fixedReserve * marginalE18) / MARGINAL_PRICE_ONE,
+        reserveGt: spotPrice.gtForLt(fixedReserve),
       }
     }
 
     if (fixedReserveForToken.equal(this.tokenGt.address)) {
       return {
-        reserveLt: (fixedReserve * MARGINAL_PRICE_ONE) / marginalE18,
+        reserveLt: spotPrice.ltForGt(fixedReserve),
         reserveGt: fixedReserve,
       }
     }
