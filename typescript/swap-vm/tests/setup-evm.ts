@@ -238,6 +238,7 @@ async function setupBalances(
   await liqProvider.transfer(ADDRESSES.WETH, parseEther('100'))
   await swapper.transfer(ADDRESSES.WETH, parseEther('100'))
   await liqProvider.transfer(ADDRESSES.DAI_DONOR, parseEther('1')) // it has low eth
+  await liqProvider.transfer(ADDRESSES.WBTC_DONOR, parseEther('1')) // it has low eth
   await liqProvider.unlimitedApprove(ADDRESSES.WETH, addresses.aqua)
 
   const usdcDonor = await TestWallet.fromAddress(ADDRESSES.USDC_DONOR, transport, chain)

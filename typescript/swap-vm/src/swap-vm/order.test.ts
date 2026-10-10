@@ -2,10 +2,12 @@
 
 import { describe, it, expect } from 'vitest'
 import { Address, HexString, Interaction, NetworkEnum } from '@1inch/sdk-core'
+import { hashTypedData } from 'viem'
 
 import { Order } from './order'
 import { MakerTraits } from './maker-traits'
 import { SwapVmProgram } from './programs'
+import { getAquaSwapVmEip712Domain } from '../swap-vm-contract/constants'
 
 function createMaker(): Address {
   return Address.fromBigInt(1n)
@@ -108,6 +110,41 @@ describe('Order', () => {
       expect(hash.toString()).not.toBe(
         new Order(createMaker(), MakerTraits.default(), createProgram('0x01')).hash().toString(),
       )
+    })
+
+    it('should hash signature-based orders as EIP-712 Order(address maker,uint256 traits,bytes data)', () => {
+      const traits = MakerTraits.new({
+        useAquaInsteadOfSignature: false,
+        allowZeroAmountIn: false,
+        shouldUnwrap: true,
+        customReceiver: Address.fromBigInt(2n),
+        preTransferInHook: new Interaction(Address.fromBigInt(3n), new HexString('0xaabb')),
+      })
+      const order = new Order(createMaker(), traits, createProgram('0x01020304'))
+      const { traits: packedTraits, data } = order.build()
+
+      const expected = hashTypedData({
+        domain: {
+          chainId: 1,
+          name: '1inch SwapVM v1.0',
+          version: '1.0.2',
+          verifyingContract: '0x111111338c5091e8440b67b168bae16a668ac0de',
+        },
+        primaryType: 'Order',
+        types: {
+          Order: [
+            { name: 'maker', type: 'address' },
+            { name: 'traits', type: 'uint256' },
+            { name: 'data', type: 'bytes' },
+          ],
+        },
+        message: { maker: createMaker().toString(), traits: packedTraits, data },
+      })
+
+      const domain = getAquaSwapVmEip712Domain(NetworkEnum.ETHEREUM)
+
+      expect(order.hash(domain).toString()).toBe(expected)
+      expect(order.hash({ ...domain, version: '1.0' }).toString()).not.toBe(expected)
     })
   })
 })
