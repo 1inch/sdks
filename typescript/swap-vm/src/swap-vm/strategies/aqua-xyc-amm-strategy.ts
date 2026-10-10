@@ -39,6 +39,15 @@ export class AquaXYCAmmStrategy extends AquaAMMStrategy {
     throw new Error('unknown parameters for newXYCConcentrate')
   }
 
+  /**
+   * Builds the strategy program. Instructions are emitted in this order, optional ones only when set:
+   *   onlyTxOriginTokenBalanceNonZero (access token) -> aquaProtocolFeeAmountInXD (protocol fee)
+   *   -> decayXD -> concentrateGrowLiquidity2D -> flatFeeAmountInXD (fee on amountIn) -> xycSwapXD -> salt
+   *
+   * decayXD must run before concentrateGrowLiquidity2D, which derives liquidity from the balances
+   * decayXD adjusts. The order is part of the program bytes, so changing it changes the strategy hash
+   * produced for the same parameters.
+   */
   public build(): SwapVmProgram {
     const builder = new AquaProgramBuilder()
 
@@ -51,12 +60,12 @@ export class AquaXYCAmmStrategy extends AquaAMMStrategy {
       builder.add(fee.aquaProtocolFeeAmountInXD.createIx(data))
     }
 
-    if (this.xycConcentrateArgs) {
-      builder.add(concentrate.concentrateGrowLiquidity2D.createIx(this.xycConcentrateArgs))
-    }
-
     if (this.decayPeriod) {
       builder.decayXD({ decayPeriod: this.decayPeriod })
+    }
+
+    if (this.xycConcentrateArgs) {
+      builder.add(concentrate.concentrateGrowLiquidity2D.createIx(this.xycConcentrateArgs))
     }
 
     if (this.feeBpsIn) {
