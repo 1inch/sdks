@@ -164,4 +164,37 @@ describe('ProtocolFeeArgs', () => {
     expect(percent1.fee).toBe(bps100.fee)
     expect(percent1.to).toBe(bps100.to)
   })
+
+  it('should create from fractional basis points and percent exactly', () => {
+    expect(ProtocolFeeArgs.fromBps(1.1, feeRecipient).fee).toBe(110000n)
+    expect(ProtocolFeeArgs.fromBps(2.3, feeRecipient).fee).toBe(230000n)
+    expect(ProtocolFeeArgs.fromBps(0.00001, feeRecipient).fee).toBe(1n)
+    expect(ProtocolFeeArgs.fromPercent(0.011, feeRecipient).fee).toBe(110000n)
+    expect(ProtocolFeeArgs.fromPercent(0.57, feeRecipient).fee).toBe(5700000n)
+    expect(ProtocolFeeArgs.fromPercent(0.0000001, feeRecipient).fee).toBe(1n)
+
+    expect(
+      ProtocolFeeArgs.CODER.encode(ProtocolFeeArgs.fromBps(1.1, feeRecipient)).toString(),
+    ).toBe('0x0001adb068b3465833fb72a70ecdf485e0e4c7bd8665fc45')
+  })
+
+  it('should reject unrepresentable basis points and percent', () => {
+    expect(() => ProtocolFeeArgs.fromBps(1.234567, feeRecipient)).toThrow(
+      'Must be a multiple of 0.00001 bps',
+    )
+    expect(() => ProtocolFeeArgs.fromPercent(0.00000001, feeRecipient)).toThrow(
+      'Must be a multiple of 0.0000001%',
+    )
+    expect(() => ProtocolFeeArgs.fromBps(NaN, feeRecipient)).toThrow('Must be a finite number')
+    expect(() => ProtocolFeeArgs.fromPercent(-Infinity, feeRecipient)).toThrow(
+      'Must be a finite number',
+    )
+    expect(() => ProtocolFeeArgs.fromBps(-1, feeRecipient)).toThrow('Must be non-negative')
+    expect(() => ProtocolFeeArgs.fromPercent(-0.1, feeRecipient)).toThrow('Must be non-negative')
+  })
+
+  it('should reject basis points and percent above 100%', () => {
+    expect(() => ProtocolFeeArgs.fromBps(10000.00001, feeRecipient)).toThrow('Fee out of range')
+    expect(() => ProtocolFeeArgs.fromPercent(100.1, feeRecipient)).toThrow('Fee out of range')
+  })
 })
