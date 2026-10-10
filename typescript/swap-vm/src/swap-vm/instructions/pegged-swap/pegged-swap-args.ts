@@ -12,19 +12,31 @@ import type { IArgsCoder, IArgsData } from '../types'
 /**
  * Arguments for PeggedSwap._peggedSwapGrowPriceRange2D.
  * 5 × uint256: x0, y0, linearWidth, rateLt, rateGt (160 bytes).
+ *
+ * The slots follow token address order, not swap direction: x0 and rateLt always describe the token
+ * with the LOWER address (Lt), y0 and rateGt the token with the HIGHER address (Gt). On-chain,
+ * `PeggedSwapArgsBuilder.parseRatesAndBalances` picks them for each swap by comparing
+ * `tokenIn < tokenOut`. {@link PeggedSwapArgs.fromTokens} applies this convention for you.
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/PeggedSwap.sol
  **/
 export class PeggedSwapArgs implements IArgsData {
   public static readonly CODER: IArgsCoder<PeggedSwapArgs> = new PeggedSwapArgsCoder()
 
   /**
-   * x0 - Initial X reserve (normalization factor) = initial_balance_X * rateLt (or rateGt)
-   * y0 - Initial Y reserve (normalization factor) = initial_balance_Y * rateGt (or rateLt)
+   * Raw constructor: encodes the values exactly as given. It has no token addresses, so it cannot
+   * check that x0/rateLt belong to the lower-address token and y0/rateGt to the higher-address one.
+   * Swapped values are accepted and silently mis-normalize both swap directions (quotes are computed
+   * from the same args, so nothing looks off). Prefer {@link PeggedSwapArgs.fromTokens}.
+   *
+   * x0 - Initial reserve (normalization factor) of the LOWER-address token: `initialReserveLt * rateLt`
+   * y0 - Initial reserve (normalization factor) of the HIGHER-address token: `initialReserveGt * rateGt`
    * linearWidth - Linear component coefficient A scaled by 1e27 (e.g., 0.8e27 for A=0.8); must be ≤ MAX_LINEAR_WIDTH (A ≤ 5000)
-   * rateLt - Rate multiplier for token with LOWER address
-   * rateGt - Rate multiplier for token with GREATER address
-   * > For equal decimals (e.g., both 18): rateLt = rateGt = 1
-   * > For 18 vs 6 decimals: rate18 = 1, rate6 = 1e12 (to scale up to common precision)
+   * rateLt - Rate multiplier of the LOWER-address token: `resolveRate(decimalsLt, decimalsGt)`
+   * rateGt - Rate multiplier of the HIGHER-address token: `resolveRate(decimalsGt, decimalsLt)`
+   * > Rates scale both tokens up to the larger decimals: the token with fewer decimals gets
+   * > 10^(decimals difference), the other gets 1 (both 1 for equal decimals)
+   * > Example: DAI (0x6B17…, 18 decimals) < USDC (0xA0b8…, 6 decimals), so for 1000 DAI + 1000 USDC:
+   * > rateLt = 1, rateGt = 1e12, x0 = 1000e18 * 1, y0 = 1000e6 * 1e12
    **/
   constructor(
     public readonly x0: bigint,
@@ -47,6 +59,10 @@ export class PeggedSwapArgs implements IArgsData {
     )
   }
 
+  /**
+   * Safe way to build the args: takes both tokens in any order with their raw (unscaled) initial
+   * reserves, sorts them by address and derives rateLt/rateGt with {@link resolveRate}.
+   **/
   static fromTokens(
     tokenA: PeggedTokenInfo,
     tokenB: PeggedTokenInfo,

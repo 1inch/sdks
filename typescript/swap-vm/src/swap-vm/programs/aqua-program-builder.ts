@@ -168,7 +168,12 @@ export class AquaProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Square-root linear swap curve for pegged assets
+   * Square-root linear swap curve for pegged assets.
+   * `x0`/`rateLt` must describe the token with the LOWER address and `y0`/`rateGt` the token with
+   * the HIGHER address: `x0 = initialReserveLt * rateLt`, `y0 = initialReserveGt * rateGt`, with the
+   * rates `resolveRate` derives from the two tokens' decimals. The values are encoded as given and
+   * cannot be checked here; assigning them to the wrong tokens silently mis-normalizes both swap
+   * directions. Build `data` with {@link peggedSwap.PeggedSwapArgs.fromTokens} to get this right.
    **/
   public peggedSwapGrowPriceRange2D(data: DataFor<peggedSwap.PeggedSwapArgs>): this {
     super.add(
