@@ -705,12 +705,10 @@ describe('ProgramBuilder', () => {
       .debugPrintSwapRegisters()
       .debugPrintSwapQuery()
       .debugPrintContext()
-      .debugPrintAmountForSwap()
       .debugPrintFreeMemoryPointer()
       .debugPrintGasLeft()
       .build()
 
-    expect(program.toString()).toMatch(/^0x[0-9a-f]+$/)
-    expect(program.toString().length).toBeGreaterThan(4)
+    expect(program.toString()).toBe('0x00000100020003000400')
   })
 })
