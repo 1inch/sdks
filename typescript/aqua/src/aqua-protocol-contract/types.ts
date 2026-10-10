@@ -3,7 +3,7 @@
 import type { Address, HexString } from '@1inch/sdk-core'
 
 /**
- * Aqua Protocol types for the 4 core methods
+ * Aqua Protocol types for the ship and dock methods
  */
 
 export type ShipArgs = {
