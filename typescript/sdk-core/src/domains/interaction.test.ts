@@ -32,4 +32,22 @@ describe('Interaction', () => {
   it('should reject invalid interaction data', () => {
     expect(() => new Interaction(target, new HexString('0xabc'))).toThrow()
   })
+
+  it('should decode an upper-case target as the lowercase address', () => {
+    const decoded = Interaction.decode(new HexString(`0x${'AB'.repeat(20)}1234`))
+
+    expect(decoded.target.toString()).toBe(`0x${'ab'.repeat(20)}`)
+    expect(decoded.data.toString()).toBe('0x1234')
+  })
+
+  it('should decode a non-checksummed mixed-case target as the lowercase address', () => {
+    const mixedCaseTarget = '0x7A250D5630b4cf539739df2c5dacb4c659f2488d'
+
+    expect(() => new Address(mixedCaseTarget)).toThrow('Invalid address')
+
+    const decoded = Interaction.decode(new HexString(`${mixedCaseTarget}abcdef`))
+
+    expect(decoded.target.toString()).toBe(mixedCaseTarget.toLowerCase())
+    expect(decoded.equal(new Interaction(target, data))).toBe(true)
+  })
 })

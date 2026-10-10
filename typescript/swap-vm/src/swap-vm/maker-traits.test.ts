@@ -175,6 +175,35 @@ describe('MakerTraits', () => {
 
       encodeDecodeTest(traits, maker)
     })
+
+    it('should decode hook targets regardless of hex letter case', () => {
+      const maker = Address.fromBigInt(7n)
+
+      const traits = MakerTraits.new({
+        shouldUnwrap: false,
+        useAquaInsteadOfSignature: true,
+        allowZeroAmountIn: false,
+        preTransferInHook: new Interaction(
+          new Address(`0x${'ab'.repeat(20)}`),
+          new HexString('0x1234'),
+        ),
+        postTransferInHook: new Interaction(Address.ZERO_ADDRESS, new HexString('0x5678')),
+        postTransferOutHook: new Interaction(
+          new Address('0x7a250d5630b4cf539739df2c5dacb4c659f2488d'),
+          new HexString('0x90'),
+        ),
+      })
+
+      const { traits: encodedTraits, hooksData } = traits.encode(maker)
+      const upperCaseHooksData = new HexString(`0x${hooksData.toString().slice(2).toUpperCase()}`)
+
+      expect(upperCaseHooksData.equal(hooksData)).toBe(false)
+
+      const decoded = MakerTraits.decode(encodedTraits, upperCaseHooksData)
+
+      expect(decoded).toEqual(MakerTraits.decode(encodedTraits, hooksData))
+      expect(decoded).toEqual(traits)
+    })
   })
 
   it('should encode hooks where target is maker', () => {

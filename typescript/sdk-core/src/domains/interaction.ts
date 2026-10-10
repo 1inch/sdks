@@ -18,8 +18,10 @@ export class Interaction {
    */
   public static decode(bytes: HexString): Interaction {
     const iter = BytesIter.HexString(bytes.toString())
+    // Raw bytes carry no EIP-55 checksum, so hex letter case must not affect `Address` validation
+    const target = new Address(iter.nextUint160().toLowerCase())
 
-    return new Interaction(new Address(iter.nextUint160()), new HexString(iter.rest()))
+    return new Interaction(target, new HexString(iter.rest()))
   }
 
   /**
