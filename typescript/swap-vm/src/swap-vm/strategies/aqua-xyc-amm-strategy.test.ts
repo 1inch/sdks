@@ -4,6 +4,8 @@ import { describe, it, expect } from 'vitest'
 import { Address } from '@1inch/sdk-core'
 import { AquaXYCAmmStrategy } from './aqua-xyc-amm-strategy'
 import { AquaProgramBuilder } from '../programs/aqua-program-builder'
+import type { ConcentrateGrowLiquidity2DArgs } from '../instructions/concentrate'
+import { Price } from '../instructions/concentrate'
 
 describe('AquaXYCAMMStrategy', () => {
   describe('buildProgram', () => {
@@ -103,6 +105,37 @@ describe('AquaXYCAMMStrategy', () => {
 
       expect(AquaProgramBuilder.decode(program).build().toString()).toBe(program.toString())
       expect(program.toString().length).toBeGreaterThan(4)
+    })
+
+    it('should reject raw prices too small for 1e18 fixed-point', () => {
+      expect(() =>
+        AquaXYCAmmStrategy.newConcentrate({ rawPriceMin: 9n, rawPriceMax: 19n }),
+      ).toThrow(
+        'Invalid rawPriceMin: 9. Must be >= 100000 for 1e-5 precision; use sqrt prices instead',
+      )
+    })
+
+    it('should encode the exact sqrt bounds of Price.toSqrt()', () => {
+      const pair = {
+        quoteToken: {
+          address: new Address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'), // USDC
+          decimals: 6n,
+        },
+        baseToken: {
+          address: new Address('0x6982508145454Ce325dDbE47a25d4ec3d2311933'), // PEPE
+          decimals: 18n,
+        },
+      }
+      const program = AquaXYCAmmStrategy.newConcentrate({
+        sqrtPriceMin: Price.fromHuman('0.00001', pair).toSqrt(),
+        sqrtPriceMax: Price.fromHuman('0.00002', pair).toSqrt(),
+      }).build()
+
+      const [concentrateIx] = AquaProgramBuilder.decode(program).getInstructions()
+      const args = concentrateIx.args as ConcentrateGrowLiquidity2DArgs
+      // 0.00001 USDC per PEPE is P = 10 in 1e18 fixed-point: floor(sqrt(10 * 1e18))
+      expect(args.sqrtPriceMin).toBe(3162277660n)
+      expect(args.sqrtPriceMax).toBe(4472135954n)
     })
 
     it('should include a tx.origin access token', () => {

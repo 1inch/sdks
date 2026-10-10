@@ -128,12 +128,22 @@ export class Price {
   }
 
   /**
-   * Raw price `P` with 1e18 fixed-point (`(sqrtP^2) / 1e18`), matching typical on-chain use.
+   * Raw price `P` with 1e18 fixed-point (`(sqrtP^2) / 1e18`), rounded down.
+   *
+   * Lossy: the integer result keeps little precision when it is small (0.00001 USDC per PEPE gives
+   * 9 instead of 10). Do not use it to build program bounds; pass {@link Price.toSqrt} to
+   * `ConcentrateGrowLiquidity2DArgs.fromSqrtPrices` /
+   * `AquaXYCAmmStrategy.newConcentrate({ sqrtPriceMin, sqrtPriceMax })`, or use
+   * `ConcentrateGrowLiquidity2DArgs.fromPrices`.
    */
   toRaw(): bigint {
     return (this.sqrtP * this.sqrtP) / ONE_E18
   }
 
+  /**
+   * Fixed-point sqrt price (`sqrt(P * 1e18)`) exactly as stored; concentrate program bounds are
+   * encoded on-chain in this form.
+   */
   toSqrt(): bigint {
     return this.sqrtP
   }
