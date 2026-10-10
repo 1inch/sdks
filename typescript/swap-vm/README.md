@@ -317,6 +317,18 @@ Strategies are thin wrappers around a program builder:
 
 Because the strategy owns the builder, you can keep the strategy API stable even if the underlying instruction sequence evolves.
 
+### Salt and strategy hash uniqueness
+
+Aqua tracks a maker's balances per strategy hash (`order.hash()`, the `keccak256` of the encoded order), and `ship()` accepts new tokens for a hash that already holds balances. Without a salt, the hash depends only on the maker, the traits and the strategy parameters, so shipping identical parameters for two token pairs puts both pairs under one hash and lets takers swap across them. Give each shipped strategy its own salt:
+
+```typescript
+const program = AquaXYCAmmStrategy.new().withFeeTokenIn(5).withRandomSalt().build()
+```
+
+- `withRandomSalt()` draws a uint64 salt from `globalThis.crypto.getRandomValues`; `withSalt(salt)` sets your own value (`0n` included).
+- A random salt cannot be recomputed from the parameters: store it (or keep the shipped strategy bytes or hash) to recompute the strategy hash for docking.
+- No salt is added by default, so `build()` stays deterministic for the same parameters.
+
 ### Creating your own strategy
 
 To define a custom strategy:

@@ -66,7 +66,7 @@ export class AquaXYCAmmStrategy extends AquaAMMStrategy {
 
     builder.xycSwapXD()
 
-    if (this.salt) {
+    if (this.salt !== undefined) {
       builder.salt({ salt: this.salt })
     }
 

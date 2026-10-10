@@ -58,7 +58,7 @@ export class AquaPeggedAmmStrategy extends AquaAMMStrategy {
 
     builder.peggedSwapGrowPriceRange2D(peggedArgs)
 
-    if (this.salt) {
+    if (this.salt !== undefined) {
       builder.salt({ salt: this.salt })
     }
 
