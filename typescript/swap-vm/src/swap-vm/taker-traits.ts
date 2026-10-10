@@ -333,38 +333,102 @@ export class TakerTraits {
   }
 
   /**
-   * Validates the swap amounts against the threshold settings.
+   * Validates the swap amounts against these traits with the same checks, in the same
+   * order, as the contract's `TakerTraitsLib.validate`:
+   * 1. `amountOut` must be greater than zero
+   * 2. if a deadline is set, the timestamp must not be past it
+   * 3. `takerAmount` must equal `amountIn` (exactIn) or `amountOut` (exactOut)
+   * 4. if a threshold is set, it must be matched exactly (`strictThreshold`), or else be
+   *    the minimum `amountOut` (exactIn) or the maximum `amountIn` (exactOut)
+   *
    * @param amountIn - The input amount of the swap
    * @param amountOut - The output amount of the swap
-   * @throws Error if the amounts don't meet the threshold requirements
+   * @param options.takerAmount - The `amount` passed to `swap`/`quote`.
+   * Check 3 is skipped when it is omitted.
+   * @param options.timestamp - Unix time in seconds to check the deadline against.
+   * Defaults to the current time.
+   * @throws Error whose message starts with the name of the error the contract reverts with,
+   * e.g. `TakerTraitsInsufficientMinOutputAmount: amountOut 999 < threshold 1000`
    */
-  validate(amountIn: bigint, amountOut: bigint): void {
-    if (this.threshold === 0n) return
+  validate(
+    amountIn: bigint,
+    amountOut: bigint,
+    options: { takerAmount?: bigint; timestamp?: bigint } = {},
+  ): void {
+    if (amountOut <= 0n) {
+      throw new Error(`TakerTraitsAmountOutMustBeGreaterThanZero: amountOut ${amountOut}`)
+    }
 
-    const threshold = this.threshold
+    this.validateDeadline(options.timestamp)
 
-    if (this.strictThreshold) {
-      const actual = this.exactIn ? amountOut : amountIn
-
-      if (actual !== threshold) {
-        throw new Error(
-          `TakerTraitsNonExactThresholdAmount: ${this.exactIn ? 'amountOut' : 'amountIn'} ${actual} != threshold ${threshold}`,
-        )
-      }
+    if (this.exactIn) {
+      this.validateExactIn(amountIn, amountOut, options.takerAmount)
     } else {
-      if (this.exactIn) {
-        if (amountOut < threshold) {
-          throw new Error(
-            `TakerTraitsInsufficientMinOutputAmount: amountOut ${amountOut} < threshold ${threshold}`,
-          )
-        }
-      } else {
-        if (amountIn > threshold) {
-          throw new Error(
-            `TakerTraitsExceedingMaxInputAmount: amountIn ${amountIn} > threshold ${threshold}`,
-          )
-        }
-      }
+      this.validateExactOut(amountIn, amountOut, options.takerAmount)
+    }
+  }
+
+  private validateDeadline(timestamp?: bigint): void {
+    if (this.deadline <= 0n) {
+      return
+    }
+
+    const now = timestamp ?? BigInt(Math.floor(Date.now() / 1000))
+
+    if (now > this.deadline) {
+      throw new Error(`TakerTraitsDeadlineExpired: timestamp ${now} > deadline ${this.deadline}`)
+    }
+  }
+
+  private validateExactIn(amountIn: bigint, amountOut: bigint, takerAmount?: bigint): void {
+    if (takerAmount !== undefined && takerAmount !== amountIn) {
+      throw new Error(
+        `TakerTraitsTakerAmountInMismatch: takerAmount ${takerAmount} != amountIn ${amountIn}`,
+      )
+    }
+
+    const { threshold } = this
+
+    if (threshold <= 0n) {
+      return
+    }
+
+    if (this.strictThreshold && amountOut !== threshold) {
+      throw new Error(
+        `TakerTraitsNonExactThresholdAmountOut: amountOut ${amountOut} != threshold ${threshold}`,
+      )
+    }
+
+    if (!this.strictThreshold && amountOut < threshold) {
+      throw new Error(
+        `TakerTraitsInsufficientMinOutputAmount: amountOut ${amountOut} < threshold ${threshold}`,
+      )
+    }
+  }
+
+  private validateExactOut(amountIn: bigint, amountOut: bigint, takerAmount?: bigint): void {
+    if (takerAmount !== undefined && takerAmount !== amountOut) {
+      throw new Error(
+        `TakerTraitsTakerAmountOutMismatch: takerAmount ${takerAmount} != amountOut ${amountOut}`,
+      )
+    }
+
+    const { threshold } = this
+
+    if (threshold <= 0n) {
+      return
+    }
+
+    if (this.strictThreshold && amountIn !== threshold) {
+      throw new Error(
+        `TakerTraitsNonExactThresholdAmountIn: amountIn ${amountIn} != threshold ${threshold}`,
+      )
+    }
+
+    if (!this.strictThreshold && amountIn > threshold) {
+      throw new Error(
+        `TakerTraitsExceedingMaxInputAmount: amountIn ${amountIn} > threshold ${threshold}`,
+      )
     }
   }
 }
