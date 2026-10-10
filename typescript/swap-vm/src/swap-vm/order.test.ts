@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
+import type { DataFor } from '@1inch/sdk-core'
 import { Address, HexString, Interaction, NetworkEnum } from '@1inch/sdk-core'
 
 import { Order } from './order'
@@ -16,6 +17,59 @@ function createProgram(hex: string = '0x'): SwapVmProgram {
 }
 
 describe('Order', () => {
+  describe('new', () => {
+    const maker = createMaker()
+    const receiver = Address.fromBigInt(2n)
+    const program = createProgram('0x01')
+
+    it.each<{ name: string; data: Partial<DataFor<MakerTraits>> }>([
+      { name: 'Aqua defaults', data: {} },
+      { name: 'Aqua with the maker as receiver', data: { customReceiver: maker } },
+      {
+        name: 'signature with shouldUnwrap',
+        data: { useAquaInsteadOfSignature: false, shouldUnwrap: true },
+      },
+      {
+        name: 'signature with custom receiver',
+        data: { useAquaInsteadOfSignature: false, customReceiver: receiver },
+      },
+    ])('should create an order with $name traits', ({ data }) => {
+      const traits = MakerTraits.default().with(data)
+
+      expect(Order.new({ maker, traits, program })).toEqual(new Order(maker, traits, program))
+    })
+
+    it('should reject Aqua traits with shouldUnwrap', () => {
+      const traits = MakerTraits.default().with({ shouldUnwrap: true })
+
+      expect(() => Order.new({ maker, traits, program })).toThrow(
+        'MakerTraitsUnwrapIsIncompatibleWithAqua',
+      )
+    })
+
+    it('should reject Aqua traits with a receiver other than the maker', () => {
+      const traits = MakerTraits.default().with({ customReceiver: receiver })
+
+      expect(() => Order.new({ maker, traits, program })).toThrow(
+        'MakerTraitsCustomReceiverIsIncompatibleWithAqua',
+      )
+    })
+
+    it('should still decode, encode and hash orders with Aqua-incompatible traits', () => {
+      const traits = MakerTraits.default().with({ shouldUnwrap: true, customReceiver: receiver })
+      const order = new Order(maker, traits, program)
+
+      const encoded = order.encode()
+      const decoded = Order.decode(encoded)
+
+      expect(decoded).toEqual(order)
+      expect(decoded.build()).toEqual(order.build())
+      expect(decoded.encode()).toEqual(encoded)
+      expect(decoded.hash()).toEqual(order.hash())
+      expect(() => Order.new(decoded)).toThrow('MakerTraitsUnwrapIsIncompatibleWithAqua')
+    })
+  })
+
   describe('encode / decode', () => {
     it('should round-trip encode/decode without hooks', () => {
       const maker = createMaker()

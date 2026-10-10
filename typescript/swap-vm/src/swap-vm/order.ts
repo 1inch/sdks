@@ -43,7 +43,16 @@ export class Order {
     public readonly program: SwapVmProgram,
   ) {}
 
+  /**
+   * Creates a new order and checks that its maker traits can be settled by SwapVM
+   * (see {@link MakerTraits.validate}).
+   *
+   * The constructor and {@link Order.decode} skip this check, so already shipped orders can
+   * still be decoded, encoded and hashed.
+   */
   public static new(params: DataFor<Order>): Order {
+    params.traits.validate(params.maker)
+
     return new Order(params.maker, params.traits, params.program)
   }
 
