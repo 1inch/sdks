@@ -2,6 +2,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { UINT_24_MAX, UINT_64_MAX, UINT_96_MAX } from '@1inch/byte-utils'
+import { HexString } from '@1inch/sdk-core'
 import { BaseFeeAdjusterArgs } from './base-fee-adjuster-args'
 
 describe('BaseFeeAdjusterArgs', () => {
@@ -26,8 +27,9 @@ describe('BaseFeeAdjusterArgs', () => {
     const maxUint64 = UINT_64_MAX
     const maxUint96 = UINT_96_MAX
     const maxUint24 = UINT_24_MAX
+    const maxPriceDecay = 10n ** 18n - 1n
 
-    const args = new BaseFeeAdjusterArgs(maxUint64, maxUint96, maxUint24, maxUint64)
+    const args = new BaseFeeAdjusterArgs(maxUint64, maxUint96, maxUint24, maxPriceDecay)
 
     const encoded = BaseFeeAdjusterArgs.CODER.encode(args)
     const decoded = BaseFeeAdjusterArgs.decode(encoded)
@@ -35,7 +37,7 @@ describe('BaseFeeAdjusterArgs', () => {
     expect(decoded.baseGasPrice).toBe(maxUint64)
     expect(decoded.ethToToken1Price).toBe(maxUint96)
     expect(decoded.gasAmount).toBe(maxUint24)
-    expect(decoded.maxPriceDecay).toBe(maxUint64)
+    expect(decoded.maxPriceDecay).toBe(maxPriceDecay)
   })
 
   it('should convert to JSON correctly', () => {
@@ -88,5 +90,54 @@ describe('BaseFeeAdjusterArgs', () => {
     expect(decoded.ethToToken1Price).toBe(2500n * 10n ** 18n)
     expect(decoded.gasAmount).toBe(200000n)
     expect(decoded.maxPriceDecay).toBe(950000000000000000n)
+  })
+
+  describe('maxPriceDecay bounds', () => {
+    const create = (maxPriceDecay: bigint): BaseFeeAdjusterArgs =>
+      new BaseFeeAdjusterArgs(20000000000n, 3000n * 10n ** 18n, 150000n, maxPriceDecay)
+
+    it.each([
+      ['0 (uncapped exactOut discount)', 0n],
+      ['1e18 (no adjustment)', 10n ** 18n],
+      ['1.5e18 (worse price for the taker)', 15n * 10n ** 17n],
+      ['2e18 + 1 (exactIn underflow)', 2n * 10n ** 18n + 1n],
+    ])('should reject %s', (_, maxPriceDecay) => {
+      expect(() => create(maxPriceDecay)).toThrow(
+        `Invalid maxPriceDecay: ${maxPriceDecay}. Must be > 0 and < 1e18`,
+      )
+    })
+
+    it('should keep rejecting values that are not a valid uint64', () => {
+      expect(() => create(-1n)).toThrow('Must be a valid uint64')
+      expect(() => create(UINT_64_MAX + 1n)).toThrow('Must be a valid uint64')
+    })
+
+    it.each([
+      ['1', 1n],
+      ['0.99e18', 99n * 10n ** 16n],
+      ['1e18 - 1', 10n ** 18n - 1n],
+    ])('should accept %s and round-trip it', (_, maxPriceDecay) => {
+      const args = create(maxPriceDecay)
+      const encoded = BaseFeeAdjusterArgs.CODER.encode(args)
+      const decoded = BaseFeeAdjusterArgs.decode(encoded)
+
+      expect(decoded.maxPriceDecay).toBe(maxPriceDecay)
+      expect(decoded.toJSON()).toEqual(args.toJSON())
+      expect(BaseFeeAdjusterArgs.CODER.encode(decoded).toString()).toBe(encoded.toString())
+    })
+
+    it('should reject out-of-range maxPriceDecay when decoding', () => {
+      const valid = BaseFeeAdjusterArgs.CODER.encode(create(1n)).toString()
+      const withMaxPriceDecay = (value: bigint): HexString =>
+        new HexString(valid.slice(0, -16) + value.toString(16).padStart(16, '0'))
+
+      expect(BaseFeeAdjusterArgs.decode(withMaxPriceDecay(1n)).maxPriceDecay).toBe(1n)
+      expect(() => BaseFeeAdjusterArgs.decode(withMaxPriceDecay(0n))).toThrow(
+        'Invalid maxPriceDecay: 0',
+      )
+      expect(() => BaseFeeAdjusterArgs.decode(withMaxPriceDecay(10n ** 18n))).toThrow(
+        `Invalid maxPriceDecay: ${10n ** 18n}`,
+      )
+    })
   })
 })
