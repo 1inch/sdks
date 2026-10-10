@@ -281,6 +281,19 @@ This makes it safe to:
 - Deploy your own `SwapVM`-style contract with a custom opcode mapping.
 - Use `ProgramBuilder` with your custom `ixsSet` to construct and parse programs for that deployment, without changing the rest of the SDK.
 
+**Control flow is not validated**: `jump`, `jumpIfTokenIn` and `jumpIfTokenOut` targets are absolute byte offsets into the built program, and on-chain execution is bounded only by gas, so making a program terminate is up to the maker. `build()` accepts backward jumps (which can loop until the transaction runs out of gas), targets that are not an instruction start, and instructions that no execution path reaches. Call `lint()` on a builder (for a built program, `AquaProgramBuilder.decode(program).lint()`) to get these issues as warnings, without throwing:
+
+```typescript
+new AquaProgramBuilder()
+  .jump({ nextPC: 0n }) // jumps to itself
+  .xycSwapXD()
+  .lint()
+// [
+//   { code: 'backward-jump', instructionIndex: 0, message: 'Instruction 0 (Controls.jump) at offset 0 jumps back to offset 0, so execution can loop until it runs out of gas' },
+//   { code: 'unreachable-instruction', instructionIndex: 1, message: 'Instruction 1 (XYCSwap.xycSwapXD) at offset 4 is unreachable from the program start' },
+// ]
+```
+
 ### Recommended builder for Aqua strategies
 
 For strategies intended to run on **today’s deployed `AquaSwapVM` contracts**, it is **recommended** to use the specialized [`AquaProgramBuilder`](./src/swap-vm/programs/aqua-program-builder.ts) instead of the bare `ProgramBuilder`:

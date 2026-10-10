@@ -3,6 +3,8 @@
 import { BytesBuilder, BytesIter, trim0x, add0x } from '@1inch/byte-utils'
 import { HexString } from '@1inch/sdk-core'
 import { SwapVmProgram } from './swap-vm-program'
+import { lintProgram } from './program-lint'
+import type { ProgramLintWarning } from './program-lint'
 import type { IArgsData, IInstruction, IOpcode } from '../instructions'
 import { EMPTY_OPCODE } from '../instructions/empty'
 
@@ -63,6 +65,29 @@ export class ProgramBuilder {
     }
 
     return new SwapVmProgram(builder.asHex())
+  }
+
+  /**
+   * Lints the control flow of the program and returns the issues as warnings, without throwing.
+   *
+   * Builders do not validate control flow: on-chain execution is bounded only by gas, and making
+   * a program terminate is up to the maker. Offsets are computed exactly as {@link build} lays out
+   * the bytecode (`opcode | argsLength | args`), and `jump`, `jumpIfTokenIn` and `jumpIfTokenOut`
+   * targets are absolute byte offsets into it:
+   * - `backward-jump` - the target is at or before the jump itself, so execution can loop until
+   *   the transaction runs out of gas
+   * - `misaligned-jump-target` - the target is neither an instruction start nor the program end
+   *   (targets past the end included)
+   * - `unreachable-instruction` - no execution path from offset 0 reaches the instruction, with
+   *   conditional jumps followed both ways; skipped for programs containing `extruction`,
+   *   which can continue at any offset
+   *
+   * To lint an existing program, decode it first, e.g. `AquaProgramBuilder.decode(program).lint()`
+   *
+   * @returns warnings ordered by `instructionIndex`, empty if no issue is found
+   **/
+  public lint(): ProgramLintWarning[] {
+    return lintProgram(this.program)
   }
 
   /**
