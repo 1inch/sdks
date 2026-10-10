@@ -3,6 +3,7 @@
 import { BN, BitMask } from '@1inch/byte-utils'
 import type { DataFor } from '@1inch/sdk-core'
 import { Interaction, HexString, Address } from '@1inch/sdk-core'
+import assert from 'assert'
 
 /**
  * Maker-side order configuration packed into a single `uint256` and an optional hooks data blob.
@@ -145,6 +146,11 @@ export class MakerTraits {
    *
    * Both arguments are typically obtained from contract storage / ABI and must
    * follow the bit layout described in the class-level documentation.
+   *
+   * @throws if a flagged hook's data slice is inverted or exceeds `hooksData`, if the
+   *         hooks data ends beyond `hooksData`, or if a hook with the target flag lacks a
+   *         non-zero 20-byte target. {@link encode} never produces such traits, and SwapVM
+   *         cannot execute them as encoded.
    */
   static decode(traits: bigint, hooksData: HexString = HexString.EMPTY): MakerTraits {
     const traitsBN = new BN(traits)
@@ -171,6 +177,7 @@ export class MakerTraits {
       hasPreTransferInHookTarget,
       hooksDataOffsets,
       0,
+      'preTransferInHook',
     )
 
     const hasPostTransferInHook = Boolean(
@@ -186,6 +193,7 @@ export class MakerTraits {
       hasPostTransferInHookTarget,
       hooksDataOffsets,
       1,
+      'postTransferInHook',
     )
 
     const hasPreTransferOutHook = Boolean(
@@ -200,6 +208,7 @@ export class MakerTraits {
       hasPreTransferOutHookTarget,
       hooksDataOffsets,
       2,
+      'preTransferOutHook',
     )
 
     const hasPostTransferOutHook = Boolean(
@@ -215,6 +224,14 @@ export class MakerTraits {
       hasPostTransferOutHookTarget,
       hooksDataOffsets,
       3,
+      'postTransferOutHook',
+    )
+
+    const hooksDataEndsAt = MakerTraits.hooksDataEndsAtByte(traits)
+
+    assert(
+      hooksDataEndsAt <= hooksData.bytesCount(),
+      `Invalid hooks data offsets: hooks data ends at byte ${hooksDataEndsAt}, but only ${hooksData.bytesCount()} bytes are provided`,
     )
 
     return MakerTraits.new({
@@ -385,6 +402,7 @@ function parseHook(
   hasHookTarget: boolean,
   offsets: bigint,
   idx: number,
+  hookName: string,
 ): Interaction | undefined {
   if (!hasHook) {
     return undefined
@@ -392,11 +410,35 @@ function parseHook(
 
   const startDataIdx = idx === 0 ? 0 : Number((offsets >> (16n * BigInt(idx - 1))) & 0xffffn)
   const endDataIdx = Number((offsets >> (16n * BigInt(idx))) & 0xffffn)
+
+  assert(
+    endDataIdx <= fullHookData.bytesCount(),
+    `MakerTraitsMissingHookData: ${hookName} data ends at byte ${endDataIdx}, but only ${fullHookData.bytesCount()} bytes are provided`,
+  )
+  assert(
+    startDataIdx <= endDataIdx,
+    `Invalid ${hookName} data offsets: start ${startDataIdx} is greater than end ${endDataIdx}`,
+  )
+
+  const hookDataLength = endDataIdx - startDataIdx
+
+  assert(
+    !hasHookTarget || hookDataLength >= 20,
+    `MakerTraitsMissingHookTarget: ${hookName} has the target flag set, but its data is only ${hookDataLength} bytes long`,
+  )
+
   const hookData = fullHookData.sliceBytes(startDataIdx, endDataIdx)
 
   if (!hasHookTarget) {
     return new Interaction(Address.ZERO_ADDRESS, hookData)
   }
 
-  return Interaction.decode(hookData)
+  const hook = Interaction.decode(hookData)
+
+  assert(
+    !hook.target.isZero(),
+    `Invalid ${hookName} target: the target flag is set, but the target is the zero address`,
+  )
+
+  return hook
 }
