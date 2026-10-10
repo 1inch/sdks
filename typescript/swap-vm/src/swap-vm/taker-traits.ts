@@ -3,6 +3,7 @@
 import { add0x, BN, BytesBuilder, BytesIter, trim0x } from '@1inch/byte-utils'
 import type { DataFor } from '@1inch/sdk-core'
 import { Address, HexString } from '@1inch/sdk-core'
+import assert from 'assert'
 
 /**
  * TakerTraits encodes taker-specific parameters and flags for swap execution.
@@ -176,6 +177,15 @@ export class TakerTraits {
    * - 2 bytes: uint16 flags
    * - Variable: data sections (threshold, to, deadline, hook data, callback data, etc.)
    * - Variable: signature
+   *
+   * Sections are interpreted the way the contract reads them: the threshold only from an
+   * exactly 32-byte section, the receiver only from 20 bytes and the deadline only from
+   * 5 bytes. Sections of any other length decode as absent.
+   *
+   * @throws Error if the section offsets decrease or point past the end of the data
+   * @throws Error if the traits have an on-chain meaning this class cannot represent:
+   * a 32-byte zero threshold, a 20-byte zero receiver, or callback data whose
+   * callback flag is not set
    */
   static decode(packed: HexString): TakerTraits {
     const iter = BytesIter.BigInt(packed.toString())
@@ -184,15 +194,24 @@ export class TakerTraits {
     const flags = new BN(iter.nextUint16())
 
     const dataStr = trim0x(packed.toString()).slice(44)
-    const sections: string[] = []
+    const dataLength = dataStr.length / 2
 
-    offsets.forEach((offset, i) => {
+    const sections = offsets.map((offset, i) => {
       const start = i === 0 ? 0 : offsets[i - 1]
-      sections.push(offset > start ? dataStr.slice(start * 2, offset * 2) : '')
+
+      assert(
+        offset >= start,
+        `Invalid TakerTraits: section offset ${offset} is lower than the previous offset ${start}`,
+      )
+      assert(
+        offset <= dataLength,
+        `Invalid TakerTraits: section offset ${offset} exceeds the data length ${dataLength}`,
+      )
+
+      return dataStr.slice(start * 2, offset * 2)
     })
 
-    const lastOffset = offsets[offsets.length - 1]
-    const signature = dataStr.length > lastOffset * 2 ? dataStr.slice(lastOffset * 2) : ''
+    const signature = dataStr.slice(offsets[offsets.length - 1] * 2)
 
     const [
       threshold,
@@ -207,15 +226,38 @@ export class TakerTraits {
       instructionsArgs,
     ] = sections
 
+    const thresholdValue = TakerTraits.readFixedSizeSection(threshold, 32)
+    const toValue = TakerTraits.readFixedSizeSection(to, 20)
+    const deadlineValue = TakerTraits.readFixedSizeSection(deadline, 5)
+    const preTransferInCallbackEnabled = Boolean(
+      flags.getBit(TakerTraits.HAS_PRE_TRANSFER_IN_CALLBACK_BIT_FLAG),
+    )
+    const preTransferOutCallbackEnabled = Boolean(
+      flags.getBit(TakerTraits.HAS_PRE_TRANSFER_OUT_CALLBACK_BIT_FLAG),
+    )
+
+    assert(
+      thresholdValue !== 0n,
+      'Unsupported TakerTraits: 32-byte zero threshold (enforced on-chain, but 0n means no threshold)',
+    )
+    assert(
+      toValue !== 0n,
+      'Unsupported TakerTraits: 20-byte zero receiver (address(0) on-chain, but zero means the taker)',
+    )
+    assert(
+      preTransferInCallbackEnabled || !preTransferInCallbackData,
+      'Unsupported TakerTraits: preTransferInCallbackData is set but its callback flag is not',
+    )
+    assert(
+      preTransferOutCallbackEnabled || !preTransferOutCallbackData,
+      'Unsupported TakerTraits: preTransferOutCallbackData is set but its callback flag is not',
+    )
+
     return TakerTraits.new({
       exactIn: Boolean(flags.getBit(TakerTraits.IS_EXACT_IN_BIT_FLAG)),
       shouldUnwrap: Boolean(flags.getBit(TakerTraits.SHOULD_UNWRAP_BIT_FLAG)),
-      preTransferInCallbackEnabled: Boolean(
-        flags.getBit(TakerTraits.HAS_PRE_TRANSFER_IN_CALLBACK_BIT_FLAG),
-      ),
-      preTransferOutCallbackEnabled: Boolean(
-        flags.getBit(TakerTraits.HAS_PRE_TRANSFER_OUT_CALLBACK_BIT_FLAG),
-      ),
+      preTransferInCallbackEnabled,
+      preTransferOutCallbackEnabled,
       strictThreshold: Boolean(flags.getBit(TakerTraits.IS_STRICT_THRESHOLD_BIT_FLAG)),
       firstTransferFromTaker: Boolean(
         flags.getBit(TakerTraits.IS_FIRST_TRANSFER_FROM_TAKER_BIT_FLAG),
@@ -223,9 +265,9 @@ export class TakerTraits {
       useTransferFromAndAquaPush: Boolean(
         flags.getBit(TakerTraits.USE_TRANSFER_FROM_AND_AQUA_PUSH_FLAG),
       ),
-      threshold: threshold ? BigInt(add0x(threshold)) : 0n,
-      customReceiver: to ? new Address(add0x(to)) : Address.ZERO_ADDRESS,
-      deadline: deadline ? BigInt(add0x(deadline)) : 0n,
+      threshold: thresholdValue ?? 0n,
+      customReceiver: toValue === undefined ? Address.ZERO_ADDRESS : Address.fromBigInt(toValue),
+      deadline: deadlineValue ?? 0n,
       preTransferInHookData: preTransferInHookData
         ? new HexString(add0x(preTransferInHookData))
         : HexString.EMPTY,
@@ -247,6 +289,14 @@ export class TakerTraits {
       instructionsArgs: instructionsArgs ? new HexString(add0x(instructionsArgs)) : HexString.EMPTY,
       signature: signature ? new HexString(add0x(signature)) : HexString.EMPTY,
     })
+  }
+
+  /**
+   * Only a section of exactly `size` bytes holds a value, mirroring the contract's
+   * `TakerTraitsLib.threshold`/`to`/`deadline` length checks.
+   */
+  private static readFixedSizeSection(section: string, size: number): bigint | undefined {
+    return section.length === size * 2 ? BigInt(add0x(section)) : undefined
   }
 
   /**
