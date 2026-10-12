@@ -50,6 +50,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * Sets initial token balances for the swap program
+   * (one entry per token, keyed by the full 20-byte token address)
    **/
   public staticBalancesXD(data: DataFor<balances.BalancesArgs>): this {
     super.add(balances.staticBalancesXD.createIx(new balances.BalancesArgs(data.tokenBalances)))
@@ -59,6 +60,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * Reads token balances from program data or contract storage
+   * (one entry per token, keyed by the full 20-byte token address)
    **/
   public dynamicBalancesXD(data: DataFor<balances.BalancesArgs>): this {
     super.add(balances.dynamicBalancesXD.createIx(new balances.BalancesArgs(data.tokenBalances)))
@@ -76,22 +78,22 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Jumps if tokenIn is the specified token
+   * Jumps to `nextPC` if tokenIn is the specified token (full 20-byte address)
    **/
   public jumpIfTokenIn(data: DataFor<controls.JumpIfTokenArgs>): this {
     super.add(
-      controls.jumpIfTokenIn.createIx(new controls.JumpIfTokenArgs(data.tokenTail, data.nextPC)),
+      controls.jumpIfTokenIn.createIx(new controls.JumpIfTokenArgs(data.token, data.nextPC)),
     )
 
     return this
   }
 
   /**
-   * Jumps if tokenOut is the specified token
+   * Jumps to `nextPC` if tokenOut is the specified token (full 20-byte address)
    **/
   public jumpIfTokenOut(data: DataFor<controls.JumpIfTokenArgs>): this {
     super.add(
-      controls.jumpIfTokenOut.createIx(new controls.JumpIfTokenArgs(data.tokenTail, data.nextPC)),
+      controls.jumpIfTokenOut.createIx(new controls.JumpIfTokenArgs(data.token, data.nextPC)),
     )
 
     return this
