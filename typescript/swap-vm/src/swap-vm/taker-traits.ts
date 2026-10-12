@@ -33,16 +33,18 @@ const TAKER_TRAITS_CLEARED: Partial<DataFor<TakerTraits>> = {
 }
 
 function applyUndefinedClears(data: Partial<DataFor<TakerTraits>>): Partial<DataFor<TakerTraits>> {
-  const patch: Partial<DataFor<TakerTraits>> = {}
+  return Object.fromEntries(
+    (Object.keys(data) as Array<keyof DataFor<TakerTraits>>).map((key) => {
+      const value = data[key]
 
-  for (const key of Object.keys(data) as Array<keyof DataFor<TakerTraits>>) {
-    const value = data[key]
-
-    patch[key] =
-      value === undefined ? (TAKER_TRAITS_CLEARED[key] as DataFor<TakerTraits>[typeof key]) : value
-  }
-
-  return patch
+      return [
+        key,
+        value === undefined
+          ? (TAKER_TRAITS_CLEARED[key] as DataFor<TakerTraits>[typeof key])
+          : value,
+      ]
+    }),
+  ) as Partial<DataFor<TakerTraits>>
 }
 
 /**
