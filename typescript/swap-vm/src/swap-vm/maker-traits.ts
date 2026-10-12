@@ -112,11 +112,7 @@ export class MakerTraits {
     public readonly postTransferOutHook?: Interaction,
   ) {}
 
-  /**
-   * Construct traits from a plain data object.
-   *
-   * Flag combinations are not checked here, see {@link MakerTraits.validate}.
-   */
+  /** Construct traits from a plain data object. */
   static new(data: DataFor<MakerTraits>): MakerTraits {
     return new MakerTraits(
       data.shouldUnwrap,
@@ -257,7 +253,7 @@ export class MakerTraits {
    * `MakerTraits.default().with({ useAquaInsteadOfSignature: false, shouldUnwrap: true })`
    *
    * Only fields present in `data` are updated; flags, receiver, and hooks can be
-   * changed independently. Flag combinations are not checked here, see {@link validate}.
+   * changed independently.
    */
   public with(data: Partial<DataFor<MakerTraits>>): this {
     const next = MakerTraits.new({ ...this, ...applyUndefinedClears(data) } as DataFor<MakerTraits>)
