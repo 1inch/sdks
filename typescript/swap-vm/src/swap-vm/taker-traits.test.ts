@@ -122,9 +122,9 @@ describe('TakerTraits', () => {
       expect(withThreshold.threshold !== undefined && withThreshold.threshold > 0n).toBe(true)
       expect(withThreshold.threshold).toBe(threshold)
 
-      const withoutThreshold = withThreshold.with({ threshold: 0n })
-      expect(withoutThreshold.threshold).toBe(0n)
-      expect(withThreshold.threshold).toBe(threshold)
+      const withoutThreshold = withThreshold.with({ threshold: undefined })
+      expect(!withoutThreshold.threshold || withoutThreshold.threshold === 0n).toBe(true)
+      expect(withoutThreshold.threshold).toBe(undefined)
     })
   })
 
@@ -138,13 +138,44 @@ describe('TakerTraits', () => {
       ).toBe(true)
       expect(withReceiver.customReceiver?.toString()).toBe(mockReceiver.toString())
 
-      const withoutReceiver = withReceiver.with({ customReceiver: Address.ZERO_ADDRESS })
-      expect(withoutReceiver.customReceiver.isZero()).toBe(true)
-      expect(withReceiver.customReceiver.toString()).toBe(mockReceiver.toString())
+      const withoutReceiver = withReceiver.with({ customReceiver: undefined })
+      expect(!withoutReceiver.customReceiver || withoutReceiver.customReceiver.isZero()).toBe(true)
+      expect(withoutReceiver.customReceiver).toBe(undefined)
     })
   })
 
   describe('with', () => {
+    it('should mutate the receiver in place and return it', () => {
+      const base = TakerTraits.new({ threshold: 1000n, exactIn: true })
+      const same = base.with({ exactIn: false, threshold: 2000n })
+
+      expect(same).toBe(base)
+      expect(base.exactIn).toBe(false)
+      expect(base.threshold).toBe(2000n)
+    })
+
+    it('should support chaining from default()', () => {
+      const receiverA = Address.fromBigInt(0xaaaan)
+      const traits = TakerTraits.default()
+        .with({ exactIn: false, threshold: 2000n })
+        .with({ customReceiver: receiverA })
+        .with({ strictThreshold: true })
+
+      expect(traits.exactIn).toBe(false)
+      expect(traits.threshold).toBe(2000n)
+      expect(traits.customReceiver.equal(receiverA)).toBe(true)
+      expect(traits.strictThreshold).toBe(true)
+      expect(traits.useTransferFromAndAquaPush).toBe(true)
+
+      const decoded = TakerTraits.decode(traits.encode())
+      expect(decoded.exactIn).toBe(false)
+      expect(decoded.threshold).toBe(2000n)
+      expect(decoded.customReceiver.equal(receiverA)).toBe(true)
+      expect(decoded.strictThreshold).toBe(true)
+    })
+  })
+
+  describe('withNew', () => {
     const receiverA = Address.fromBigInt(0xaaaan)
     const receiverB = Address.fromBigInt(0xbbbbn)
 
@@ -157,7 +188,7 @@ describe('TakerTraits', () => {
       })
       const baseEncoded = base.encode().toString()
 
-      const derived = base.with({ exactIn: false, customReceiver: receiverB })
+      const derived = base.withNew({ exactIn: false, customReceiver: receiverB })
 
       expect(derived).toBeInstanceOf(TakerTraits)
       expect(derived).not.toBe(base)
@@ -175,8 +206,8 @@ describe('TakerTraits', () => {
     it('should derive independent instances from the same base', () => {
       const base = TakerTraits.default()
 
-      const toA = base.with({ customReceiver: receiverA })
-      const toB = base.with({ customReceiver: receiverB })
+      const toA = base.withNew({ customReceiver: receiverA })
+      const toB = base.withNew({ customReceiver: receiverB })
 
       expect(toA).not.toBe(toB)
       expect(toA.customReceiver.equal(receiverA)).toBe(true)
@@ -191,7 +222,7 @@ describe('TakerTraits', () => {
     it('should return an equal copy when no fields are updated', () => {
       const base = TakerTraits.new({ threshold: 5n, signature: new HexString('0xabcd') })
 
-      const copy = base.with({})
+      const copy = base.withNew({})
 
       expect(copy).not.toBe(base)
       expect(copy).toEqual(base)
@@ -208,7 +239,7 @@ describe('TakerTraits', () => {
         signature: new HexString('0xabcd'),
       })
 
-      const updated = base.with({
+      const updated = base.withNew({
         exactIn: undefined,
         threshold: undefined,
         customReceiver: undefined,
@@ -226,12 +257,12 @@ describe('TakerTraits', () => {
       expect(updated.signature.toString()).toBe('0xabcd')
       expect(updated.shouldUnwrap).toBe(true)
       expect(updated.encode().toString()).toBe(
-        base.with({ shouldUnwrap: true }).encode().toString(),
+        base.withNew({ shouldUnwrap: true }).encode().toString(),
       )
     })
 
     it('should encode after updating fields with undefined values', () => {
-      const traits = TakerTraits.default().with({
+      const traits = TakerTraits.default().withNew({
         customReceiver: undefined,
         threshold: undefined,
         deadline: undefined,
@@ -244,9 +275,9 @@ describe('TakerTraits', () => {
 
     it('should support chaining from default()', () => {
       const traits = TakerTraits.default()
-        .with({ exactIn: false, threshold: 2000n })
-        .with({ customReceiver: receiverA })
-        .with({ strictThreshold: true })
+        .withNew({ exactIn: false, threshold: 2000n })
+        .withNew({ customReceiver: receiverA })
+        .withNew({ strictThreshold: true })
 
       expect(traits.exactIn).toBe(false)
       expect(traits.threshold).toBe(2000n)
