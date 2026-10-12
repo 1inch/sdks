@@ -39,9 +39,7 @@ function applyUndefinedClears(data: Partial<DataFor<TakerTraits>>): Partial<Data
     const value = data[key]
 
     patch[key] =
-      value === undefined
-        ? (TAKER_TRAITS_CLEARED[key] as DataFor<TakerTraits>[typeof key])
-        : value
+      value === undefined ? (TAKER_TRAITS_CLEARED[key] as DataFor<TakerTraits>[typeof key]) : value
   }
 
   return patch
