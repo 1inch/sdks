@@ -4,6 +4,22 @@ import { describe, it, expect } from 'vitest'
 import { Address, HexString } from '@1inch/sdk-core'
 import { TakerTraits } from './taker-traits'
 
+const fluentChainReceiver = Address.fromBigInt(0xaaaan)
+
+function expectFluentChainResult(traits: TakerTraits, receiver: Address): void {
+  expect(traits.exactIn).toBe(false)
+  expect(traits.threshold).toBe(2000n)
+  expect(traits.customReceiver.equal(receiver)).toBe(true)
+  expect(traits.strictThreshold).toBe(true)
+  expect(traits.useTransferFromAndAquaPush).toBe(true)
+
+  const decoded = TakerTraits.decode(traits.encode())
+  expect(decoded.exactIn).toBe(false)
+  expect(decoded.threshold).toBe(2000n)
+  expect(decoded.customReceiver.equal(receiver)).toBe(true)
+  expect(decoded.strictThreshold).toBe(true)
+}
+
 describe('TakerTraits', () => {
   const mockReceiver = Address.fromBigInt(2n)
 
@@ -153,30 +169,10 @@ describe('TakerTraits', () => {
       expect(base.exactIn).toBe(false)
       expect(base.threshold).toBe(2000n)
     })
-
-    it('should support chaining from default()', () => {
-      const receiverA = Address.fromBigInt(0xaaaan)
-      const traits = TakerTraits.default()
-        .with({ exactIn: false, threshold: 2000n })
-        .with({ customReceiver: receiverA })
-        .with({ strictThreshold: true })
-
-      expect(traits.exactIn).toBe(false)
-      expect(traits.threshold).toBe(2000n)
-      expect(traits.customReceiver.equal(receiverA)).toBe(true)
-      expect(traits.strictThreshold).toBe(true)
-      expect(traits.useTransferFromAndAquaPush).toBe(true)
-
-      const decoded = TakerTraits.decode(traits.encode())
-      expect(decoded.exactIn).toBe(false)
-      expect(decoded.threshold).toBe(2000n)
-      expect(decoded.customReceiver.equal(receiverA)).toBe(true)
-      expect(decoded.strictThreshold).toBe(true)
-    })
   })
 
   describe('withNew', () => {
-    const receiverA = Address.fromBigInt(0xaaaan)
+    const receiverA = fluentChainReceiver
     const receiverB = Address.fromBigInt(0xbbbbn)
 
     it('should return a new instance and leave the original unchanged', () => {
@@ -272,24 +268,28 @@ describe('TakerTraits', () => {
       expect(() => traits.encode()).not.toThrow()
       expect(traits.encode().toString()).toBe(TakerTraits.default().encode().toString())
     })
+  })
 
-    it('should support chaining from default()', () => {
-      const traits = TakerTraits.default()
-        .withNew({ exactIn: false, threshold: 2000n })
-        .withNew({ customReceiver: receiverA })
-        .withNew({ strictThreshold: true })
-
-      expect(traits.exactIn).toBe(false)
-      expect(traits.threshold).toBe(2000n)
-      expect(traits.customReceiver.equal(receiverA)).toBe(true)
-      expect(traits.strictThreshold).toBe(true)
-      expect(traits.useTransferFromAndAquaPush).toBe(true)
-
-      const decoded = TakerTraits.decode(traits.encode())
-      expect(decoded.exactIn).toBe(false)
-      expect(decoded.threshold).toBe(2000n)
-      expect(decoded.customReceiver.equal(receiverA)).toBe(true)
-      expect(decoded.strictThreshold).toBe(true)
+  describe('partial update helpers', () => {
+    it.each([
+      {
+        label: 'with',
+        chain: (): TakerTraits =>
+          TakerTraits.default()
+            .with({ exactIn: false, threshold: 2000n })
+            .with({ customReceiver: fluentChainReceiver })
+            .with({ strictThreshold: true }),
+      },
+      {
+        label: 'withNew',
+        chain: (): TakerTraits =>
+          TakerTraits.default()
+            .withNew({ exactIn: false, threshold: 2000n })
+            .withNew({ customReceiver: fluentChainReceiver })
+            .withNew({ strictThreshold: true }),
+      },
+    ])('should support fluent chaining via $label', ({ chain }) => {
+      expectFluentChainResult(chain(), fluentChainReceiver)
     })
   })
 

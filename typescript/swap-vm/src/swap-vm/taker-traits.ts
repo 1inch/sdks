@@ -4,6 +4,12 @@ import { add0x, BN, BytesBuilder, BytesIter, trim0x } from '@1inch/byte-utils'
 import type { DataFor } from '@1inch/sdk-core'
 import { Address, HexString } from '@1inch/sdk-core'
 
+function omitUndefinedFields<T extends object>(data: Partial<T>): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(data).filter(([, value]) => value !== undefined),
+  ) as Partial<T>
+}
+
 /**
  * TakerTraits encodes taker-specific parameters and flags for swap execution.
  * It defines how the taker wants the swap to be executed, including thresholds,
@@ -274,11 +280,7 @@ export class TakerTraits {
    * (e.g. `threshold: 0n`, `customReceiver: Address.ZERO_ADDRESS`, `HexString.EMPTY`).
    */
   public withNew(data: Partial<DataFor<TakerTraits>>): TakerTraits {
-    const updates: Partial<DataFor<TakerTraits>> = Object.fromEntries(
-      Object.entries(data).filter(([, value]) => value !== undefined),
-    )
-
-    return TakerTraits.new({ ...this, ...updates })
+    return TakerTraits.new({ ...this, ...omitUndefinedFields(data) })
   }
 
   /**
