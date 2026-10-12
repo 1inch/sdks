@@ -10,6 +10,43 @@ function omitUndefinedFields<T extends object>(data: Partial<T>): Partial<T> {
   ) as Partial<T>
 }
 
+/** Values applied when `with()` is passed `undefined` for a field (clears without breaking `encode()`). */
+const TAKER_TRAITS_CLEARED: Partial<DataFor<TakerTraits>> = {
+  exactIn: true,
+  shouldUnwrap: false,
+  preTransferInCallbackEnabled: false,
+  preTransferOutCallbackEnabled: false,
+  strictThreshold: false,
+  firstTransferFromTaker: false,
+  useTransferFromAndAquaPush: true,
+  threshold: 0n,
+  customReceiver: Address.ZERO_ADDRESS,
+  deadline: 0n,
+  preTransferInHookData: HexString.EMPTY,
+  postTransferInHookData: HexString.EMPTY,
+  preTransferOutHookData: HexString.EMPTY,
+  postTransferOutHookData: HexString.EMPTY,
+  preTransferInCallbackData: HexString.EMPTY,
+  preTransferOutCallbackData: HexString.EMPTY,
+  instructionsArgs: HexString.EMPTY,
+  signature: HexString.EMPTY,
+}
+
+function applyUndefinedClears(data: Partial<DataFor<TakerTraits>>): Partial<DataFor<TakerTraits>> {
+  const patch: Partial<DataFor<TakerTraits>> = {}
+
+  for (const key of Object.keys(data) as Array<keyof DataFor<TakerTraits>>) {
+    const value = data[key]
+
+    patch[key] =
+      value === undefined
+        ? (TAKER_TRAITS_CLEARED[key] as DataFor<TakerTraits>[typeof key])
+        : value
+  }
+
+  return patch
+}
+
 /**
  * TakerTraits encodes taker-specific parameters and flags for swap execution.
  * It defines how the taker wants the swap to be executed, including thresholds,
@@ -258,15 +295,18 @@ export class TakerTraits {
   /**
    * Mutate this instance in-place with a partial update and return it.
    *
-   * Matches {@link MakerTraits.with}: fields from `data` are copied onto the receiver,
-   * including `undefined` (which clears optional fields). For fluent construction in
-   * tests and one-off tweaks, e.g. `TakerTraits.default().with({ threshold: minOut })`.
+   * Matches {@link MakerTraits.with}: fields from `data` are copied onto the receiver.
+   * A key set to `undefined` clears that field back to its default empty value (e.g.
+   * `threshold: 0n`, `customReceiver: Address.ZERO_ADDRESS`) so {@link encode} keeps working.
+   * For fluent construction in tests and one-off tweaks, e.g. `TakerTraits.default().with({ threshold: minOut })`.
    *
    * To build a derived traits object without changing the original (e.g. reuse a base
    * template for several receivers), use {@link TakerTraits.withNew} instead.
    */
   public with(data: Partial<DataFor<TakerTraits>>): this {
-    Object.assign(this, data)
+    const next = TakerTraits.new({ ...this, ...applyUndefinedClears(data) })
+
+    Object.assign(this, next)
 
     return this
   }

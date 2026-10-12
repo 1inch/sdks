@@ -139,8 +139,8 @@ describe('TakerTraits', () => {
       expect(withThreshold.threshold).toBe(threshold)
 
       const withoutThreshold = withThreshold.with({ threshold: undefined })
-      expect(!withoutThreshold.threshold || withoutThreshold.threshold === 0n).toBe(true)
-      expect(withoutThreshold.threshold).toBe(undefined)
+      expect(withoutThreshold.threshold).toBe(0n)
+      expect(() => withoutThreshold.encode()).not.toThrow()
     })
   })
 
@@ -155,8 +155,8 @@ describe('TakerTraits', () => {
       expect(withReceiver.customReceiver?.toString()).toBe(mockReceiver.toString())
 
       const withoutReceiver = withReceiver.with({ customReceiver: undefined })
-      expect(!withoutReceiver.customReceiver || withoutReceiver.customReceiver.isZero()).toBe(true)
-      expect(withoutReceiver.customReceiver).toBe(undefined)
+      expect(withoutReceiver.customReceiver.isZero()).toBe(true)
+      expect(() => withoutReceiver.encode()).not.toThrow()
     })
   })
 
@@ -168,6 +168,16 @@ describe('TakerTraits', () => {
       expect(same).toBe(base)
       expect(base.exactIn).toBe(false)
       expect(base.threshold).toBe(2000n)
+    })
+
+    it('should encode after clearing fields with undefined', () => {
+      const traits = TakerTraits.default()
+        .with({ customReceiver: mockReceiver, threshold: 1n })
+        .with({ customReceiver: undefined, threshold: undefined })
+
+      expect(traits.customReceiver.isZero()).toBe(true)
+      expect(traits.threshold).toBe(0n)
+      expect(traits.encode().toString()).toBe(TakerTraits.default().encode().toString())
     })
   })
 
