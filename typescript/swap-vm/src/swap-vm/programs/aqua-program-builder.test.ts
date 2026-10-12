@@ -51,6 +51,10 @@ describe('AquaProgramBuilder', () => {
     expect(decoded.getInstructions()).toHaveLength(18)
   })
 
+  it('should reject building an empty program', () => {
+    expect(() => new AquaProgramBuilder().build()).toThrow('Cannot build an empty program')
+  })
+
   it('should encode and decode extruction with empty args', () => {
     const target = new Address('0x1111111111111111111111111111111111111111')
     const expected = `0x2014${target.toString().slice(2)}`
