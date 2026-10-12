@@ -3,6 +3,7 @@
 import { describe, it, expect } from 'vitest'
 import type { DataFor } from '@1inch/sdk-core'
 import { Address, HexString, Interaction, NetworkEnum } from '@1inch/sdk-core'
+import { encodeAbiParameters, keccak256 } from 'viem'
 
 import { Order } from './order'
 import { MakerTraits } from './maker-traits'
@@ -130,6 +131,87 @@ describe('Order', () => {
       const decoded = Order.decode(encoded)
 
       expect(decoded).toEqual(original)
+    })
+
+    it('should round-trip hooks with empty data without changing the encoding or hash', () => {
+      const maker = new Address('0x3333333333333333333333333333333333333333')
+      const target = new Address('0x4444444444444444444444444444444444444444')
+
+      const traits = MakerTraits.new({
+        shouldUnwrap: false,
+        useAquaInsteadOfSignature: true,
+        allowZeroAmountIn: false,
+        preTransferInHook: new Interaction(Address.ZERO_ADDRESS, new HexString('0xaaaa')),
+        postTransferInHook: new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+        preTransferOutHook: new Interaction(target, HexString.EMPTY),
+        postTransferOutHook: new Interaction(Address.ZERO_ADDRESS, new HexString('0xdddd')),
+      })
+
+      const original = new Order(maker, traits, createProgram('0x1100'))
+      const encoded = original.encode()
+      const decoded = Order.decode(encoded)
+
+      expect(decoded).toEqual(original)
+      expect(decoded.build().data).toBe('0xaaaa4444444444444444444444444444444444444444dddd1100')
+      expect(decoded.encode().toString()).toBe(encoded.toString())
+      expect(decoded.hash().toString()).toBe(original.hash().toString())
+      expect(decoded.hash().toString()).toBe(
+        '0xb2a0df79e94ea67a344251b1387fbc98fc3bb635db7dcc0b9876fc2c4aa07985',
+      )
+    })
+
+    it('should decode an empty first hook without changing the encoding or hash', () => {
+      const maker = new Address('0x3333333333333333333333333333333333333333')
+      const encoded = new HexString(
+        encodeAbiParameters(
+          [Order.ABI],
+          [
+            {
+              maker: maker.toString(),
+              traits:
+                39803530675328264941685581732473515572931709543860161877349024523970154594304n,
+              data: '0xabcd1100',
+            },
+          ],
+        ),
+      )
+
+      const decoded = Order.decode(encoded)
+
+      expect(decoded.maker).toEqual(maker)
+      expect(decoded.traits.preTransferInHook).toEqual(
+        new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+      )
+      expect(decoded.traits.postTransferInHook).toEqual(
+        new Interaction(Address.ZERO_ADDRESS, new HexString('0xabcd')),
+      )
+      expect(decoded.program).toEqual(createProgram('0x1100'))
+      expect(decoded.encode().toString()).toBe(encoded.toString())
+      expect(decoded.hash().toString()).toBe(keccak256(encoded.toString()))
+      expect(decoded.hash().toString()).toBe(
+        '0x536fc34685bd20b5869519e686e78046812055221533a98040024b1ae9291cca',
+      )
+    })
+
+    it('should round-trip an order whose hooks are all empty', () => {
+      const emptyHook = new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY)
+      const traits = MakerTraits.new({
+        shouldUnwrap: false,
+        useAquaInsteadOfSignature: true,
+        allowZeroAmountIn: false,
+        preTransferInHook: emptyHook,
+        postTransferInHook: emptyHook,
+        preTransferOutHook: emptyHook,
+        postTransferOutHook: emptyHook,
+      })
+
+      const original = new Order(createMaker(), traits, createProgram('0x1100'))
+      const encoded = original.encode()
+      const decoded = Order.decode(encoded)
+
+      expect(decoded).toEqual(original)
+      expect(decoded.encode().toString()).toBe(encoded.toString())
+      expect(decoded.hash().toString()).toBe(original.hash().toString())
     })
   })
 
