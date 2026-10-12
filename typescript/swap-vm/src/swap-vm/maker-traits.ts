@@ -108,16 +108,18 @@ export class MakerTraits {
   /**
    * Construct traits from a plain data object.
    */
-  static new(data: DataFor<MakerTraits>): MakerTraits {
+  static new(data: Partial<DataFor<MakerTraits>> = {}): MakerTraits {
+    const d = { ...MAKER_TRAITS_DEFAULTS, ...applyUndefinedClears(data) }
+
     return new MakerTraits(
-      data.shouldUnwrap,
-      data.useAquaInsteadOfSignature,
-      data.allowZeroAmountIn,
-      data.customReceiver,
-      data.preTransferInHook,
-      data.postTransferInHook,
-      data.preTransferOutHook,
-      data.postTransferOutHook,
+      d.shouldUnwrap,
+      d.useAquaInsteadOfSignature,
+      d.allowZeroAmountIn,
+      d.customReceiver,
+      d.preTransferInHook,
+      d.postTransferInHook,
+      d.preTransferOutHook,
+      d.postTransferOutHook,
     )
   }
 
@@ -129,11 +131,7 @@ export class MakerTraits {
    * - no receiver or hooks configured.
    */
   static default(): MakerTraits {
-    return MakerTraits.new({
-      useAquaInsteadOfSignature: true,
-      allowZeroAmountIn: false,
-      shouldUnwrap: false,
-    })
+    return MakerTraits.new()
   }
 
   /**
@@ -244,13 +242,25 @@ export class MakerTraits {
    *
    * `MakerTraits.default().with({ shouldUnwrap: true })`
    *
-   * Only fields present in `data` are updated; flags, receiver, and hooks can be
-   * changed independently.
+   * A key set to `undefined` resets that field to the canonical default (e.g. clears
+   * `customReceiver` or a hook).
    */
   public with(data: Partial<DataFor<MakerTraits>>): this {
-    Object.assign(this, data)
+    const next = MakerTraits.new({ ...this, ...applyUndefinedClears(data) })
+
+    Object.assign(this, next)
 
     return this
+  }
+
+  /**
+   * Returns a new {@link MakerTraits} with the given fields replaced. This instance is
+   * not modified, so it can be kept as a template for several derived traits.
+   *
+   * A key set to `undefined` resets that field to the canonical default, same as {@link with}.
+   */
+  public withNew(data: Partial<DataFor<MakerTraits>>): MakerTraits {
+    return MakerTraits.new({ ...this, ...applyUndefinedClears(data) })
   }
 
   /**
@@ -377,6 +387,39 @@ export class MakerTraits {
 
     return !(hook.target.isZero() || hook.target.equal(maker))
   }
+}
+
+type MakerTraitsFieldDefaults = {
+  shouldUnwrap: boolean
+  useAquaInsteadOfSignature: boolean
+  allowZeroAmountIn: boolean
+  customReceiver?: Address
+  preTransferInHook?: Interaction
+  postTransferInHook?: Interaction
+  preTransferOutHook?: Interaction
+  postTransferOutHook?: Interaction
+}
+
+/** Canonical default field values for {@link MakerTraits} (construction, `default()`, and `undefined` clears). */
+const MAKER_TRAITS_DEFAULTS: MakerTraitsFieldDefaults = {
+  shouldUnwrap: false,
+  useAquaInsteadOfSignature: true,
+  allowZeroAmountIn: false,
+  customReceiver: undefined,
+  preTransferInHook: undefined,
+  postTransferInHook: undefined,
+  preTransferOutHook: undefined,
+  postTransferOutHook: undefined,
+}
+
+function applyUndefinedClears(data: Partial<DataFor<MakerTraits>>): Partial<DataFor<MakerTraits>> {
+  return Object.fromEntries(
+    Object.entries(data).map(([key, value]) => {
+      const field = key as keyof MakerTraitsFieldDefaults
+
+      return [field, value ?? MAKER_TRAITS_DEFAULTS[field]]
+    }),
+  ) as Partial<DataFor<MakerTraits>>
 }
 
 function parseHook(
