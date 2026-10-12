@@ -235,7 +235,7 @@ describe('TakerTraits', () => {
       expect(copy.encode().toString()).toBe(base.encode().toString())
     })
 
-    it('should keep current values for keys set to undefined', () => {
+    it('should reset keys set to undefined to canonical defaults', () => {
       const base = TakerTraits.new({
         exactIn: false,
         threshold: 1000n,
@@ -255,15 +255,15 @@ describe('TakerTraits', () => {
         shouldUnwrap: true,
       })
 
-      expect(updated.exactIn).toBe(false)
-      expect(updated.threshold).toBe(1000n)
-      expect(updated.customReceiver.equal(receiverA)).toBe(true)
-      expect(updated.deadline).toBe(1735689600n)
-      expect(updated.preTransferInHookData.toString()).toBe('0x1234')
-      expect(updated.signature.toString()).toBe('0xabcd')
+      expect(updated.exactIn).toBe(true)
+      expect(updated.threshold).toBe(0n)
+      expect(updated.customReceiver.isZero()).toBe(true)
+      expect(updated.deadline).toBe(0n)
+      expect(updated.preTransferInHookData.toString()).toBe(HexString.EMPTY.toString())
+      expect(updated.signature.toString()).toBe(HexString.EMPTY.toString())
       expect(updated.shouldUnwrap).toBe(true)
       expect(updated.encode().toString()).toBe(
-        base.withNew({ shouldUnwrap: true }).encode().toString(),
+        TakerTraits.new({ shouldUnwrap: true }).encode().toString(),
       )
     })
 

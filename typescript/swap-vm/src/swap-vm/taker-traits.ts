@@ -4,14 +4,8 @@ import { add0x, BN, BytesBuilder, BytesIter, trim0x } from '@1inch/byte-utils'
 import type { DataFor } from '@1inch/sdk-core'
 import { Address, HexString } from '@1inch/sdk-core'
 
-function omitUndefinedFields<T extends object>(data: Partial<T>): Partial<T> {
-  return Object.fromEntries(
-    Object.entries(data).filter(([, value]) => value !== undefined),
-  ) as Partial<T>
-}
-
-/** Values applied when `with()` is passed `undefined` for a field (clears without breaking `encode()`). */
-const TAKER_TRAITS_CLEARED: Partial<DataFor<TakerTraits>> = {
+/** Canonical default field values for {@link TakerTraits} (construction, `default()`, and `undefined` clears). */
+const TAKER_TRAITS_DEFAULTS = {
   exactIn: true,
   shouldUnwrap: false,
   preTransferInCallbackEnabled: false,
@@ -30,7 +24,7 @@ const TAKER_TRAITS_CLEARED: Partial<DataFor<TakerTraits>> = {
   preTransferOutCallbackData: HexString.EMPTY,
   instructionsArgs: HexString.EMPTY,
   signature: HexString.EMPTY,
-}
+} as const satisfies Required<DataFor<TakerTraits>>
 
 function applyUndefinedClears(data: Partial<DataFor<TakerTraits>>): Partial<DataFor<TakerTraits>> {
   return Object.fromEntries(
@@ -40,7 +34,7 @@ function applyUndefinedClears(data: Partial<DataFor<TakerTraits>>): Partial<Data
       return [
         key,
         value === undefined
-          ? (TAKER_TRAITS_CLEARED[key] as DataFor<TakerTraits>[typeof key])
+          ? (TAKER_TRAITS_DEFAULTS[key] as DataFor<TakerTraits>[typeof key])
           : value,
       ]
     }),
@@ -108,50 +102,50 @@ export class TakerTraits {
      * Minimum output amount (for exactIn) or maximum input amount (for exactOut).
      * Set to 0n for no threshold.
      */
-    public readonly threshold: bigint = 0n,
+    public readonly threshold: bigint = TAKER_TRAITS_DEFAULTS.threshold,
     /**
      * Custom receiver address for the swap output.
      * Defaults to zero address (meaning taker receives funds).
      */
-    public readonly customReceiver: Address = Address.ZERO_ADDRESS,
+    public readonly customReceiver: Address = TAKER_TRAITS_DEFAULTS.customReceiver,
     /**
      * Optional expiration timestamp (uint40, Unix seconds). 0 = no deadline.
      * When non-zero, contract validates block.timestamp <= deadline (TakerTraitsDeadlineExpired otherwise).
      */
-    public readonly deadline: bigint = 0n,
+    public readonly deadline: bigint = TAKER_TRAITS_DEFAULTS.deadline,
     /**
      * Optional data passed to the maker's pre-transfer-in hook.
      */
-    public readonly preTransferInHookData: HexString = HexString.EMPTY,
+    public readonly preTransferInHookData: HexString = TAKER_TRAITS_DEFAULTS.preTransferInHookData,
     /**
      * Optional data passed to the maker's post-transfer-in hook.
      */
-    public readonly postTransferInHookData: HexString = HexString.EMPTY,
+    public readonly postTransferInHookData: HexString = TAKER_TRAITS_DEFAULTS.postTransferInHookData,
     /**
      * Optional data passed to the maker's pre-transfer-out hook.
      */
-    public readonly preTransferOutHookData: HexString = HexString.EMPTY,
+    public readonly preTransferOutHookData: HexString = TAKER_TRAITS_DEFAULTS.preTransferOutHookData,
     /**
      * Optional data passed to the maker's post-transfer-out hook.
      */
-    public readonly postTransferOutHookData: HexString = HexString.EMPTY,
+    public readonly postTransferOutHookData: HexString = TAKER_TRAITS_DEFAULTS.postTransferOutHookData,
     /**
      * Optional callback data for taker's pre-transfer-in callback.
      */
-    public readonly preTransferInCallbackData: HexString = HexString.EMPTY,
+    public readonly preTransferInCallbackData: HexString = TAKER_TRAITS_DEFAULTS.preTransferInCallbackData,
     /**
      * Optional callback data for taker's pre-transfer-out callback.
      */
-    public readonly preTransferOutCallbackData: HexString = HexString.EMPTY,
+    public readonly preTransferOutCallbackData: HexString = TAKER_TRAITS_DEFAULTS.preTransferOutCallbackData,
     /**
      * Optional arguments for VM instructions execution.
      */
-    public readonly instructionsArgs: HexString = HexString.EMPTY,
+    public readonly instructionsArgs: HexString = TAKER_TRAITS_DEFAULTS.instructionsArgs,
     /**
      * ECDSA signature for order validation (65 bytes typically).
      * Can be empty when using Aqua authentication.
      */
-    public readonly signature: HexString = HexString.EMPTY,
+    public readonly signature: HexString = TAKER_TRAITS_DEFAULTS.signature,
   ) {}
 
   /**
@@ -159,25 +153,27 @@ export class TakerTraits {
    * Provides default values for unspecified fields.
    */
   static new(data: Partial<DataFor<TakerTraits>> = {}): TakerTraits {
+    const d = { ...TAKER_TRAITS_DEFAULTS, ...applyUndefinedClears(data) }
+
     return new TakerTraits(
-      data.exactIn ?? true,
-      data.shouldUnwrap ?? false,
-      data.preTransferInCallbackEnabled ?? false,
-      data.preTransferOutCallbackEnabled ?? false,
-      data.strictThreshold ?? false,
-      data.firstTransferFromTaker ?? false,
-      data.useTransferFromAndAquaPush ?? true,
-      data.threshold,
-      data.customReceiver,
-      data.deadline,
-      data.preTransferInHookData,
-      data.postTransferInHookData,
-      data.preTransferOutHookData,
-      data.postTransferOutHookData,
-      data.preTransferInCallbackData,
-      data.preTransferOutCallbackData,
-      data.instructionsArgs,
-      data.signature,
+      d.exactIn,
+      d.shouldUnwrap,
+      d.preTransferInCallbackEnabled,
+      d.preTransferOutCallbackEnabled,
+      d.strictThreshold,
+      d.firstTransferFromTaker,
+      d.useTransferFromAndAquaPush,
+      d.threshold,
+      d.customReceiver,
+      d.deadline,
+      d.preTransferInHookData,
+      d.postTransferInHookData,
+      d.preTransferOutHookData,
+      d.postTransferOutHookData,
+      d.preTransferInCallbackData,
+      d.preTransferOutCallbackData,
+      d.instructionsArgs,
+      d.signature,
     )
   }
 
@@ -190,26 +186,7 @@ export class TakerTraits {
    * - transferFromAndAquaPush enabled
    */
   static default(): TakerTraits {
-    return TakerTraits.new({
-      exactIn: true,
-      shouldUnwrap: false,
-      preTransferInCallbackEnabled: false,
-      preTransferOutCallbackEnabled: false,
-      strictThreshold: false,
-      firstTransferFromTaker: false,
-      useTransferFromAndAquaPush: true,
-      threshold: 0n,
-      deadline: 0n,
-      customReceiver: Address.ZERO_ADDRESS,
-      preTransferInHookData: HexString.EMPTY,
-      postTransferInHookData: HexString.EMPTY,
-      preTransferOutHookData: HexString.EMPTY,
-      postTransferOutHookData: HexString.EMPTY,
-      preTransferInCallbackData: HexString.EMPTY,
-      preTransferOutCallbackData: HexString.EMPTY,
-      instructionsArgs: HexString.EMPTY,
-      signature: HexString.EMPTY,
-    })
+    return TakerTraits.new()
   }
 
   /**
@@ -296,7 +273,7 @@ export class TakerTraits {
    * Mutate this instance in-place with a partial update and return it.
    *
    * Matches {@link MakerTraits.with}: fields from `data` are copied onto the receiver.
-   * A key set to `undefined` clears that field back to its default empty value (e.g.
+   * A key set to `undefined` resets that field to the canonical default (e.g.
    * `threshold: 0n`, `customReceiver: Address.ZERO_ADDRESS`) so {@link encode} keeps working.
    * For fluent construction in tests and one-off tweaks, e.g. `TakerTraits.default().with({ threshold: minOut })`.
    *
@@ -315,12 +292,10 @@ export class TakerTraits {
    * Returns a new {@link TakerTraits} with the given fields replaced. This instance is
    * not modified, so it can be kept as a template for several derived traits.
    *
-   * Keys whose value is `undefined` are ignored and keep their current value.
-   * To clear an optional field, pass its empty value explicitly
-   * (e.g. `threshold: 0n`, `customReceiver: Address.ZERO_ADDRESS`, `HexString.EMPTY`).
+   * A key set to `undefined` resets that field to the canonical default, same as {@link with}.
    */
   public withNew(data: Partial<DataFor<TakerTraits>>): TakerTraits {
-    return TakerTraits.new({ ...this, ...omitUndefinedFields(data) })
+    return TakerTraits.new({ ...this, ...applyUndefinedClears(data) })
   }
 
   /**
