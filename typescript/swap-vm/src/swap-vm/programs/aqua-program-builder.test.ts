@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
-import { Address, AddressHalf } from '@1inch/sdk-core'
+import { Address, HexString } from '@1inch/sdk-core'
 import { AquaProgramBuilder } from './aqua-program-builder'
+import { SwapVmProgram } from './swap-vm-program'
 import { PeggedSwapArgs } from '../instructions/pegged-swap'
+import { extruction, ExtructionArgs } from '../instructions/extruction'
+import type { JumpIfTokenArgs } from '../instructions/controls'
 
 const USDC = new Address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
 const WETH = new Address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2')
@@ -20,8 +23,8 @@ describe('AquaProgramBuilder', () => {
 
     const program = new AquaProgramBuilder()
       .jump({ nextPC: 5n })
-      .jumpIfTokenIn({ tokenTail: AddressHalf.fromAddress(USDC), nextPC: 6n })
-      .jumpIfTokenOut({ tokenTail: AddressHalf.fromAddress(WETH), nextPC: 7n })
+      .jumpIfTokenIn({ token: USDC, nextPC: 6n })
+      .jumpIfTokenOut({ token: WETH, nextPC: 7n })
       .deadline({ deadline: 1735689600n })
       .onlyTakerTokenBalanceNonZero({ token: USDC })
       .onlyTakerTokenBalanceGte({ token: USDC, minAmount: 1n })
@@ -49,12 +52,10 @@ describe('AquaProgramBuilder', () => {
   })
 
   it('should serialize jump instructions to JSON', () => {
-    const usdcHalf = AddressHalf.fromAddress(USDC)
-    const wethHalf = AddressHalf.fromAddress(WETH)
     const builder = new AquaProgramBuilder()
       .jump({ nextPC: 5n })
-      .jumpIfTokenIn({ tokenTail: usdcHalf, nextPC: 6n })
-      .jumpIfTokenOut({ tokenTail: wethHalf, nextPC: 7n })
+      .jumpIfTokenIn({ token: USDC, nextPC: 6n })
+      .jumpIfTokenOut({ token: WETH, nextPC: 7n })
     const decoded = AquaProgramBuilder.decode(builder.build())
 
     const json = JSON.stringify(builder.getInstructions())
@@ -64,12 +65,49 @@ describe('AquaProgramBuilder', () => {
       { opcode: 'Symbol(Controls.jump)', args: { nextPC: '5' } },
       {
         opcode: 'Symbol(Controls.jumpIfTokenIn)',
-        args: { tokenTail: usdcHalf.toString(), nextPC: '6' },
+        args: { token: USDC.toString(), nextPC: '6' },
       },
       {
         opcode: 'Symbol(Controls.jumpIfTokenOut)',
-        args: { tokenTail: wethHalf.toString(), nextPC: '7' },
+        args: { token: WETH.toString(), nextPC: '7' },
       },
     ])
+  })
+
+  it('should encode and decode extruction with empty args', () => {
+    const target = new Address('0x1111111111111111111111111111111111111111')
+    const expected = `0x2014${target.toString().slice(2)}`
+
+    const program = new AquaProgramBuilder()
+      .add(extruction.createIx(new ExtructionArgs(target, HexString.EMPTY)))
+      .build()
+
+    expect(program.toString()).toBe(expected)
+
+    const decoded = AquaProgramBuilder.decode(new SwapVmProgram(expected))
+    const [ix] = decoded.getInstructions()
+
+    expect(decoded.build().toString()).toBe(expected)
+    expect(ix.opcode).toBe(extruction)
+    expect((ix.args as ExtructionArgs).extructionArgs.isEmpty()).toBe(true)
+  })
+
+  it('should encode jumpIfTokenIn and jumpIfTokenOut with full token addresses', () => {
+    const program = new AquaProgramBuilder()
+      .jumpIfTokenIn({ token: USDC, nextPC: 6n })
+      .jumpIfTokenOut({ token: WETH, nextPC: 7n })
+      .build()
+
+    // AquaOpcodes Controls._jumpIfTokenIn / _jumpIfTokenOut with ControlsArgsBuilder.buildJumpIfToken args
+    expect(program.toString()).toBe(
+      '0x0b16a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480006' +
+        '0c16c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20007',
+    )
+
+    const [jumpIn, jumpOut] = AquaProgramBuilder.decode(program).getInstructions()
+    expect((jumpIn.args as JumpIfTokenArgs).token.equal(USDC)).toBe(true)
+    expect((jumpIn.args as JumpIfTokenArgs).nextPC).toBe(6n)
+    expect((jumpOut.args as JumpIfTokenArgs).token.equal(WETH)).toBe(true)
+    expect((jumpOut.args as JumpIfTokenArgs).nextPC).toBe(7n)
   })
 })
