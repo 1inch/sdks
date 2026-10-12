@@ -130,9 +130,9 @@ export class MakerTraits {
    */
   static default(): MakerTraits {
     return MakerTraits.new({
-      useAquaInsteadOfSignature: true,
-      allowZeroAmountIn: false,
-      shouldUnwrap: false,
+      useAquaInsteadOfSignature: MAKER_TRAITS_DEFAULTS.useAquaInsteadOfSignature,
+      allowZeroAmountIn: MAKER_TRAITS_DEFAULTS.allowZeroAmountIn,
+      shouldUnwrap: MAKER_TRAITS_DEFAULTS.shouldUnwrap,
     })
   }
 
@@ -248,9 +248,15 @@ export class MakerTraits {
    * changed independently.
    */
   public with(data: Partial<DataFor<MakerTraits>>): this {
-    Object.assign(this, data)
+    const next = MakerTraits.new({ ...this, ...applyUndefinedClears(data) } as DataFor<MakerTraits>)
+
+    Object.assign(this, next)
 
     return this
+  }
+
+  public withNew(data: Partial<DataFor<MakerTraits>>): MakerTraits {
+    return MakerTraits.new({ ...this, ...applyUndefinedClears(data) } as DataFor<MakerTraits>)
   }
 
   /**
@@ -377,6 +383,38 @@ export class MakerTraits {
 
     return !(hook.target.isZero() || hook.target.equal(maker))
   }
+}
+
+type MakerTraitsFieldDefaults = {
+  shouldUnwrap: boolean
+  useAquaInsteadOfSignature: boolean
+  allowZeroAmountIn: boolean
+  customReceiver?: Address
+  preTransferInHook?: Interaction
+  postTransferInHook?: Interaction
+  preTransferOutHook?: Interaction
+  postTransferOutHook?: Interaction
+}
+
+const MAKER_TRAITS_DEFAULTS: MakerTraitsFieldDefaults = {
+  shouldUnwrap: false,
+  useAquaInsteadOfSignature: true,
+  allowZeroAmountIn: false,
+  customReceiver: undefined,
+  preTransferInHook: undefined,
+  postTransferInHook: undefined,
+  preTransferOutHook: undefined,
+  postTransferOutHook: undefined,
+}
+
+function applyUndefinedClears(data: Partial<DataFor<MakerTraits>>): Partial<DataFor<MakerTraits>> {
+  return Object.fromEntries(
+    Object.entries(data).map(([key, value]) => {
+      const field = key as keyof MakerTraitsFieldDefaults
+
+      return [field, value ?? MAKER_TRAITS_DEFAULTS[field]]
+    }),
+  ) as Partial<DataFor<MakerTraits>>
 }
 
 function parseHook(

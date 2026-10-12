@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-import { AddressHalf, HexString } from '@1inch/sdk-core'
-import { add0x, BytesBuilder, BytesIter } from '@1inch/byte-utils'
+import { Address, HexString } from '@1inch/sdk-core'
+import { BytesBuilder, BytesIter } from '@1inch/byte-utils'
 import { BalancesArgs } from './balances-args'
 import type { TokenBalance } from './types'
 import type { IArgsCoder } from '../types'
@@ -12,8 +12,8 @@ export class BalancesArgsCoder implements IArgsCoder<BalancesArgs> {
 
     builder.addUint16(BigInt(args.tokenBalances.length))
 
-    for (const { tokenHalf } of args.tokenBalances) {
-      builder.addBytes(tokenHalf.toString())
+    for (const { token } of args.tokenBalances) {
+      builder.addAddress(token.toString())
     }
 
     for (const { value } of args.tokenBalances) {
@@ -26,20 +26,17 @@ export class BalancesArgsCoder implements IArgsCoder<BalancesArgs> {
   decode(data: HexString): BalancesArgs {
     const iter = BytesIter.HexString(data.toString())
     const tokenCount = Number(iter.nextUint16())
-    const tokenHalfs: AddressHalf[] = []
+    const tokens: Address[] = []
 
     for (let i = 0; i < tokenCount; i++) {
-      const bytes = iter.nextBytes(10)
-
-      const hexString = add0x(bytes)
-      tokenHalfs.push(AddressHalf.fromHex(hexString))
+      tokens.push(new Address(iter.nextAddress()))
     }
 
     const tokenBalances: TokenBalance[] = []
 
     for (let i = 0; i < tokenCount; i++) {
       tokenBalances.push({
-        tokenHalf: tokenHalfs[i],
+        token: tokens[i],
         value: BigInt(iter.nextUint256()),
       })
     }
