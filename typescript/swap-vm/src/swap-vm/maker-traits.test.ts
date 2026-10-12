@@ -82,6 +82,72 @@ describe('MakerTraits', () => {
 
       traits.with({ customReceiver: receiver })
       expect(traits.customReceiver?.toString()).toBe(receiver.toString())
+
+      traits.with({ customReceiver: undefined })
+      expect(traits.customReceiver).toBeUndefined()
+      expect(() => traits.encode()).not.toThrow()
+    })
+  })
+
+  describe('with', () => {
+    it('should mutate the receiver in place and return it', () => {
+      const base = MakerTraits.new({ shouldUnwrap: false, allowZeroAmountIn: false })
+      const same = base.with({ shouldUnwrap: true, allowZeroAmountIn: true })
+
+      expect(same).toBe(base)
+      expect(base.shouldUnwrap).toBe(true)
+      expect(base.allowZeroAmountIn).toBe(true)
+    })
+  })
+
+  describe('withNew', () => {
+    const receiverA = Address.fromBigInt(0xaaaan)
+    const receiverB = Address.fromBigInt(0xbbbbn)
+
+    it('should return a new instance and leave the original unchanged', () => {
+      const base = MakerTraits.new({
+        shouldUnwrap: false,
+        customReceiver: receiverA,
+        allowZeroAmountIn: true,
+      })
+      const baseEncoded = base.encode().traits
+
+      const derived = base.withNew({ shouldUnwrap: true, customReceiver: receiverB })
+
+      expect(derived).toBeInstanceOf(MakerTraits)
+      expect(derived).not.toBe(base)
+      expect(derived.shouldUnwrap).toBe(true)
+      expect(derived.customReceiver?.equal(receiverB)).toBe(true)
+      expect(derived.allowZeroAmountIn).toBe(true)
+
+      expect(base.shouldUnwrap).toBe(false)
+      expect(base.customReceiver?.equal(receiverA)).toBe(true)
+      expect(base.encode().traits).toBe(baseEncoded)
+    })
+
+    it('should reset keys set to undefined to canonical defaults', () => {
+      const hook = new Interaction(Address.ZERO_ADDRESS, new HexString('0x1234'))
+      const base = MakerTraits.new({
+        shouldUnwrap: true,
+        useAquaInsteadOfSignature: false,
+        customReceiver: receiverA,
+        preTransferInHook: hook,
+      })
+
+      const updated = base.withNew({
+        shouldUnwrap: undefined,
+        useAquaInsteadOfSignature: undefined,
+        customReceiver: undefined,
+        preTransferInHook: undefined,
+        allowZeroAmountIn: true,
+      })
+
+      expect(updated.shouldUnwrap).toBe(false)
+      expect(updated.useAquaInsteadOfSignature).toBe(true)
+      expect(updated.customReceiver).toBeUndefined()
+      expect(updated.preTransferInHook).toBeUndefined()
+      expect(updated.allowZeroAmountIn).toBe(true)
+      encodeDecodeTest(updated)
     })
   })
 
