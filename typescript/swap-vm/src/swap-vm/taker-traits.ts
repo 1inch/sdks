@@ -4,38 +4,6 @@ import { add0x, BN, BytesBuilder, BytesIter, trim0x } from '@1inch/byte-utils'
 import type { DataFor } from '@1inch/sdk-core'
 import { Address, HexString } from '@1inch/sdk-core'
 
-/** Canonical default field values for {@link TakerTraits} (construction, `default()`, and `undefined` clears). */
-const TAKER_TRAITS_DEFAULTS = {
-  exactIn: true,
-  shouldUnwrap: false,
-  preTransferInCallbackEnabled: false,
-  preTransferOutCallbackEnabled: false,
-  strictThreshold: false,
-  firstTransferFromTaker: false,
-  useTransferFromAndAquaPush: true,
-  threshold: 0n,
-  customReceiver: Address.ZERO_ADDRESS,
-  deadline: 0n,
-  preTransferInHookData: HexString.EMPTY,
-  postTransferInHookData: HexString.EMPTY,
-  preTransferOutHookData: HexString.EMPTY,
-  postTransferOutHookData: HexString.EMPTY,
-  preTransferInCallbackData: HexString.EMPTY,
-  preTransferOutCallbackData: HexString.EMPTY,
-  instructionsArgs: HexString.EMPTY,
-  signature: HexString.EMPTY,
-} as const satisfies Required<DataFor<TakerTraits>>
-
-function applyUndefinedClears(data: Partial<DataFor<TakerTraits>>): Partial<DataFor<TakerTraits>> {
-  return Object.fromEntries(
-    (Object.keys(data) as Array<keyof DataFor<TakerTraits>>).map((key) => {
-      const value = data[key]
-
-      return [key, value ?? (TAKER_TRAITS_DEFAULTS[key] as DataFor<TakerTraits>[typeof key])]
-    }),
-  ) as Partial<DataFor<TakerTraits>>
-}
-
 /**
  * TakerTraits encodes taker-specific parameters and flags for swap execution.
  * It defines how the taker wants the swap to be executed, including thresholds,
@@ -401,4 +369,35 @@ export class TakerTraits {
       }
     }
   }
+}
+
+const TAKER_TRAITS_DEFAULTS = {
+  exactIn: true,
+  shouldUnwrap: false,
+  preTransferInCallbackEnabled: false,
+  preTransferOutCallbackEnabled: false,
+  strictThreshold: false,
+  firstTransferFromTaker: false,
+  useTransferFromAndAquaPush: true,
+  threshold: 0n,
+  customReceiver: Address.ZERO_ADDRESS,
+  deadline: 0n,
+  preTransferInHookData: HexString.EMPTY,
+  postTransferInHookData: HexString.EMPTY,
+  preTransferOutHookData: HexString.EMPTY,
+  postTransferOutHookData: HexString.EMPTY,
+  preTransferInCallbackData: HexString.EMPTY,
+  preTransferOutCallbackData: HexString.EMPTY,
+  instructionsArgs: HexString.EMPTY,
+  signature: HexString.EMPTY,
+} as const satisfies Required<DataFor<TakerTraits>>
+
+function applyUndefinedClears(data: Partial<DataFor<TakerTraits>>): Partial<DataFor<TakerTraits>> {
+  return Object.fromEntries(
+    (Object.keys(data) as Array<keyof DataFor<TakerTraits>>).map((key) => {
+      const value = data[key]
+
+      return [key, value ?? (TAKER_TRAITS_DEFAULTS[key] as DataFor<TakerTraits>[typeof key])]
+    }),
+  ) as Partial<DataFor<TakerTraits>>
 }

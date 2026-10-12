@@ -108,18 +108,16 @@ export class MakerTraits {
   /**
    * Construct traits from a plain data object.
    */
-  static new(data: Partial<DataFor<MakerTraits>> = {}): MakerTraits {
-    const d = { ...MAKER_TRAITS_DEFAULTS, ...applyUndefinedClears(data) }
-
+  static new(data: DataFor<MakerTraits>): MakerTraits {
     return new MakerTraits(
-      d.shouldUnwrap,
-      d.useAquaInsteadOfSignature,
-      d.allowZeroAmountIn,
-      d.customReceiver,
-      d.preTransferInHook,
-      d.postTransferInHook,
-      d.preTransferOutHook,
-      d.postTransferOutHook,
+      data.shouldUnwrap,
+      data.useAquaInsteadOfSignature,
+      data.allowZeroAmountIn,
+      data.customReceiver,
+      data.preTransferInHook,
+      data.postTransferInHook,
+      data.preTransferOutHook,
+      data.postTransferOutHook,
     )
   }
 
@@ -131,7 +129,11 @@ export class MakerTraits {
    * - no receiver or hooks configured.
    */
   static default(): MakerTraits {
-    return MakerTraits.new()
+    return MakerTraits.new({
+      useAquaInsteadOfSignature: MAKER_TRAITS_DEFAULTS.useAquaInsteadOfSignature,
+      allowZeroAmountIn: MAKER_TRAITS_DEFAULTS.allowZeroAmountIn,
+      shouldUnwrap: MAKER_TRAITS_DEFAULTS.shouldUnwrap,
+    })
   }
 
   /**
@@ -242,25 +244,19 @@ export class MakerTraits {
    *
    * `MakerTraits.default().with({ shouldUnwrap: true })`
    *
-   * A key set to `undefined` resets that field to the canonical default (e.g. clears
-   * `customReceiver` or a hook).
+   * Only fields present in `data` are updated; flags, receiver, and hooks can be
+   * changed independently.
    */
   public with(data: Partial<DataFor<MakerTraits>>): this {
-    const next = MakerTraits.new({ ...this, ...applyUndefinedClears(data) })
+    const next = MakerTraits.new({ ...this, ...applyUndefinedClears(data) } as DataFor<MakerTraits>)
 
     Object.assign(this, next)
 
     return this
   }
 
-  /**
-   * Returns a new {@link MakerTraits} with the given fields replaced. This instance is
-   * not modified, so it can be kept as a template for several derived traits.
-   *
-   * A key set to `undefined` resets that field to the canonical default, same as {@link with}.
-   */
   public withNew(data: Partial<DataFor<MakerTraits>>): MakerTraits {
-    return MakerTraits.new({ ...this, ...applyUndefinedClears(data) })
+    return MakerTraits.new({ ...this, ...applyUndefinedClears(data) } as DataFor<MakerTraits>)
   }
 
   /**
@@ -400,7 +396,6 @@ type MakerTraitsFieldDefaults = {
   postTransferOutHook?: Interaction
 }
 
-/** Canonical default field values for {@link MakerTraits} (construction, `default()`, and `undefined` clears). */
 const MAKER_TRAITS_DEFAULTS: MakerTraitsFieldDefaults = {
   shouldUnwrap: false,
   useAquaInsteadOfSignature: true,
