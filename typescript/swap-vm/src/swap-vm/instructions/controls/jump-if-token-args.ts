@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-import type { HexString, AddressHalf } from '@1inch/sdk-core'
+import type { HexString, Address } from '@1inch/sdk-core'
 import { JumpIfTokenArgsCoder } from './jump-if-token-args-coder'
 import type { IArgsCoder, IArgsData } from '../types'
 
+/**
+ * Arguments for jumpIfTokenIn and jumpIfTokenOut instructions.
+ * Encoded as `20-byte token address | uint16 nextPC`
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L25
+ **/
 export class JumpIfTokenArgs implements IArgsData {
   public static readonly CODER: IArgsCoder<JumpIfTokenArgs> = new JumpIfTokenArgsCoder()
 
   constructor(
-    public readonly tokenTail: AddressHalf,
+    public readonly token: Address,
     public readonly nextPC: bigint,
   ) {}
 
@@ -18,7 +23,7 @@ export class JumpIfTokenArgs implements IArgsData {
 
   toJSON(): Record<string, unknown> {
     return {
-      tokenTail: this.tokenTail.toString(),
+      token: this.token.toString(),
       nextPC: this.nextPC,
     }
   }
