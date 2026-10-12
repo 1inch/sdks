@@ -280,8 +280,8 @@ export class MakerTraits {
    * The contract checks this only for swaps with `amountIn > 0`, so such an order can still
    * be shipped and quoted, but those swaps revert.
    *
-   * Called by `Order.new()`. Decoding, encoding and hashing do not validate, so existing
-   * orders with such traits can still be processed.
+   * Called by {@link encode}. {@link decode} does not validate, so existing on-chain
+   * orders with such traits can still be read back.
    *
    * @param maker - Order maker. For Aqua orders a non-zero `customReceiver` is accepted only
    *                when it equals `maker`, and rejected when `maker` is omitted.
@@ -313,9 +313,9 @@ export class MakerTraits {
   /**
    * Encode traits into the ABI format expected by SwapVM contracts.
    *
-   * @param maker - Maker address for this order. This parameter is required only
-   *                for gas/size optimisation; if omitted, any non-zero hook `target`
-   *                is treated as an explicit target.
+   * @param maker - Maker address for this order. Required to validate Aqua receiver
+   *                rules; if omitted, any non-zero hook `target` is treated as an
+   *                explicit target for encoding.
    *
    * @returns An object containing:
    *   - `traits`    - Packed `uint256` bitfield with flags, receiver and offsets
@@ -348,6 +348,8 @@ export class MakerTraits {
    * | 245 | POST_TRANSFER_OUT_HOOK_HAS_TARGET        |
    */
   public encode(maker?: Address): { traits: bigint; hooksData: HexString } {
+    this.validate(maker)
+
     let traits = new BN(0n)
 
     // flags

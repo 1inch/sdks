@@ -238,23 +238,30 @@ describe('MakerTraits', () => {
       )
     })
 
-    it('should not be enforced when building, encoding or decoding traits', () => {
-      const traits = MakerTraits.new({
+    it('should reject encoding incompatible Aqua traits but still allow decoding them', () => {
+      const signed = MakerTraits.new({
         shouldUnwrap: true,
-        useAquaInsteadOfSignature: true,
+        useAquaInsteadOfSignature: false,
         allowZeroAmountIn: false,
         customReceiver: receiver,
       })
+      const { traits: encodedTraits, hooksData } = signed.encode(maker)
+      const decoded = MakerTraits.decode(encodedTraits, hooksData).with({
+        useAquaInsteadOfSignature: true,
+      })
 
-      const decoded = encodeDecodeTest(traits, maker)
-
+      expect(() => decoded.encode(maker)).toThrow('MakerTraitsUnwrapIsIncompatibleWithAqua')
       expect(() => decoded.validate(maker)).toThrow('MakerTraitsUnwrapIsIncompatibleWithAqua')
     })
   })
 
   describe('conversion', () => {
     it('should convert to bigint and back without hooks', () => {
-      const traits = MakerTraits.default().with({ shouldUnwrap: true, allowZeroAmountIn: true })
+      const traits = MakerTraits.default().with({
+        useAquaInsteadOfSignature: false,
+        shouldUnwrap: true,
+        allowZeroAmountIn: true,
+      })
 
       encodeDecodeTest(traits)
     })
@@ -294,7 +301,7 @@ describe('MakerTraits', () => {
 
       const traits = MakerTraits.new({
         shouldUnwrap: true,
-        useAquaInsteadOfSignature: true,
+        useAquaInsteadOfSignature: false,
         allowZeroAmountIn: false,
         preTransferInHook: hook1,
         postTransferInHook: hook2,

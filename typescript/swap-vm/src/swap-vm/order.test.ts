@@ -40,34 +40,40 @@ describe('Order', () => {
       expect(Order.new({ maker, traits, program })).toEqual(new Order(maker, traits, program))
     })
 
-    it('should reject Aqua traits with shouldUnwrap', () => {
+    it('should reject encoding Aqua traits with shouldUnwrap', () => {
       const traits = MakerTraits.default().with({ shouldUnwrap: true })
+      const order = Order.new({ maker, traits, program })
 
-      expect(() => Order.new({ maker, traits, program })).toThrow(
-        'MakerTraitsUnwrapIsIncompatibleWithAqua',
-      )
+      expect(() => order.encode()).toThrow('MakerTraitsUnwrapIsIncompatibleWithAqua')
     })
 
-    it('should reject Aqua traits with a receiver other than the maker', () => {
+    it('should reject encoding Aqua traits with a receiver other than the maker', () => {
       const traits = MakerTraits.default().with({ customReceiver: receiver })
+      const order = Order.new({ maker, traits, program })
 
-      expect(() => Order.new({ maker, traits, program })).toThrow(
-        'MakerTraitsCustomReceiverIsIncompatibleWithAqua',
-      )
+      expect(() => order.encode()).toThrow('MakerTraitsCustomReceiverIsIncompatibleWithAqua')
     })
 
-    it('should still decode, encode and hash orders with Aqua-incompatible traits', () => {
-      const traits = MakerTraits.default().with({ shouldUnwrap: true, customReceiver: receiver })
-      const order = new Order(maker, traits, program)
-
+    it('should decode orders with Aqua-incompatible traits but reject re-encoding them', () => {
+      const signed = MakerTraits.new({
+        shouldUnwrap: true,
+        useAquaInsteadOfSignature: false,
+        allowZeroAmountIn: false,
+        customReceiver: receiver,
+      })
+      const order = Order.new({ maker, traits: signed, program })
       const encoded = order.encode()
+      const incompatible = Order.new({
+        maker,
+        traits: signed.withNew({ useAquaInsteadOfSignature: true }),
+        program,
+      })
+
       const decoded = Order.decode(encoded)
 
-      expect(decoded).toEqual(order)
-      expect(decoded.build()).toEqual(order.build())
-      expect(decoded.encode()).toEqual(encoded)
-      expect(decoded.hash()).toEqual(order.hash())
-      expect(() => Order.new(decoded)).toThrow('MakerTraitsUnwrapIsIncompatibleWithAqua')
+      expect(decoded.traits).toEqual(signed)
+      expect(() => incompatible.encode()).toThrow('MakerTraitsUnwrapIsIncompatibleWithAqua')
+      expect(() => incompatible.hash()).toThrow('MakerTraitsUnwrapIsIncompatibleWithAqua')
     })
   })
 
@@ -94,7 +100,7 @@ describe('Order', () => {
 
       const traits = MakerTraits.new({
         shouldUnwrap: true,
-        useAquaInsteadOfSignature: true,
+        useAquaInsteadOfSignature: false,
         allowZeroAmountIn: true,
         preTransferInHook: preIn,
         postTransferInHook: postIn,
