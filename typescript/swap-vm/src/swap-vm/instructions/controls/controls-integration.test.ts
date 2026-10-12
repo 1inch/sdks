@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
-import { Address, AddressHalf } from '@1inch/sdk-core'
+import { Address } from '@1inch/sdk-core'
 import { RegularProgramBuilder } from '../../programs'
 
 describe('Controls Integration', () => {
@@ -24,13 +24,15 @@ describe('Controls Integration', () => {
       const builder = new RegularProgramBuilder()
 
       const program = builder
-        .jumpIfTokenIn({ tokenTail: AddressHalf.fromAddress(USDC), nextPC: 50n })
-        .jumpIfTokenOut({ tokenTail: AddressHalf.fromAddress(WETH), nextPC: 75n })
+        .jumpIfTokenIn({ token: USDC, nextPC: 50n })
+        .jumpIfTokenOut({ token: WETH, nextPC: 75n })
         .build()
 
-      const hex = program.toString()
-      expect(hex.substring(0, 4)).toBe('0x0b')
-      expect(hex.length).toBeGreaterThan(10)
+      // Controls._jumpIfTokenIn / _jumpIfTokenOut with ControlsArgsBuilder.buildJumpIfToken args
+      expect(program.toString()).toBe(
+        '0x0b16a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480032' +
+          '0c16c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2004b',
+      )
     })
 
     it('should build program with token balance check', () => {

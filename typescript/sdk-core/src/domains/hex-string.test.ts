@@ -153,4 +153,23 @@ describe('HexString Unit Test', () => {
     expect(left.equal(new HexString('0x0011'))).toBe(true)
     expect(left.equal(right)).toBe(false)
   })
+
+  test('should return empty bytes when slice start equals end', () => {
+    const hex = new HexString('0x00112233')
+
+    expect(hex.sliceBytes(0, 0).toString()).toBe('0x')
+    expect(hex.sliceBytes(2, 2).toString()).toBe('0x')
+    expect(hex.sliceBytes(4, 4).toString()).toBe('0x')
+    expect(HexString.EMPTY.sliceBytes(0, 0).toString()).toBe('0x')
+  })
+
+  test('should slice to the end when end is omitted', () => {
+    const hex = new HexString('0x00112233')
+
+    expect(hex.sliceBytes(0).toString()).toBe('0x00112233')
+    expect(hex.sliceBytes(0, undefined).toString()).toBe('0x00112233')
+    expect(hex.sliceBytes(3).toString()).toBe('0x33')
+    expect(hex.sliceBytes(4).toString()).toBe('0x')
+    expect(hex.sliceBytes(0, 1).toString()).toBe('0x00')
+  })
 })
