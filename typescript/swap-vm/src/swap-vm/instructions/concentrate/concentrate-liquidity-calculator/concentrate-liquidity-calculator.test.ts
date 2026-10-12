@@ -36,9 +36,10 @@ describe('ConcentrateLiquidityCalculator', () => {
     const fixedLt = 100n * ONE_E18
     const allocation = calculator.computeFixedAllocation(prices, TOKEN_A, fixedLt)
 
-    // L = 100 * 1.1 / (1.1 - 1) = 1100, bGt = L * (1 - 0.9)
+    // L = 100 * 1.1 / (1.1 - 1) = 1100 in exact arithmetic; the largest L whose token0 leg fits
+    // within the fixed amount is 1099999999999999989011, bGt = L * (1 - 0.9)
     expect(allocation.token0Reserve).toBe(fixedLt)
-    expect(allocation.token1Reserve).toBe(110n * ONE_E18)
+    expect(allocation.token1Reserve).toBe(109999999999999998901n)
   })
 
   it('should compute fixed allocation for the higher-address token', () => {
@@ -46,8 +47,8 @@ describe('ConcentrateLiquidityCalculator', () => {
     const fixedGt = 80n * ONE_E18
     const allocation = calculator.computeFixedAllocation(prices, TOKEN_B, fixedGt)
 
-    // L = 80 / (1 - 0.9) = 800, bLt = L * (1.1 - 1) / 1.1
-    expect(allocation.token0Reserve).toBe(72727272727272727272n)
+    // L = 80 / (1 - 0.9) = 800, bLt = L * (1/1 - 1/1.1) on floored reciprocals
+    expect(allocation.token0Reserve).toBe(72727272727272728000n)
     expect(allocation.token1Reserve).toBe(fixedGt)
   })
 
