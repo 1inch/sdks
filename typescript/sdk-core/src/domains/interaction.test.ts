@@ -50,4 +50,33 @@ describe('Interaction', () => {
     expect(decoded.target.toString()).toBe(mixedCaseTarget.toLowerCase())
     expect(decoded.equal(new Interaction(target, data))).toBe(true)
   })
+
+  it('should accept empty data', () => {
+    const withTarget = new Interaction(target, HexString.EMPTY)
+    const withoutTarget = new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY)
+
+    expect(withTarget.data.isEmpty()).toBe(true)
+    expect(withoutTarget.data.isEmpty()).toBe(true)
+    expect(withTarget.encode().toString()).toBe(target.toString())
+  })
+
+  it('should decode exactly 20 bytes as target with empty data', () => {
+    const decoded = Interaction.decode(new HexString(target.toString()))
+
+    expect(decoded.target.equal(target)).toBe(true)
+    expect(decoded.data.isEmpty()).toBe(true)
+    expect(decoded.equal(new Interaction(target, HexString.EMPTY))).toBe(true)
+  })
+
+  it('should round-trip an interaction with empty data', () => {
+    const interaction = new Interaction(target, HexString.EMPTY)
+    const encoded = interaction.encode()
+
+    expect(encoded.bytesCount()).toBe(20)
+
+    const decoded = Interaction.decode(encoded)
+
+    expect(decoded.equal(interaction)).toBe(true)
+    expect(decoded.encode().equal(encoded)).toBe(true)
+  })
 })

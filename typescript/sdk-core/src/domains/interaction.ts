@@ -1,5 +1,4 @@
-import { BytesIter, isHexBytes } from '@1inch/byte-utils'
-import assert from 'assert'
+import { BytesIter } from '@1inch/byte-utils'
 import { Address } from './address'
 import { HexString } from './hex-string'
 
@@ -7,9 +6,7 @@ export class Interaction {
   constructor(
     public readonly target: Address,
     public readonly data: HexString,
-  ) {
-    assert(isHexBytes(data.toString()), 'Interaction data must be valid hex bytes')
-  }
+  ) {}
 
   /**
    * Create `Interaction` from bytes
