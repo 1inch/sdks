@@ -31,10 +31,7 @@ function applyUndefinedClears(data: Partial<DataFor<TakerTraits>>): Partial<Data
     (Object.keys(data) as Array<keyof DataFor<TakerTraits>>).map((key) => {
       const value = data[key]
 
-      return [
-        key,
-        value ?? (TAKER_TRAITS_DEFAULTS[key] as DataFor<TakerTraits>[typeof key]),
-      ]
+      return [key, value ?? (TAKER_TRAITS_DEFAULTS[key] as DataFor<TakerTraits>[typeof key])]
     }),
   ) as Partial<DataFor<TakerTraits>>
 }
