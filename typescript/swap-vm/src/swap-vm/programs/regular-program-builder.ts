@@ -47,6 +47,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * Sets initial token balances for the swap program
+   * (one entry per token, keyed by the full 20-byte token address)
    **/
   public staticBalancesXD(data: DataFor<balances.BalancesArgs>): this {
     super.add(balances.staticBalancesXD.createIx(new balances.BalancesArgs(data.tokenBalances)))
@@ -56,6 +57,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * Reads token balances from program data or contract storage
+   * (one entry per token, keyed by the full 20-byte token address)
    **/
   public dynamicBalancesXD(data: DataFor<balances.BalancesArgs>): this {
     super.add(balances.dynamicBalancesXD.createIx(new balances.BalancesArgs(data.tokenBalances)))
@@ -73,22 +75,22 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Jumps if tokenIn is the specified token
+   * Jumps to `nextPC` if tokenIn is the specified token (full 20-byte address)
    **/
   public jumpIfTokenIn(data: DataFor<controls.JumpIfTokenArgs>): this {
     super.add(
-      controls.jumpIfTokenIn.createIx(new controls.JumpIfTokenArgs(data.tokenTail, data.nextPC)),
+      controls.jumpIfTokenIn.createIx(new controls.JumpIfTokenArgs(data.token, data.nextPC)),
     )
 
     return this
   }
 
   /**
-   * Jumps if tokenOut is the specified token
+   * Jumps to `nextPC` if tokenOut is the specified token (full 20-byte address)
    **/
   public jumpIfTokenOut(data: DataFor<controls.JumpIfTokenArgs>): this {
     super.add(
-      controls.jumpIfTokenOut.createIx(new controls.JumpIfTokenArgs(data.tokenTail, data.nextPC)),
+      controls.jumpIfTokenOut.createIx(new controls.JumpIfTokenArgs(data.token, data.nextPC)),
     )
 
     return this
@@ -148,9 +150,10 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * No-op instruction used to add uniqueness to order hashes (prevents replay attacks)
+   * `bytes` — arbitrary-length salt payload (use {@link controls.SaltArgs.fromUint64} for uint64).
    **/
   public salt(data: DataFor<controls.SaltArgs>): this {
-    super.add(controls.salt.createIx(new controls.SaltArgs(data.salt)))
+    super.add(controls.salt.createIx(new controls.SaltArgs(data.bytes)))
 
     return this
   }
@@ -301,7 +304,9 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Adjusts swap prices based on network gas costs
+   * Adjusts swap prices based on network gas costs.
+   * `maxPriceDecay` is the minimum price coefficient (1e18 = unadjusted price, must be in (0, 1e18)),
+   * not a discount amount: e.g. `0.99e18` lets the taker's price improve by at most 1%
    **/
   public baseFeeAdjuster1D(data: DataFor<baseFeeAdjuster.BaseFeeAdjusterArgs>): this {
     super.add(

@@ -114,8 +114,15 @@ const [_, dstAmount] = decodeFunctionResult({
 
 console.log('dstAmount', dstAmount)
 
+// Slippage protection: the swap reverts if it would deliver less than the quote minus 0.5%
+const slippageBps = 50n
+const minDstAmount = (dstAmount * (10_000n - slippageBps)) / 10_000n
+
 // Swap
-const swapTx = swapVM.swap(swapParams)
+const swapTx = swapVM.swap({
+  ...swapParams,
+  takerTraits: TakerTraits.default().with({ threshold: minDstAmount })
+})
 await taker.send(swapTx)
 ```
 
@@ -149,19 +156,35 @@ const quoteTx = swapVm.quote({
 Execute a swap transaction.
 
 ```typescript
+// quotedAmountOut: amountOut returned by `quote` for the same order, tokens and amount
+const slippageBps = 50n // 0.5%
+const minAmountOut = (quotedAmountOut * (10_000n - slippageBps)) / 10_000n
+
 const swapTx = swapVm.swap({
   order: Order.parse('0x...'),
   tokenIn: new Address('0x...'),
   tokenOut: new Address('0x...'),
   amount: 1000000000000000000n,
-  takerTraits: TakerTraits.default(),
+  takerTraits: TakerTraits.new({ exactIn: true, threshold: minAmountOut }),
 })
 ```
 
 **Parameters:**
 - All parameters from `quote`
+- `takerTraits.threshold` - Slippage bound checked on-chain: minimum `amountOut` for exact-in swaps, maximum `amountIn` for exact-out swaps. `0n` (the default) disables the check, see [Slippage protection](#slippage-protection)
 
 **Returns:** `CallInfo` object with encoded transaction data
+
+### Slippage protection
+
+`TakerTraits.threshold` is the only slippage check the router enforces, and it defaults to `0n`. With `0n` the threshold is left out of the encoded taker traits and the router skips the check, so the swap succeeds as long as `amountOut > 0`. Such a swap can be sandwiched, and it accepts whatever the order returns at execution time, even if that is far below the quote.
+
+Set a threshold for every swap, derived from a fresh quote and an explicit slippage tolerance:
+
+- Exact-in (`exactIn: true`, `amount` is the input amount): `threshold` is the minimum `amountOut`, for example `quotedAmountOut * (10_000n - slippageBps) / 10_000n`. Below it, the swap reverts with `TakerTraitsInsufficientMinOutputAmount`.
+- Exact-out (`exactIn: false`, `amount` is the output amount): `threshold` is the maximum `amountIn`, for example `quotedAmountIn * (10_000n + slippageBps) / 10_000n`. Above it, the swap reverts with `TakerTraitsExceedingMaxInputAmount`.
+
+With `strictThreshold: true`, the swap must match `threshold` exactly instead.
 
 ### Hash Order
 
