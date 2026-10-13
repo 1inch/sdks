@@ -5,6 +5,7 @@ import type { ConcentrateRawPrices, ConcentrateSqrtPrices } from './types'
 import { AquaProgramBuilder } from '../programs/aqua-program-builder'
 import type { SwapVmProgram } from '../programs'
 import * as concentrate from '../instructions/concentrate'
+import { SaltArgs } from '../instructions/controls/salt-args'
 import * as fee from '../instructions/fee'
 
 export class AquaXYCAmmStrategy extends AquaAMMStrategy {
@@ -64,7 +65,7 @@ export class AquaXYCAmmStrategy extends AquaAMMStrategy {
     builder.xycSwapXD()
 
     if (this.salt) {
-      builder.salt({ salt: this.salt })
+      builder.salt({ bytes: SaltArgs.fromUint64(this.salt).bytes })
     }
 
     return builder.build()

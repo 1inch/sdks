@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
+import type { DataFor } from '@1inch/sdk-core'
 import { Address, HexString, Interaction } from '@1inch/sdk-core'
 import { MakerTraits } from './maker-traits'
 
@@ -82,12 +83,185 @@ describe('MakerTraits', () => {
 
       traits.with({ customReceiver: receiver })
       expect(traits.customReceiver?.toString()).toBe(receiver.toString())
+
+      traits.with({ customReceiver: undefined })
+      expect(traits.customReceiver).toBeUndefined()
+      expect(() => traits.encode()).not.toThrow()
+    })
+  })
+
+  describe('with', () => {
+    it('should mutate the receiver in place and return it', () => {
+      const base = MakerTraits.new({ shouldUnwrap: false, allowZeroAmountIn: false })
+      const same = base.with({ shouldUnwrap: true, allowZeroAmountIn: true })
+
+      expect(same).toBe(base)
+      expect(base.shouldUnwrap).toBe(true)
+      expect(base.allowZeroAmountIn).toBe(true)
+    })
+  })
+
+  describe('withNew', () => {
+    const receiverA = Address.fromBigInt(0xaaaan)
+    const receiverB = Address.fromBigInt(0xbbbbn)
+
+    it('should return a new instance and leave the original unchanged', () => {
+      const base = MakerTraits.new({
+        shouldUnwrap: false,
+        customReceiver: receiverA,
+        allowZeroAmountIn: true,
+      })
+      const baseEncoded = base.encode().traits
+
+      const derived = base.withNew({ shouldUnwrap: true, customReceiver: receiverB })
+
+      expect(derived).toBeInstanceOf(MakerTraits)
+      expect(derived).not.toBe(base)
+      expect(derived.shouldUnwrap).toBe(true)
+      expect(derived.customReceiver?.equal(receiverB)).toBe(true)
+      expect(derived.allowZeroAmountIn).toBe(true)
+
+      expect(base.shouldUnwrap).toBe(false)
+      expect(base.customReceiver?.equal(receiverA)).toBe(true)
+      expect(base.encode().traits).toBe(baseEncoded)
+    })
+
+    it('should reset keys set to undefined to canonical defaults', () => {
+      const hook = new Interaction(Address.ZERO_ADDRESS, new HexString('0x1234'))
+      const base = MakerTraits.new({
+        shouldUnwrap: true,
+        useAquaInsteadOfSignature: false,
+        customReceiver: receiverA,
+        preTransferInHook: hook,
+      })
+
+      const updated = base.withNew({
+        shouldUnwrap: undefined,
+        useAquaInsteadOfSignature: undefined,
+        customReceiver: undefined,
+        preTransferInHook: undefined,
+        allowZeroAmountIn: true,
+      })
+
+      expect(updated.shouldUnwrap).toBe(false)
+      expect(updated.useAquaInsteadOfSignature).toBe(true)
+      expect(updated.customReceiver).toBeUndefined()
+      expect(updated.preTransferInHook).toBeUndefined()
+      expect(updated.allowZeroAmountIn).toBe(true)
+      encodeDecodeTest(updated)
+    })
+  })
+
+  describe('validate', () => {
+    type Case = { name: string; data: Partial<DataFor<MakerTraits>>; maker?: Address }
+
+    const maker = new Address('0x742d35cc6634c0532925a3b844bc454e4438f44e')
+    const receiver = Address.fromBigInt(1n)
+    const signature = { useAquaInsteadOfSignature: false }
+
+    it.each<Case>([
+      { name: 'Aqua defaults', data: {}, maker },
+      { name: 'Aqua defaults without maker', data: {} },
+      {
+        name: 'Aqua with zero receiver without maker',
+        data: { customReceiver: Address.ZERO_ADDRESS },
+      },
+      { name: 'Aqua with the maker as receiver', data: { customReceiver: maker }, maker },
+      {
+        name: 'Aqua with allowZeroAmountIn and hooks',
+        data: {
+          allowZeroAmountIn: true,
+          preTransferInHook: new Interaction(Address.ZERO_ADDRESS, new HexString('0xaaaa')),
+        },
+        maker,
+      },
+      { name: 'signature with shouldUnwrap', data: { ...signature, shouldUnwrap: true }, maker },
+      {
+        name: 'signature with custom receiver',
+        data: { ...signature, customReceiver: receiver },
+        maker,
+      },
+      {
+        name: 'signature with custom receiver without maker',
+        data: { ...signature, customReceiver: receiver },
+      },
+      {
+        name: 'signature with shouldUnwrap and custom receiver',
+        data: { ...signature, shouldUnwrap: true, customReceiver: receiver },
+        maker,
+      },
+    ])('should accept $name', ({ data, maker }) => {
+      expect(() => MakerTraits.default().with(data).validate(maker)).not.toThrow()
+    })
+
+    it.each<Case & { error: string }>([
+      {
+        name: 'Aqua with shouldUnwrap',
+        data: { shouldUnwrap: true },
+        maker,
+        error: 'MakerTraitsUnwrapIsIncompatibleWithAqua',
+      },
+      {
+        name: 'Aqua with shouldUnwrap and the maker as receiver',
+        data: { shouldUnwrap: true, customReceiver: maker },
+        maker,
+        error: 'MakerTraitsUnwrapIsIncompatibleWithAqua',
+      },
+      {
+        name: 'Aqua with custom receiver',
+        data: { customReceiver: receiver },
+        maker,
+        error: 'MakerTraitsCustomReceiverIsIncompatibleWithAqua',
+      },
+      {
+        name: 'Aqua with custom receiver without maker',
+        data: { customReceiver: receiver },
+        error: 'MakerTraitsCustomReceiverIsIncompatibleWithAqua',
+      },
+      {
+        name: 'Aqua with the maker as receiver without maker',
+        data: { customReceiver: maker },
+        error: 'MakerTraitsCustomReceiverIsIncompatibleWithAqua',
+      },
+    ])('should reject $name', ({ data, maker, error }) => {
+      expect(() => MakerTraits.default().with(data).validate(maker)).toThrow(error)
+    })
+
+    it('should name the receiver and the maker in the error', () => {
+      const traits = MakerTraits.default().with({ customReceiver: receiver })
+
+      expect(() => traits.validate(maker)).toThrow(
+        `MakerTraitsCustomReceiverIsIncompatibleWithAqua: customReceiver ${receiver} must be the maker (${maker}) for Aqua orders`,
+      )
+      expect(() => traits.validate()).toThrow(
+        `customReceiver ${receiver} must be the maker (not provided) for Aqua orders`,
+      )
+    })
+
+    it('should reject encoding incompatible Aqua traits but still allow decoding them', () => {
+      const signed = MakerTraits.new({
+        shouldUnwrap: true,
+        useAquaInsteadOfSignature: false,
+        allowZeroAmountIn: false,
+        customReceiver: receiver,
+      })
+      const { traits: encodedTraits, hooksData } = signed.encode(maker)
+      const decoded = MakerTraits.decode(encodedTraits, hooksData).with({
+        useAquaInsteadOfSignature: true,
+      })
+
+      expect(() => decoded.encode(maker)).toThrow('MakerTraitsUnwrapIsIncompatibleWithAqua')
+      expect(() => decoded.validate(maker)).toThrow('MakerTraitsUnwrapIsIncompatibleWithAqua')
     })
   })
 
   describe('conversion', () => {
     it('should convert to bigint and back without hooks', () => {
-      const traits = MakerTraits.default().with({ shouldUnwrap: true, allowZeroAmountIn: true })
+      const traits = MakerTraits.default().with({
+        useAquaInsteadOfSignature: false,
+        shouldUnwrap: true,
+        allowZeroAmountIn: true,
+      })
 
       encodeDecodeTest(traits)
     })
@@ -127,7 +301,7 @@ describe('MakerTraits', () => {
 
       const traits = MakerTraits.new({
         shouldUnwrap: true,
-        useAquaInsteadOfSignature: true,
+        useAquaInsteadOfSignature: false,
         allowZeroAmountIn: false,
         preTransferInHook: hook1,
         postTransferInHook: hook2,
@@ -174,6 +348,99 @@ describe('MakerTraits', () => {
       })
 
       encodeDecodeTest(traits, maker)
+    })
+
+    it('should encode and decode hooks with empty data after a non-empty first hook', () => {
+      const maker = Address.fromBigInt(7n)
+      const target = Address.fromBigInt(30n)
+
+      const traits = MakerTraits.new({
+        shouldUnwrap: false,
+        useAquaInsteadOfSignature: true,
+        allowZeroAmountIn: false,
+        preTransferInHook: new Interaction(Address.ZERO_ADDRESS, new HexString('0xaaaa')),
+        postTransferInHook: new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+        preTransferOutHook: new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+        postTransferOutHook: new Interaction(target, HexString.EMPTY),
+      })
+
+      const { hooksData } = traits.encode(maker)
+
+      expect(hooksData.toString()).toBe(`0xaaaa${target.toString().slice(2)}`)
+
+      const decoded = encodeDecodeTest(traits, maker)
+
+      expect(decoded.postTransferInHook?.data.isEmpty()).toBe(true)
+      expect(decoded.preTransferOutHook?.data.isEmpty()).toBe(true)
+      expect(decoded.postTransferOutHook?.target).toEqual(target)
+      expect(decoded.postTransferOutHook?.data.isEmpty()).toBe(true)
+    })
+
+    it('should match MakerTraitsLib.build output for hooks with empty data', () => {
+      const maker = new Address('0x3333333333333333333333333333333333333333')
+      const target = new Address('0x4444444444444444444444444444444444444444')
+      const onChainTraits =
+        42630485978982730269626159077550656080137343507199255245084254063879318929408n
+      const onChainHooksData = new HexString('0xaaaa4444444444444444444444444444444444444444dddd')
+      const program = new HexString('0x1100')
+
+      const traits = MakerTraits.new({
+        shouldUnwrap: false,
+        useAquaInsteadOfSignature: true,
+        allowZeroAmountIn: false,
+        preTransferInHook: new Interaction(Address.ZERO_ADDRESS, new HexString('0xaaaa')),
+        postTransferInHook: new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+        preTransferOutHook: new Interaction(target, HexString.EMPTY),
+        postTransferOutHook: new Interaction(Address.ZERO_ADDRESS, new HexString('0xdddd')),
+      })
+
+      expect(traits.encode(maker)).toEqual({ traits: onChainTraits, hooksData: onChainHooksData })
+      expect(MakerTraits.decode(onChainTraits, onChainHooksData.concat(program))).toEqual(traits)
+      expect(MakerTraits.hooksDataEndsAtByte(onChainTraits)).toBe(onChainHooksData.bytesCount())
+    })
+
+    it('should decode an empty first hook from MakerTraitsLib.build output', () => {
+      const maker = new Address('0x3333333333333333333333333333333333333333')
+      const onChainTraits =
+        39803530675328264941685581732473515572931709543860161877349024523970154594304n
+      const onChainData = new HexString('0xabcd1100')
+
+      const decoded = MakerTraits.decode(onChainTraits, onChainData)
+
+      expect(decoded).toEqual(
+        MakerTraits.new({
+          shouldUnwrap: false,
+          useAquaInsteadOfSignature: true,
+          allowZeroAmountIn: false,
+          preTransferInHook: new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+          postTransferInHook: new Interaction(Address.ZERO_ADDRESS, new HexString('0xabcd')),
+        }),
+      )
+      expect(onChainData.sliceBytes(MakerTraits.hooksDataEndsAtByte(onChainTraits))).toEqual(
+        new HexString('0x1100'),
+      )
+      expect(decoded.encode(maker)).toEqual({
+        traits: onChainTraits,
+        hooksData: new HexString('0xabcd'),
+      })
+    })
+
+    it('should decode empty hooks as empty data when the program follows the hooks data', () => {
+      const traits = MakerTraits.new({
+        shouldUnwrap: false,
+        useAquaInsteadOfSignature: true,
+        allowZeroAmountIn: false,
+        preTransferInHook: new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+        postTransferInHook: new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+        preTransferOutHook: new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+        postTransferOutHook: new Interaction(Address.ZERO_ADDRESS, HexString.EMPTY),
+      })
+
+      const { traits: encodedTraits, hooksData } = traits.encode()
+      const orderData = hooksData.concat(new HexString('0x1100'))
+
+      expect(hooksData.isEmpty()).toBe(true)
+      expect(MakerTraits.decode(encodedTraits, orderData)).toEqual(traits)
     })
   })
 

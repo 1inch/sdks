@@ -9,7 +9,10 @@ export class ExtructionArgsCoder implements IArgsCoder<ExtructionArgs> {
   encode(args: ExtructionArgs): HexString {
     const builder = new BytesBuilder()
     builder.addAddress(args.target.toString())
-    builder.addBytes(args.extructionArgs.toString())
+
+    if (!args.extructionArgs.isEmpty()) {
+      builder.addBytes(args.extructionArgs.toString())
+    }
 
     return new HexString(builder.asHex())
   }
