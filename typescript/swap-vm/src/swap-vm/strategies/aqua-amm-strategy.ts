@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-import type { Address } from '@1inch/sdk-core'
+import type { Address, Bps, Percent } from '@1inch/sdk-core'
 import { FlatFeeArgs, ProtocolFeeArgs } from '../instructions/fee'
+
+function feeUnits(fee: number | Bps | Percent): bigint {
+  if (typeof fee === 'number') {
+    return BigInt(fee)
+  }
+
+  return fee.toScaledBigInt()
+}
 
 export abstract class AquaAMMStrategy {
   feeBpsIn?: number
@@ -40,8 +48,8 @@ export abstract class AquaAMMStrategy {
    * Sets the protocol fee taken from amountIn, in fee units (1e9 = 100%, 1 bps = 100_000)
    * @throws if `fee` is negative or exceeds 100%
    */
-  public withProtocolFeeRaw(fee: bigint, receiver: Address): this {
-    this.protocolFeeRaw = new ProtocolFeeArgs(fee, receiver)
+  public withProtocolFeeRaw(fee: number | Bps | Percent, receiver: Address): this {
+    this.protocolFeeRaw = new ProtocolFeeArgs(feeUnits(fee), receiver)
     this.protocolFee = undefined
 
     return this
@@ -70,8 +78,8 @@ export abstract class AquaAMMStrategy {
    * Sets the taker fee on amountIn, in fee units (1e9 = 100%, 1 bps = 100_000)
    * @throws if `fee` is negative or exceeds 100%
    */
-  public withFeeTokenInRaw(fee: bigint): this {
-    this.feeTokenInRaw = new FlatFeeArgs(fee)
+  public withFeeTokenInRaw(fee: number | Bps | Percent): this {
+    this.feeTokenInRaw = new FlatFeeArgs(feeUnits(fee))
     this.feeBpsIn = undefined
 
     return this

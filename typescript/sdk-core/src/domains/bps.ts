@@ -23,6 +23,10 @@ export class Bps {
     return new Bps(parseScaled(value, Bps.scale, 'bps'))
   }
 
+  static fromScaledBigInt(value: bigint): Bps {
+    return new Bps(value)
+  }
+
   toScaledBigInt(): bigint {
     return this.value
   }

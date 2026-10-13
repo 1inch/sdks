@@ -40,6 +40,14 @@ describe('Bps', () => {
     expect(Bps.fromNumber(10_000).toNumber()).toBe(10_000)
   })
 
+  it('should restore a scaled bigint', () => {
+    const bps = Bps.fromNumber(1.1)
+
+    expect(Bps.fromScaledBigInt(bps.toScaledBigInt()).toString()).toBe('1.1')
+    expect(Bps.fromScaledBigInt(100_000n).toNumber()).toBe(1)
+    expect(() => Bps.fromScaledBigInt(-1n)).toThrow('Must be non-negative')
+  })
+
   it('should reject non-finite and negative values', () => {
     expect(() => Bps.fromNumber(NaN)).toThrow('Must be a finite number')
     expect(() => Bps.fromNumber(Infinity)).toThrow('Must be a finite number')

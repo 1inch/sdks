@@ -23,6 +23,10 @@ export class Percent {
     return new Percent(parseScaled(value, Percent.scale, 'percent'))
   }
 
+  static fromScaledBigInt(value: bigint): Percent {
+    return new Percent(value)
+  }
+
   toScaledBigInt(): bigint {
     return this.value
   }

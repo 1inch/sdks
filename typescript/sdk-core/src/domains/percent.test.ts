@@ -43,6 +43,14 @@ describe('Percent', () => {
     expect(Percent.fromNumber(100).toNumber()).toBe(100)
   })
 
+  it('should restore a scaled bigint', () => {
+    expect(Percent.fromScaledBigInt(10_000_000n).toNumber()).toBe(1)
+    expect(Percent.fromScaledBigInt(Percent.fromString('0.57').toScaledBigInt()).toString()).toBe(
+      '0.57',
+    )
+    expect(() => Percent.fromScaledBigInt(-1n)).toThrow('Must be non-negative')
+  })
+
   it('should reject non-finite and negative values', () => {
     expect(() => Percent.fromNumber(NaN)).toThrow('Must be a finite number')
     expect(() => Percent.fromNumber(Infinity)).toThrow('Must be a finite number')

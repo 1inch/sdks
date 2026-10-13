@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
-import { Address } from '@1inch/sdk-core'
+import { Address, Bps, Percent } from '@1inch/sdk-core'
 import { AquaPeggedAmmStrategy } from './aqua-pegged-amm-strategy'
 import { AquaProgramBuilder } from '../programs/aqua-program-builder'
 import type { SwapVmProgram } from '../programs'
@@ -83,7 +83,7 @@ describe('AquaPeggedAmmStrategy', () => {
     })
 
     it('should build raw fees in fee units', () => {
-      const raw = newStrategy().withProtocolFeeRaw(1n, RECEIVER).withFeeTokenInRaw(2n).build()
+      const raw = newStrategy().withProtocolFeeRaw(1, RECEIVER).withFeeTokenInRaw(2).build()
       const { flatFee, protocolFee } = feeArgs(raw)
 
       expect(flatFee?.fee).toBe(2n)
@@ -92,8 +92,8 @@ describe('AquaPeggedAmmStrategy', () => {
 
       expect(
         newStrategy()
-          .withProtocolFeeRaw(230000n, RECEIVER)
-          .withFeeTokenInRaw(110000n)
+          .withProtocolFeeRaw(Percent.fromScaledBigInt(230000n), RECEIVER)
+          .withFeeTokenInRaw(Bps.fromScaledBigInt(110000n))
           .build()
           .toString(),
       ).toBe(newStrategy().withProtocolFee(2.3, RECEIVER).withFeeTokenIn(1.1).build().toString())
@@ -103,9 +103,9 @@ describe('AquaPeggedAmmStrategy', () => {
       const lastRaw = feeArgs(
         newStrategy()
           .withFeeTokenIn(1)
-          .withFeeTokenInRaw(5n)
+          .withFeeTokenInRaw(5)
           .withProtocolFee(1, ACCESS)
-          .withProtocolFeeRaw(7n, RECEIVER)
+          .withProtocolFeeRaw(7, RECEIVER)
           .build(),
       )
 
@@ -115,9 +115,9 @@ describe('AquaPeggedAmmStrategy', () => {
 
       const lastBps = feeArgs(
         newStrategy()
-          .withFeeTokenInRaw(5n)
+          .withFeeTokenInRaw(5)
           .withFeeTokenIn(1)
-          .withProtocolFeeRaw(7n, RECEIVER)
+          .withProtocolFeeRaw(7, RECEIVER)
           .withProtocolFee(1, ACCESS)
           .build(),
       )
@@ -130,9 +130,9 @@ describe('AquaPeggedAmmStrategy', () => {
     it('should reject invalid fees in the setters', () => {
       const strategy = newStrategy()
 
-      expect(() => strategy.withFeeTokenInRaw(1_000_000_001n)).toThrow('Fee out of range')
+      expect(() => strategy.withFeeTokenInRaw(1_000_000_001)).toThrow('Fee out of range')
       expect(() => strategy.withProtocolFee(Infinity, RECEIVER)).toThrow('Must be a finite number')
-      expect(() => strategy.withProtocolFeeRaw(-1n, RECEIVER)).toThrow('Must be a valid uint32')
+      expect(() => strategy.withProtocolFeeRaw(-1, RECEIVER)).toThrow('Must be a valid uint32')
 
       expect(feeArgs(strategy.build())).toEqual({ flatFee: undefined, protocolFee: undefined })
     })
