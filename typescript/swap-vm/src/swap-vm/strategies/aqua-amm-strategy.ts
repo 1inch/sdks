@@ -39,10 +39,14 @@ export abstract class AquaAMMStrategy {
   }
 
   /**
-   * Sets the taker fee on amountIn, in basis points (e.g. `1.1`)
+   * Sets the taker fee on amountIn, in basis points (e.g. `1.1` or a {@link Bps})
    * @throws if `bps` is not a finite non-negative number or exceeds 100%
    */
-  public withFeeTokenIn(bps: number): this {
+  public withFeeTokenIn(bps: Bps): this
+
+  public withFeeTokenIn(bps: number): this
+
+  public withFeeTokenIn(bps: number | Bps): this {
     this.feeBpsIn = FlatFeeArgs.fromBps(bps)
 
     return this

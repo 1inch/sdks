@@ -136,7 +136,10 @@ describe('AquaXYCAMMStrategy', () => {
       )
     })
 
-    it('should accept a Bps instance for the protocol fee', () => {
+    it('should accept a Bps instance', () => {
+      expect(AquaXYCAmmStrategy.new().withFeeTokenIn(Bps.fromNumber(1.1)).build().toString()).toBe(
+        AquaXYCAmmStrategy.new().withFeeTokenIn(1.1).build().toString(),
+      )
       expect(
         AquaXYCAmmStrategy.new().withProtocolFee(Bps.fromNumber(2.3), receiver).build().toString(),
       ).toBe(AquaXYCAmmStrategy.new().withProtocolFee(2.3, receiver).build().toString())
@@ -148,7 +151,7 @@ describe('AquaXYCAMMStrategy', () => {
       expect(
         AquaXYCAmmStrategy.new()
           .withFeeTokenIn(5)
-          .withFeeTokenIn(1)
+          .withFeeTokenIn(Bps.fromNumber(1))
           .withProtocolFee(7, other)
           .withProtocolFee(Bps.fromNumber(1), receiver)
           .build()
@@ -164,8 +167,9 @@ describe('AquaXYCAMMStrategy', () => {
       expect(strategy.feeBpsIn).toEqual(FlatFeeArgs.fromBps(1.1))
       expect(strategy.protocolFee).toEqual(ProtocolFeeArgs.fromBps(2.3, receiver))
 
-      strategy.withProtocolFee(Bps.fromNumber(1), receiver)
+      strategy.withFeeTokenIn(Bps.fromNumber(1)).withProtocolFee(Bps.fromNumber(1), receiver)
 
+      expect(strategy.feeBpsIn).toEqual(FlatFeeArgs.fromBps(1))
       expect(strategy.protocolFee).toEqual(ProtocolFeeArgs.fromBps(1, receiver))
 
       strategy.feeBpsIn = FlatFeeArgs.fromBps(1.1)
@@ -189,6 +193,9 @@ describe('AquaXYCAMMStrategy', () => {
 
       expect(() => strategy.withFeeTokenIn(NaN)).toThrow('Must be a finite number')
       expect(() => strategy.withFeeTokenIn(10000.1)).toThrow('Fee out of range')
+      expect(() => strategy.withFeeTokenIn(Bps.fromScaledBigInt(1_000_000_001n))).toThrow(
+        'Fee out of range',
+      )
       expect(() => strategy.withProtocolFee(-0.5, receiver)).toThrow('Must be non-negative')
       expect(() => strategy.withProtocolFee(20000, receiver)).toThrow('Fee out of range')
       expect(() =>

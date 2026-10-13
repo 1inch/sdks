@@ -82,10 +82,10 @@ describe('AquaPeggedAmmStrategy', () => {
       expect(program.toString()).toContain('1504' + '0001adb0')
     })
 
-    it('should accept a Bps instance for the protocol fee', () => {
+    it('should accept a Bps instance', () => {
       const program = newStrategy()
         .withProtocolFee(Bps.fromNumber(2.3), RECEIVER)
-        .withFeeTokenIn(1.1)
+        .withFeeTokenIn(Bps.fromNumber(1.1))
         .build()
       const { flatFee, protocolFee } = feeArgs(program)
 
@@ -100,7 +100,7 @@ describe('AquaPeggedAmmStrategy', () => {
       const { flatFee, protocolFee } = feeArgs(
         newStrategy()
           .withFeeTokenIn(5)
-          .withFeeTokenIn(1)
+          .withFeeTokenIn(Bps.fromNumber(1))
           .withProtocolFee(7, RECEIVER)
           .withProtocolFee(Bps.fromNumber(1), ACCESS)
           .build(),
@@ -115,6 +115,9 @@ describe('AquaPeggedAmmStrategy', () => {
       const strategy = newStrategy()
 
       expect(() => strategy.withFeeTokenIn(10000.1)).toThrow('Fee out of range')
+      expect(() => strategy.withFeeTokenIn(Bps.fromScaledBigInt(1_000_000_001n))).toThrow(
+        'Fee out of range',
+      )
       expect(() => strategy.withProtocolFee(Infinity, RECEIVER)).toThrow('Must be a finite number')
       expect(() =>
         strategy.withProtocolFee(Bps.fromScaledBigInt(1_000_000_001n), RECEIVER),

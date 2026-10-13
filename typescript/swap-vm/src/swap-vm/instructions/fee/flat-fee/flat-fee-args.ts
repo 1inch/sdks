@@ -56,6 +56,8 @@ export class FlatFeeArgs implements IArgsData {
 
   public static fromBps(bps: number): FlatFeeArgs
 
+  public static fromBps(bps: number | Bps): FlatFeeArgs
+
   public static fromBps(bps: number | Bps): FlatFeeArgs {
     return new FlatFeeArgs(
       bps instanceof Bps ? bps.toScaledBigInt() : Bps.fromNumber(bps).toScaledBigInt(),
