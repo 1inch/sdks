@@ -22,15 +22,20 @@ describe('Percent', () => {
     expect(Percent.fromString('0.0000001').toString()).toBe('0.0000001')
   })
 
-  it('should round digits past the scale', () => {
-    expect(Percent.fromNumber(1.23456789).toScaledBigInt()).toBe(12_345_679n)
-    expect(Percent.fromString('1.23456789').toString()).toBe('1.2345679')
-    expect(Percent.fromNumber(0.00000001).toScaledBigInt()).toBe(0n)
+  it('should accept a fraction as long as the scale', () => {
+    expect(Percent.fromString('1.1234567').toScaledBigInt()).toBe(11_234_567n)
+    expect(Percent.fromNumber(1e-7).toScaledBigInt()).toBe(1n)
+  })
+
+  it('should reject a fraction longer than the scale', () => {
+    expect(() => Percent.fromNumber(1.23456789)).toThrow('Must have at most 7 decimal places')
+    expect(() => Percent.fromString('1.23456789')).toThrow('Must have at most 7 decimal places')
+    expect(() => Percent.fromNumber(1e-8)).toThrow('Must have at most 7 decimal places')
   })
 
   it('should convert back to a number from the formatted string', () => {
     expect(Percent.fromNumber(0.57).toNumber()).toBe(Number(Percent.fromNumber(0.57).toString()))
-    expect(Percent.fromString('1.23456789').toNumber()).toBe(1.2345679)
+    expect(Percent.fromString('1.2345678').toNumber()).toBe(1.2345678)
     expect(Percent.fromNumber(100).toNumber()).toBe(100)
   })
 

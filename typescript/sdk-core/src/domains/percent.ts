@@ -1,5 +1,6 @@
-import { formatUnits, parseUnits } from 'viem'
+import { formatUnits } from 'viem'
 import assert from 'assert'
+import { parseScaled } from './parse-scaled'
 
 /**
  * Percentage points (100% = 100).
@@ -15,13 +16,11 @@ export class Percent {
   }
 
   static fromNumber(value: number): Percent {
-    assert(Number.isFinite(value), `Invalid percent: ${value}. Must be a finite number`)
-
-    return new Percent(parseUnits(value.toFixed(Percent.scale), Percent.scale))
+    return new Percent(parseScaled(value, Percent.scale, 'percent'))
   }
 
   static fromString(value: string): Percent {
-    return new Percent(parseUnits(value, Percent.scale))
+    return new Percent(parseScaled(value, Percent.scale, 'percent'))
   }
 
   toScaledBigInt(): bigint {

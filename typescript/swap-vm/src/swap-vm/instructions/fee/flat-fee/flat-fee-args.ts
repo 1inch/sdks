@@ -44,7 +44,7 @@ export class FlatFeeArgs implements IArgsData {
       return new FlatFeeArgs(percent.toScaledBigInt())
     }
 
-    return FlatFeeArgs.fromBps(percent * 100)
+    return new FlatFeeArgs(Percent.fromNumber(percent).toScaledBigInt())
   }
 
   /**

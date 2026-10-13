@@ -52,7 +52,7 @@ export class ProtocolFeeArgs implements IArgsData {
       return new ProtocolFeeArgs(percent.toScaledBigInt(), to)
     }
 
-    return ProtocolFeeArgs.fromBps(percent * 100, to)
+    return new ProtocolFeeArgs(Percent.fromNumber(percent).toScaledBigInt(), to)
   }
 
   /**

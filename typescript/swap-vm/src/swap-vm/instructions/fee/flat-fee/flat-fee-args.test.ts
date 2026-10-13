@@ -154,11 +154,15 @@ describe('FlatFeeArgs', () => {
     )
   })
 
-  it('should round digits past the bps and percent scales', () => {
-    expect(FlatFeeArgs.fromBps(1.234567).fee).toBe(Bps.fromNumber(1.234567).toScaledBigInt())
-    expect(FlatFeeArgs.fromBps(Bps.fromString('1.234567')).fee).toBe(123457n)
-    expect(FlatFeeArgs.fromPercent(0.00000001).fee).toBe(0n)
-    expect(FlatFeeArgs.fromPercent(Percent.fromString('1.23456789')).fee).toBe(12345679n)
+  it('should reject a fraction longer than the bps and percent scales', () => {
+    expect(() => FlatFeeArgs.fromBps(1.234567)).toThrow('Must have at most 5 decimal places')
+    expect(() => FlatFeeArgs.fromBps(Bps.fromString('1.234567'))).toThrow(
+      'Must have at most 5 decimal places',
+    )
+    expect(() => FlatFeeArgs.fromPercent(0.00000001)).toThrow('Must have at most 7 decimal places')
+    expect(() => FlatFeeArgs.fromPercent(Percent.fromString('1.23456789'))).toThrow(
+      'Must have at most 7 decimal places',
+    )
   })
 
   it('should reject non-finite and negative basis points and percent', () => {

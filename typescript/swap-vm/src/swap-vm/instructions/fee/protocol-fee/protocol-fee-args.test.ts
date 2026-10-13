@@ -184,9 +184,13 @@ describe('ProtocolFeeArgs', () => {
     )
   })
 
-  it('should round digits past the bps and percent scales', () => {
-    expect(ProtocolFeeArgs.fromBps(Bps.fromString('1.234567'), feeRecipient).fee).toBe(123457n)
-    expect(ProtocolFeeArgs.fromPercent(Percent.fromNumber(0.00000001), feeRecipient).fee).toBe(0n)
+  it('should reject a fraction longer than the bps and percent scales', () => {
+    expect(() => ProtocolFeeArgs.fromBps(Bps.fromString('1.234567'), feeRecipient)).toThrow(
+      'Must have at most 5 decimal places',
+    )
+    expect(() => ProtocolFeeArgs.fromPercent(0.00000001, feeRecipient)).toThrow(
+      'Must have at most 7 decimal places',
+    )
   })
 
   it('should reject non-finite and negative basis points and percent', () => {

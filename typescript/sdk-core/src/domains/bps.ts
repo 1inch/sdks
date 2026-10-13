@@ -1,5 +1,6 @@
-import { formatUnits, parseUnits } from 'viem'
+import { formatUnits } from 'viem'
 import assert from 'assert'
+import { parseScaled } from './parse-scaled'
 
 /**
  * Basis points (10_000 bps = 100%).
@@ -15,13 +16,11 @@ export class Bps {
   }
 
   static fromNumber(value: number): Bps {
-    assert(Number.isFinite(value), `Invalid bps: ${value}. Must be a finite number`)
-
-    return new Bps(parseUnits(value.toFixed(Bps.scale), Bps.scale))
+    return new Bps(parseScaled(value, Bps.scale, 'bps'))
   }
 
   static fromString(value: string): Bps {
-    return new Bps(parseUnits(value, Bps.scale))
+    return new Bps(parseScaled(value, Bps.scale, 'bps'))
   }
 
   toScaledBigInt(): bigint {

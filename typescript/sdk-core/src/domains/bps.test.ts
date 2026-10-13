@@ -17,15 +17,21 @@ describe('Bps', () => {
     expect(Bps.fromString('0.00001').toString()).toBe('0.00001')
   })
 
-  it('should round digits past the scale', () => {
-    expect(Bps.fromNumber(1.234567).toScaledBigInt()).toBe(123_457n)
-    expect(Bps.fromString('1.234567').toScaledBigInt()).toBe(123_457n)
-    expect(Bps.fromNumber(1.234567).toString()).toBe('1.23457')
+  it('should accept a fraction as long as the scale', () => {
+    expect(Bps.fromString('1.12345').toScaledBigInt()).toBe(112_345n)
+    expect(Bps.fromString('1.10000').toScaledBigInt()).toBe(Bps.fromNumber(1.1).toScaledBigInt())
+  })
+
+  it('should reject a fraction longer than the scale', () => {
+    expect(() => Bps.fromNumber(1.234567)).toThrow('Must have at most 5 decimal places')
+    expect(() => Bps.fromString('1.234567')).toThrow('Must have at most 5 decimal places')
+    expect(() => Bps.fromString('1.100000')).toThrow('Must have at most 5 decimal places')
+    expect(() => Bps.fromNumber(1e-7)).toThrow('Must have at most 5 decimal places')
   })
 
   it('should convert back to a number from the formatted string', () => {
     expect(Bps.fromNumber(1.1).toNumber()).toBe(Number(Bps.fromNumber(1.1).toString()))
-    expect(Bps.fromString('1.234567').toNumber()).toBe(1.23457)
+    expect(Bps.fromString('1.23456').toNumber()).toBe(1.23456)
     expect(Bps.fromNumber(10_000).toNumber()).toBe(10_000)
   })
 
