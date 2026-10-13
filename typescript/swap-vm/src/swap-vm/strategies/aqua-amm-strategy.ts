@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-import type { Address, Bps, Percent } from '@1inch/sdk-core'
+import { Bps, type Address, type Percent } from '@1inch/sdk-core'
 import { FlatFeeArgs, ProtocolFeeArgs } from '../instructions/fee'
 
 function feeUnits(fee: number | Bps | Percent): bigint {
@@ -12,22 +12,20 @@ function feeUnits(fee: number | Bps | Percent): bigint {
 }
 
 export abstract class AquaAMMStrategy {
-  feeBpsIn?: number
+  /** Taker fee: basis points as a number, or fee units as {@link Bps} / {@link Percent}. */
+  feeBpsIn?: number | Bps | Percent
 
   decayPeriod?: bigint
 
+  /** Protocol fee: `bps` is basis points, or fee units when it is a {@link Bps} / {@link Percent}. */
   protocolFee?: {
-    bps: number
+    bps: number | Bps | Percent
     receiver: Address
   }
 
   accessToken?: Address
 
   salt?: bigint
-
-  private feeTokenInRaw?: FlatFeeArgs
-
-  private protocolFeeRaw?: ProtocolFeeArgs
 
   protected constructor() {}
 
@@ -39,7 +37,6 @@ export abstract class AquaAMMStrategy {
     ProtocolFeeArgs.fromBps(bps, receiver)
 
     this.protocolFee = { bps, receiver }
-    this.protocolFeeRaw = undefined
 
     return this
   }
@@ -49,8 +46,14 @@ export abstract class AquaAMMStrategy {
    * @throws if `fee` is negative or exceeds 100%
    */
   public withProtocolFeeRaw(fee: number | Bps | Percent, receiver: Address): this {
-    this.protocolFeeRaw = new ProtocolFeeArgs(feeUnits(fee), receiver)
-    this.protocolFee = undefined
+    const units = feeUnits(fee)
+
+    new ProtocolFeeArgs(units, receiver)
+
+    this.protocolFee = {
+      bps: typeof fee === 'number' ? Bps.fromScaledBigInt(units) : fee,
+      receiver,
+    }
 
     return this
   }
@@ -69,7 +72,6 @@ export abstract class AquaAMMStrategy {
     FlatFeeArgs.fromBps(bps)
 
     this.feeBpsIn = bps
-    this.feeTokenInRaw = undefined
 
     return this
   }
@@ -79,8 +81,11 @@ export abstract class AquaAMMStrategy {
    * @throws if `fee` is negative or exceeds 100%
    */
   public withFeeTokenInRaw(fee: number | Bps | Percent): this {
-    this.feeTokenInRaw = new FlatFeeArgs(feeUnits(fee))
-    this.feeBpsIn = undefined
+    const units = feeUnits(fee)
+
+    new FlatFeeArgs(units)
+
+    this.feeBpsIn = typeof fee === 'number' ? Bps.fromScaledBigInt(units) : fee
 
     return this
   }
@@ -98,26 +103,36 @@ export abstract class AquaAMMStrategy {
   }
 
   /**
-   * Protocol fee set last, in bps (`withProtocolFee` / `protocolFee`) or in fee units (`withProtocolFeeRaw`).
-   * The raw setter clears `protocolFee`, so a defined `protocolFee` was set after it
+   * Protocol fee currently stored on `protocolFee`.
+   * A number is basis points. A {@link Bps} or {@link Percent} is fee units.
    */
   protected protocolFeeArgs(): ProtocolFeeArgs | undefined {
-    if (this.protocolFee) {
-      return ProtocolFeeArgs.fromBps(this.protocolFee.bps, this.protocolFee.receiver)
+    if (!this.protocolFee) {
+      return undefined
     }
 
-    return this.protocolFeeRaw
+    const { bps, receiver } = this.protocolFee
+
+    if (typeof bps === 'number') {
+      return ProtocolFeeArgs.fromBps(bps, receiver)
+    }
+
+    return new ProtocolFeeArgs(bps.toScaledBigInt(), receiver)
   }
 
   /**
-   * Taker fee set last, in bps (`withFeeTokenIn` / `feeBpsIn`) or in fee units (`withFeeTokenInRaw`).
-   * The raw setter clears `feeBpsIn`, so a defined `feeBpsIn` was set after it
+   * Taker fee currently stored on `feeBpsIn`.
+   * A number is basis points. A {@link Bps} or {@link Percent} is fee units.
    */
   protected feeTokenInArgs(): FlatFeeArgs | undefined {
-    if (this.feeBpsIn !== undefined) {
+    if (this.feeBpsIn === undefined) {
+      return undefined
+    }
+
+    if (typeof this.feeBpsIn === 'number') {
       return FlatFeeArgs.fromBps(this.feeBpsIn)
     }
 
-    return this.feeTokenInRaw
+    return new FlatFeeArgs(this.feeBpsIn.toScaledBigInt())
   }
 }
