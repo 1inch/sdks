@@ -10,7 +10,7 @@ import assert from 'assert'
 export class Percent {
   static readonly scale = 7
 
-  constructor(private readonly value: bigint) {
+  private constructor(private readonly value: bigint) {
     assert(value >= 0n, `Invalid percent: ${value}. Must be non-negative`)
   }
 

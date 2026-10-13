@@ -39,6 +39,5 @@ describe('Percent', () => {
     expect(() => Percent.fromNumber(Infinity)).toThrow('Must be a finite number')
     expect(() => Percent.fromNumber(-0.1)).toThrow('Must be non-negative')
     expect(() => Percent.fromString('-1')).toThrow('Must be non-negative')
-    expect(() => new Percent(-1n)).toThrow('Must be non-negative')
   })
 })

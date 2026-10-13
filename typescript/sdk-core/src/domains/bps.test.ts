@@ -7,7 +7,6 @@ describe('Bps', () => {
     expect(Bps.fromString('1').toScaledBigInt()).toBe(100_000n)
     expect(Bps.fromNumber(0).toScaledBigInt()).toBe(0n)
     expect(Bps.fromNumber(10_000).toScaledBigInt()).toBe(1_000_000_000n)
-    expect(new Bps(100_000n).toScaledBigInt()).toBe(100_000n)
   })
 
   it('should scale fractional bps exactly', () => {
@@ -36,6 +35,5 @@ describe('Bps', () => {
     expect(() => Bps.fromNumber(-Infinity)).toThrow('Must be a finite number')
     expect(() => Bps.fromNumber(-1)).toThrow('Must be non-negative')
     expect(() => Bps.fromString('-0.00001')).toThrow('Must be non-negative')
-    expect(() => new Bps(-1n)).toThrow('Must be non-negative')
   })
 })
