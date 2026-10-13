@@ -2,8 +2,10 @@
 
 import { describe, it, expect } from 'vitest'
 import { Address, HexString } from '@1inch/sdk-core'
+import { decodeFunctionData } from 'viem'
 import type { DockArgs, ShipArgs } from './types'
 import { AquaProtocolContract } from './aqua-protocol-contract'
+import { AQUA_ABI } from '../abi/Aqua.abi'
 
 describe('AquaProtocolContract', () => {
   const mockApp = Address.fromBigInt(1n)
@@ -31,6 +33,52 @@ describe('AquaProtocolContract', () => {
 
       expect(result).toBeDefined()
       expect(result.toString()).toMatch(/^0x[0-9a-fA-F]+$/)
+    })
+
+    describe('amount bounds (Aqua stores balances as uint248)', () => {
+      const UINT_248_MAX = 2n ** 248n - 1n
+
+      const shipArgs = (amount: bigint): ShipArgs => ({
+        app: mockApp,
+        strategy: mockStrategy,
+        amountsAndTokens: [
+          { token: mockTokens[0], amount: mockAmounts[0] },
+          { token: mockTokens[1], amount },
+        ],
+      })
+
+      it('should accept 0 and 2^248 - 1', () => {
+        for (const amount of [0n, UINT_248_MAX]) {
+          const { args } = decodeFunctionData({
+            abi: AQUA_ABI,
+            data: AquaProtocolContract.encodeShipCallData(shipArgs(amount)).toString(),
+          })
+
+          expect(args[3]).toEqual([mockAmounts[0], amount])
+        }
+      })
+
+      it('should reject 2^248', () => {
+        expect(() => AquaProtocolContract.encodeShipCallData(shipArgs(UINT_248_MAX + 1n))).toThrow(
+          `Invalid amount for token ${mockTokens[1]}: ${UINT_248_MAX + 1n}. ` +
+            'Must be >= 0 and <= UINT_248_MAX (2^248 - 1)',
+        )
+      })
+
+      it('should reject negative amounts', () => {
+        expect(() => AquaProtocolContract.encodeShipCallData(shipArgs(-1n))).toThrow(
+          `Invalid amount for token ${mockTokens[1]}: -1. Must be >= 0`,
+        )
+      })
+
+      it('should validate amounts in buildShipTx and ship', () => {
+        const aqua = new AquaProtocolContract(mockContractAddress)
+
+        expect(() => AquaProtocolContract.buildShipTx(mockContractAddress, shipArgs(-1n))).toThrow(
+          'Invalid amount',
+        )
+        expect(() => aqua.ship(shipArgs(UINT_248_MAX + 1n))).toThrow('Invalid amount')
+      })
     })
   })
 
