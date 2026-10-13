@@ -218,15 +218,11 @@ describe('AquaXYCAMMStrategy', () => {
     it('should reject invalid fees in the setters', () => {
       const strategy = AquaXYCAmmStrategy.new()
 
-      expect(() => strategy.withFeeTokenIn(1.234567)).toThrow('Must be a multiple of 0.00001 bps')
       expect(() => strategy.withFeeTokenIn(NaN)).toThrow('Must be a finite number')
       expect(() => strategy.withFeeTokenIn(10000.1)).toThrow('Fee out of range')
       expect(() => strategy.withFeeTokenInRaw(-1n)).toThrow('Must be a valid uint32')
       expect(() => strategy.withFeeTokenInRaw(1_000_000_001n)).toThrow('Fee out of range')
       expect(() => strategy.withProtocolFee(-0.5, receiver)).toThrow('Must be non-negative')
-      expect(() => strategy.withProtocolFee(0.000001, receiver)).toThrow(
-        'Must be a multiple of 0.00001 bps',
-      )
       expect(() => strategy.withProtocolFee(20000, receiver)).toThrow('Fee out of range')
       expect(() => strategy.withProtocolFeeRaw(1_000_000_001n, receiver)).toThrow(
         'Fee out of range',

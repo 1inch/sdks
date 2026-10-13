@@ -24,8 +24,8 @@ export abstract class AquaAMMStrategy {
   protected constructor() {}
 
   /**
-   * Sets the protocol fee taken from amountIn, in basis points (at most 5 decimal places, e.g. `1.1`)
-   * @throws if `bps` is not a non-negative multiple of 0.00001 bps or exceeds 100%
+   * Sets the protocol fee taken from amountIn, in basis points (e.g. `1.1`)
+   * @throws if `bps` is not a finite non-negative number or exceeds 100%
    */
   public withProtocolFee(bps: number, receiver: Address): this {
     ProtocolFeeArgs.fromBps(bps, receiver)
@@ -54,8 +54,8 @@ export abstract class AquaAMMStrategy {
   }
 
   /**
-   * Sets the taker fee on amountIn, in basis points (at most 5 decimal places, e.g. `1.1`)
-   * @throws if `bps` is not a non-negative multiple of 0.00001 bps or exceeds 100%
+   * Sets the taker fee on amountIn, in basis points (e.g. `1.1`)
+   * @throws if `bps` is not a finite non-negative number or exceeds 100%
    */
   public withFeeTokenIn(bps: number): this {
     FlatFeeArgs.fromBps(bps)

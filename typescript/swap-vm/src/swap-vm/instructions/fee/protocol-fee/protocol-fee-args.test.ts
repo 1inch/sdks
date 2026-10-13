@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
-import { Address } from '@1inch/sdk-core'
+import { Address, Bps, Percent } from '@1inch/sdk-core'
 import { ProtocolFeeArgs } from './protocol-fee-args'
 
 describe('ProtocolFeeArgs', () => {
@@ -176,15 +176,20 @@ describe('ProtocolFeeArgs', () => {
     expect(
       ProtocolFeeArgs.CODER.encode(ProtocolFeeArgs.fromBps(1.1, feeRecipient)).toString(),
     ).toBe('0x0001adb068b3465833fb72a70ecdf485e0e4c7bd8665fc45')
+    expect(ProtocolFeeArgs.fromBps(new Bps(1.1), feeRecipient).fee).toBe(
+      ProtocolFeeArgs.fromBps(1.1, feeRecipient).fee,
+    )
+    expect(ProtocolFeeArgs.fromPercent(new Percent(0.57), feeRecipient).fee).toBe(
+      ProtocolFeeArgs.fromPercent(0.57, feeRecipient).fee,
+    )
   })
 
-  it('should reject unrepresentable basis points and percent', () => {
-    expect(() => ProtocolFeeArgs.fromBps(1.234567, feeRecipient)).toThrow(
-      'Must be a multiple of 0.00001 bps',
-    )
-    expect(() => ProtocolFeeArgs.fromPercent(0.00000001, feeRecipient)).toThrow(
-      'Must be a multiple of 0.0000001%',
-    )
+  it('should round digits past the bps and percent scales', () => {
+    expect(ProtocolFeeArgs.fromBps(new Bps('1.234567'), feeRecipient).fee).toBe(123457n)
+    expect(ProtocolFeeArgs.fromPercent(new Percent(0.00000001), feeRecipient).fee).toBe(0n)
+  })
+
+  it('should reject non-finite and negative basis points and percent', () => {
     expect(() => ProtocolFeeArgs.fromBps(NaN, feeRecipient)).toThrow('Must be a finite number')
     expect(() => ProtocolFeeArgs.fromPercent(-Infinity, feeRecipient)).toThrow(
       'Must be a finite number',

@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-import type { Address, HexString } from '@1inch/sdk-core'
+import { Bps, Percent, type Address, type HexString } from '@1inch/sdk-core'
 import { UINT_32_MAX } from '@1inch/byte-utils'
 import assert from 'assert'
 import { ProtocolFeeArgsCoder } from './protocol-fee-args-coder'
 import type { IArgsCoder, IArgsData } from '../../types'
-import { bpsToFeeUnits, percentToFeeUnits } from '../fee-units'
 
 const FEE_100_PERCENT = 1e9 // 1e9 = 100%
 
@@ -40,24 +39,34 @@ export class ProtocolFeeArgs implements IArgsData {
 
   /**
    * Creates a ProtocolFeeArgs instance from percentage
-   * @param percent - Fee as percentage (e.g., 1 for 1%, 0.1 for 0.1%), at most 7 decimal places
+   * @param percent - Fee as percentage (e.g., 1 for 1%, 0.1 for 0.1%), or a {@link Percent}
    * @param to - Address to receive the protocol fee
    * @returns ProtocolFeeArgs instance
-   * @throws if `percent` is not a non-negative multiple of 0.0000001% or exceeds 100%
    */
-  public static fromPercent(percent: number, to: Address): ProtocolFeeArgs {
-    return new ProtocolFeeArgs(percentToFeeUnits(percent), to)
+  public static fromPercent(percent: Percent, to: Address): ProtocolFeeArgs
+
+  public static fromPercent(percent: number, to: Address): ProtocolFeeArgs
+
+  public static fromPercent(percent: number | Percent, to: Address): ProtocolFeeArgs {
+    if (percent instanceof Percent) {
+      return new ProtocolFeeArgs(percent.value, to)
+    }
+
+    return ProtocolFeeArgs.fromBps(percent * 100, to)
   }
 
   /**
    * Creates a ProtocolFeeArgs instance from basis points
-   * @param bps - Fee in basis points (10000 bps = 100%), at most 5 decimal places
+   * @param bps - Fee in basis points (10000 bps = 100%), or a {@link Bps}
    * @param to - Address to receive the protocol fee
    * @returns ProtocolFeeArgs instance
-   * @throws if `bps` is not a non-negative multiple of 0.00001 bps or exceeds 100%
    */
-  public static fromBps(bps: number, to: Address): ProtocolFeeArgs {
-    return new ProtocolFeeArgs(bpsToFeeUnits(bps), to)
+  public static fromBps(bps: Bps, to: Address): ProtocolFeeArgs
+
+  public static fromBps(bps: number, to: Address): ProtocolFeeArgs
+
+  public static fromBps(bps: number | Bps, to: Address): ProtocolFeeArgs {
+    return new ProtocolFeeArgs(bps instanceof Bps ? bps.value : new Bps(bps).value, to)
   }
 
   toJSON(): Record<string, unknown> {

@@ -130,7 +130,6 @@ describe('AquaPeggedAmmStrategy', () => {
     it('should reject invalid fees in the setters', () => {
       const strategy = newStrategy()
 
-      expect(() => strategy.withFeeTokenIn(2.345678)).toThrow('Must be a multiple of 0.00001 bps')
       expect(() => strategy.withFeeTokenInRaw(1_000_000_001n)).toThrow('Fee out of range')
       expect(() => strategy.withProtocolFee(Infinity, RECEIVER)).toThrow('Must be a finite number')
       expect(() => strategy.withProtocolFeeRaw(-1n, RECEIVER)).toThrow('Must be a valid uint32')

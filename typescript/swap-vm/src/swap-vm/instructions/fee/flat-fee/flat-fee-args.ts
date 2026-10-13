@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-import type { HexString } from '@1inch/sdk-core'
+import { Bps, Percent, type HexString } from '@1inch/sdk-core'
 import { UINT_32_MAX } from '@1inch/byte-utils'
 import assert from 'assert'
 import { FlatFeeArgsCoder } from './flat-fee-args-coder'
 import type { IArgsCoder, IArgsData } from '../../types'
-import { bpsToFeeUnits, percentToFeeUnits } from '../fee-units'
 
 const FEE_100_PERCENT = 1e9 // 1e9 = 100%
 
@@ -33,22 +32,32 @@ export class FlatFeeArgs implements IArgsData {
 
   /**
    * Creates a FlatFeeArgs instance from percentage
-   * @param percent - Fee as percentage (e.g., 1 for 1%, 0.1 for 0.1%), at most 7 decimal places
+   * @param percent - Fee as percentage (e.g., 1 for 1%, 0.1 for 0.1%), or a {@link Percent}
    * @returns FlatFeeArgs instance
-   * @throws if `percent` is not a non-negative multiple of 0.0000001% or exceeds 100%
    */
-  public static fromPercent(percent: number): FlatFeeArgs {
-    return new FlatFeeArgs(percentToFeeUnits(percent))
+  public static fromPercent(percent: Percent): FlatFeeArgs
+
+  public static fromPercent(percent: number): FlatFeeArgs
+
+  public static fromPercent(percent: number | Percent): FlatFeeArgs {
+    if (percent instanceof Percent) {
+      return new FlatFeeArgs(percent.value)
+    }
+
+    return FlatFeeArgs.fromBps(percent * 100)
   }
 
   /**
    * Creates a FlatFeeArgs instance from basis points
-   * @param bps - Fee in basis points (10000 bps = 100%), at most 5 decimal places
+   * @param bps - Fee in basis points (10000 bps = 100%), or a {@link Bps}
    * @returns FlatFeeArgs instance
-   * @throws if `bps` is not a non-negative multiple of 0.00001 bps or exceeds 100%
    */
-  public static fromBps(bps: number): FlatFeeArgs {
-    return new FlatFeeArgs(bpsToFeeUnits(bps))
+  public static fromBps(bps: Bps): FlatFeeArgs
+
+  public static fromBps(bps: number): FlatFeeArgs
+
+  public static fromBps(bps: number | Bps): FlatFeeArgs {
+    return new FlatFeeArgs(bps instanceof Bps ? bps.value : new Bps(bps).value)
   }
 
   toJSON(): Record<string, unknown> {
