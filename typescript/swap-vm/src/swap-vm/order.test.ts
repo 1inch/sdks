@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
+import type { DataFor } from '@1inch/sdk-core'
 import { Address, HexString, Interaction, NetworkEnum } from '@1inch/sdk-core'
 import { encodeAbiParameters, keccak256 } from 'viem'
 
 import { Order } from './order'
 import { MakerTraits } from './maker-traits'
-import { SwapVmProgram } from './programs'
+import { AquaProgramBuilder, RegularProgramBuilder, SwapVmProgram } from './programs'
 
 function createMaker(): Address {
   return Address.fromBigInt(1n)
@@ -17,6 +18,65 @@ function createProgram(hex: string = '0x'): SwapVmProgram {
 }
 
 describe('Order', () => {
+  describe('new', () => {
+    const maker = createMaker()
+    const receiver = Address.fromBigInt(2n)
+    const program = createProgram('0x01')
+
+    it.each<{ name: string; data: Partial<DataFor<MakerTraits>> }>([
+      { name: 'Aqua defaults', data: {} },
+      { name: 'Aqua with the maker as receiver', data: { customReceiver: maker } },
+      {
+        name: 'signature with shouldUnwrap',
+        data: { useAquaInsteadOfSignature: false, shouldUnwrap: true },
+      },
+      {
+        name: 'signature with custom receiver',
+        data: { useAquaInsteadOfSignature: false, customReceiver: receiver },
+      },
+    ])('should create an order with $name traits', ({ data }) => {
+      const traits = MakerTraits.default().with(data)
+
+      expect(Order.new({ maker, traits, program })).toEqual(new Order(maker, traits, program))
+    })
+
+    it('should reject encoding Aqua traits with shouldUnwrap', () => {
+      const traits = MakerTraits.default().with({ shouldUnwrap: true })
+      const order = Order.new({ maker, traits, program })
+
+      expect(() => order.encode()).toThrow('MakerTraitsUnwrapIsIncompatibleWithAqua')
+    })
+
+    it('should reject encoding Aqua traits with a receiver other than the maker', () => {
+      const traits = MakerTraits.default().with({ customReceiver: receiver })
+      const order = Order.new({ maker, traits, program })
+
+      expect(() => order.encode()).toThrow('MakerTraitsCustomReceiverIsIncompatibleWithAqua')
+    })
+
+    it('should decode orders with Aqua-incompatible traits but reject re-encoding them', () => {
+      const signed = MakerTraits.new({
+        shouldUnwrap: true,
+        useAquaInsteadOfSignature: false,
+        allowZeroAmountIn: false,
+        customReceiver: receiver,
+      })
+      const order = Order.new({ maker, traits: signed, program })
+      const encoded = order.encode()
+      const incompatible = Order.new({
+        maker,
+        traits: signed.withNew({ useAquaInsteadOfSignature: true }),
+        program,
+      })
+
+      const decoded = Order.decode(encoded)
+
+      expect(decoded.traits).toEqual(signed)
+      expect(() => incompatible.encode()).toThrow('MakerTraitsUnwrapIsIncompatibleWithAqua')
+      expect(() => incompatible.hash()).toThrow('MakerTraitsUnwrapIsIncompatibleWithAqua')
+    })
+  })
+
   describe('encode / decode', () => {
     it('should round-trip encode/decode without hooks', () => {
       const maker = createMaker()
@@ -40,7 +100,7 @@ describe('Order', () => {
 
       const traits = MakerTraits.new({
         shouldUnwrap: true,
-        useAquaInsteadOfSignature: true,
+        useAquaInsteadOfSignature: false,
         allowZeroAmountIn: true,
         preTransferInHook: preIn,
         postTransferInHook: postIn,
@@ -190,6 +250,43 @@ describe('Order', () => {
       expect(hash.toString()).not.toBe(
         new Order(createMaker(), MakerTraits.default(), createProgram('0x01')).hash().toString(),
       )
+    })
+
+    it('should keep the Aqua hash after decode -> build of a program with a 32-byte salt', () => {
+      // xycSwapXD -> salt(32 bytes)
+      const program = createProgram('0x1100' + '1420' + 'ab'.repeat(32))
+      const rebuilt = AquaProgramBuilder.decode(program).build()
+
+      const original = new Order(createMaker(), MakerTraits.default(), program)
+      const restored = new Order(createMaker(), MakerTraits.default(), rebuilt)
+
+      expect(rebuilt.toString()).toBe(program.toString())
+      expect(restored.hash().toString()).toBe(original.hash().toString())
+    })
+
+    it('should keep the EIP-712 hash after decode -> build of a program with a 32-byte salt', () => {
+      const traits = MakerTraits.new({
+        useAquaInsteadOfSignature: false,
+        allowZeroAmountIn: false,
+        shouldUnwrap: false,
+      })
+      const domain = {
+        chainId: NetworkEnum.ETHEREUM,
+        name: '1inch SwapVM v1.0',
+        verifyingContract: new Address('0x111111338c5091e8440b67b168bae16a668ac0de'),
+        version: '1.0.2',
+      }
+      const program = new RegularProgramBuilder()
+        .limitSwap1D({ makerDirectionLt: true })
+        .salt({ bytes: new HexString('0x' + 'cd'.repeat(32)) })
+        .build()
+      const rebuilt = RegularProgramBuilder.decode(program).build()
+
+      const original = new Order(createMaker(), traits, program)
+      const restored = new Order(createMaker(), traits, rebuilt)
+
+      expect(rebuilt.toString()).toBe(program.toString())
+      expect(restored.hash(domain).toString()).toBe(original.hash(domain).toString())
     })
   })
 })

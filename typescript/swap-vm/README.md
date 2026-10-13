@@ -114,8 +114,15 @@ const [_, dstAmount] = decodeFunctionResult({
 
 console.log('dstAmount', dstAmount)
 
+// Slippage protection: the swap reverts if it would deliver less than the quote minus 0.5%
+const slippageBps = 50n
+const minDstAmount = (dstAmount * (10_000n - slippageBps)) / 10_000n
+
 // Swap
-const swapTx = swapVM.swap(swapParams)
+const swapTx = swapVM.swap({
+  ...swapParams,
+  takerTraits: TakerTraits.default().with({ threshold: minDstAmount })
+})
 await taker.send(swapTx)
 ```
 
@@ -149,19 +156,35 @@ const quoteTx = swapVm.quote({
 Execute a swap transaction.
 
 ```typescript
+// quotedAmountOut: amountOut returned by `quote` for the same order, tokens and amount
+const slippageBps = 50n // 0.5%
+const minAmountOut = (quotedAmountOut * (10_000n - slippageBps)) / 10_000n
+
 const swapTx = swapVm.swap({
   order: Order.parse('0x...'),
   tokenIn: new Address('0x...'),
   tokenOut: new Address('0x...'),
   amount: 1000000000000000000n,
-  takerTraits: TakerTraits.default(),
+  takerTraits: TakerTraits.new({ exactIn: true, threshold: minAmountOut }),
 })
 ```
 
 **Parameters:**
 - All parameters from `quote`
+- `takerTraits.threshold` - Slippage bound checked on-chain: minimum `amountOut` for exact-in swaps, maximum `amountIn` for exact-out swaps. `0n` (the default) disables the check, see [Slippage protection](#slippage-protection)
 
 **Returns:** `CallInfo` object with encoded transaction data
+
+### Slippage protection
+
+`TakerTraits.threshold` is the only slippage check the router enforces, and it defaults to `0n`. With `0n` the threshold is left out of the encoded taker traits and the router skips the check, so the swap succeeds as long as `amountOut > 0`. Such a swap can be sandwiched, and it accepts whatever the order returns at execution time, even if that is far below the quote.
+
+Set a threshold for every swap, derived from a fresh quote and an explicit slippage tolerance:
+
+- Exact-in (`exactIn: true`, `amount` is the input amount): `threshold` is the minimum `amountOut`, for example `quotedAmountOut * (10_000n - slippageBps) / 10_000n`. Below it, the swap reverts with `TakerTraitsInsufficientMinOutputAmount`.
+- Exact-out (`exactIn: false`, `amount` is the output amount): `threshold` is the maximum `amountIn`, for example `quotedAmountIn * (10_000n + slippageBps) / 10_000n`. Above it, the swap reverts with `TakerTraitsExceedingMaxInputAmount`.
+
+With `strictThreshold: true`, the swap must match `threshold` exactly instead.
 
 ### Hash Order
 
@@ -282,6 +305,19 @@ This makes it safe to:
 
 - Deploy your own `SwapVM`-style contract with a custom opcode mapping.
 - Use `ProgramBuilder` with your custom `ixsSet` to construct and parse programs for that deployment, without changing the rest of the SDK.
+
+**Control flow is not validated**: `jump`, `jumpIfTokenIn` and `jumpIfTokenOut` targets are absolute byte offsets into the built program, and on-chain execution is bounded only by gas, so making a program terminate is up to the maker. `build()` accepts backward jumps (which can loop until the transaction runs out of gas), targets that are not an instruction start, and instructions that no execution path reaches. Call `lint()` on a builder (for a built program, `AquaProgramBuilder.decode(program).lint()`) to get these issues as warnings, without throwing:
+
+```typescript
+new AquaProgramBuilder()
+  .jump({ nextPC: 0n }) // jumps to itself
+  .xycSwapXD()
+  .lint()
+// [
+//   { code: 'backward-jump', instructionIndex: 0, message: 'Instruction 0 (Controls.jump) at offset 0 jumps back to offset 0, so execution can loop until it runs out of gas' },
+//   { code: 'unreachable-instruction', instructionIndex: 1, message: 'Instruction 1 (XYCSwap.xycSwapXD) at offset 4 is unreachable from the program start' },
+// ]
+```
 
 ### Recommended builder for Aqua strategies
 
@@ -565,13 +601,13 @@ The SDK exports:
 - **[`MakerTraits`](./src/swap-vm/maker-traits.ts)** - Maker-side configuration and flags
 - **[`TakerTraits`](./src/swap-vm/taker-traits.ts)** - Taker-side configuration and flags
 - **[`ABI`](./src/abi/)** - Contract ABI exports
-- **Strategies** - [`AquaAMMStrategy`](./src/swap-vm/strategies/aqua-amm-strategy.ts) (base), [`AquaXYCAmmStrategy`](./src/swap-vm/strategies/aqua-xyc-amm-strategy.ts) (use `new()` or `newConcentrate({ rawPriceMin, rawPriceMax })` / `{ sqrtPriceMin, sqrtPriceMax }`), [`AquaPeggedAmmStrategy`](./src/swap-vm/strategies/aqua-pegged-amm-strategy.ts)
+- **Strategies** - [`AquaAMMStrategy`](./src/swap-vm/strategies/aqua-amm-strategy.ts) (base), [`AquaXYCAmmStrategy`](./src/swap-vm/strategies/aqua-xyc-amm-strategy.ts) (use `new()` or `newConcentrate({ sqrtPriceMin, sqrtPriceMax })` with `Price.toSqrt()` bounds; `newConcentrate({ rawPriceMin, rawPriceMax })` rejects raw prices below 1e5), [`AquaPeggedAmmStrategy`](./src/swap-vm/strategies/aqua-pegged-amm-strategy.ts)
 - **[Instructions](./src/swap-vm/instructions/)** - Comprehensive instruction system:
   - `controls` - Flow control instructions
   - `balances` - Balance manipulation instructions
   - `invalidators` - Invalidation instructions
   - `xycSwap` - XYC swap instructions
-  - `concentrate` - Liquidity concentration (e.g. `ConcentrateGrowLiquidity2DArgs.fromSqrtPrices` / `fromRawPrices`; P = tokenGt/tokenLt in 1e18)
+  - `concentrate` - Liquidity concentration (e.g. `ConcentrateGrowLiquidity2DArgs.fromPrices` / `fromSqrtPrices`, exact; `fromRawPrices` takes P = tokenGt/tokenLt in 1e18 and rejects values below 1e5)
   - `decay` - Decay calculation instructions
   - `limitSwap` - Limit order instructions
   - `minRate` - Minimum rate guard instructions

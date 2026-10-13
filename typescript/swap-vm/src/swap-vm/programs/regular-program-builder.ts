@@ -150,9 +150,10 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * No-op instruction used to add uniqueness to order hashes (prevents replay attacks)
+   * `bytes` — arbitrary-length salt payload (use {@link controls.SaltArgs.fromUint64} for uint64).
    **/
   public salt(data: DataFor<controls.SaltArgs>): this {
-    super.add(controls.salt.createIx(new controls.SaltArgs(data.salt)))
+    super.add(controls.salt.createIx(new controls.SaltArgs(data.bytes)))
 
     return this
   }
@@ -303,7 +304,9 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Adjusts swap prices based on network gas costs
+   * Adjusts swap prices based on network gas costs.
+   * `maxPriceDecay` is the minimum price coefficient (1e18 = unadjusted price, must be in (0, 1e18)),
+   * not a discount amount: e.g. `0.99e18` lets the taker's price improve by at most 1%
    **/
   public baseFeeAdjuster1D(data: DataFor<baseFeeAdjuster.BaseFeeAdjusterArgs>): this {
     super.add(
