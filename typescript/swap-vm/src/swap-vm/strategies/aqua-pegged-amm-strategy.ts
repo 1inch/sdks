@@ -7,6 +7,7 @@ import type { SwapVmProgram } from '../programs'
 import * as fee from '../instructions/fee'
 import { FlatFeeArgs } from '../instructions/fee'
 import { PeggedSwapArgs } from '../instructions/pegged-swap'
+import { SaltArgs } from '../instructions/controls/salt-args'
 
 export class AquaPeggedAmmStrategy extends AquaAMMStrategy {
   constructor(
@@ -59,7 +60,7 @@ export class AquaPeggedAmmStrategy extends AquaAMMStrategy {
     builder.peggedSwapGrowPriceRange2D(peggedArgs)
 
     if (this.salt) {
-      builder.salt({ salt: this.salt })
+      builder.salt({ bytes: SaltArgs.fromUint64(this.salt).bytes })
     }
 
     return builder.build()

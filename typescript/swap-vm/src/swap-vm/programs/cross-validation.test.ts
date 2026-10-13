@@ -6,7 +6,8 @@ import { RegularProgramBuilder } from './regular-program-builder'
 import { AquaProgramBuilder } from './aqua-program-builder'
 import { SwapVmProgram } from '../programs/swap-vm-program'
 import type * as balances from '../instructions/balances'
-import type * as controls from '../instructions/controls'
+import * as controls from '../instructions/controls'
+import { SaltArgs } from '../instructions/controls/salt-args'
 import type * as limitSwap from '../instructions/limit-swap'
 
 describe('Cross-validation with Solidity', () => {
@@ -37,7 +38,7 @@ describe('Cross-validation with Solidity', () => {
         makerDirectionLt: true,
       })
       .invalidateTokenOut1D()
-      .salt({ salt: 0x1235n })
+      .salt({ bytes: SaltArgs.fromUint64(0x1235n).bytes })
       .build()
 
     const decoded = RegularProgramBuilder.decode(program)
@@ -58,7 +59,7 @@ describe('Cross-validation with Solidity', () => {
     expect(balancesArgs.tokenBalances[1].value).toBe(makerBalanceB)
 
     const saltArgs = instructions[3].args as controls.SaltArgs
-    expect(saltArgs.salt).toBe(0x1235n)
+    expect(saltArgs.bytes).toEqual(SaltArgs.fromUint64(0x1235n).bytes)
   })
 
   it('should match exact staticBalancesXD and dynamicBalancesXD bytes from BalancesArgsBuilder', () => {
@@ -127,7 +128,7 @@ describe('Cross-validation with Solidity', () => {
       .limitSwap1D({ makerDirectionLt: false })
       .requireMinRate1D({ rateLt: 2000n * 10n ** 6n, rateGt: 10n ** 18n })
       .invalidateTokenOut1D()
-      .salt({ salt: 0xdeadbeefn })
+      .salt({ bytes: SaltArgs.fromUint64(0xdeadbeefn).bytes })
       .build()
 
     const decoded = RegularProgramBuilder.decode(program)
@@ -238,7 +239,7 @@ describe('Cross-validation with Aqua Solidity', () => {
     const program = new AquaProgramBuilder()
       .decayXD({ decayPeriod: 3600n })
       .xycSwapXD()
-      .salt({ salt: 0x1234n })
+      .salt({ bytes: SaltArgs.fromUint64(0x1234n).bytes })
       .flatFeeAmountInXD({ fee: 300n })
       .build()
 

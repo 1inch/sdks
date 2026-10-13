@@ -278,7 +278,7 @@ describe('Order', () => {
       }
       const program = new RegularProgramBuilder()
         .limitSwap1D({ makerDirectionLt: true })
-        .salt({ salt: new HexString('0x' + 'cd'.repeat(32)) })
+        .salt({ bytes: new HexString('0x' + 'cd'.repeat(32)) })
         .build()
       const rebuilt = RegularProgramBuilder.decode(program).build()
 

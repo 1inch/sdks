@@ -10,7 +10,7 @@ describe('SaltArgsCoder', () => {
   const coder = new SaltArgsCoder()
 
   it('should encode salt as uint64', () => {
-    const args = new SaltArgs(0x123n)
+    const args = SaltArgs.fromUint64(0x123n)
     const encoded = coder.encode(args)
 
     const hex = encoded.toString()
@@ -19,26 +19,26 @@ describe('SaltArgsCoder', () => {
     expect(hex).toBe('0x0000000000000123')
   })
 
-  it('should decode uint64 salt', () => {
+  it('should decode uint64 salt bytes', () => {
     const hex = new HexString('0x0000000000001234')
     const decoded = coder.decode(hex)
 
-    expect(decoded.salt).toBe(0x1234n)
+    expect(decoded.bytes).toEqual(hex)
   })
 
   it('should handle full uint64 values', () => {
-    const args = new SaltArgs(UINT_64_MAX)
+    const args = SaltArgs.fromUint64(UINT_64_MAX)
 
     const encoded = coder.encode(args)
     expect(encoded.toString()).toBe('0xffffffffffffffff')
 
     const decoded = coder.decode(encoded)
-    expect(decoded.salt).toBe(UINT_64_MAX)
+    expect(decoded.bytes).toEqual(args.bytes)
   })
 
   it('should maintain salt uniqueness', () => {
-    const salt1 = new SaltArgs(0x1n)
-    const salt2 = new SaltArgs(0x2n)
+    const salt1 = SaltArgs.fromUint64(0x1n)
+    const salt2 = SaltArgs.fromUint64(0x2n)
 
     const encoded1 = coder.encode(salt1)
     const encoded2 = coder.encode(salt2)
@@ -62,10 +62,9 @@ describe('SaltArgsCoder', () => {
     expect(coder.encode(decoded).toString()).toBe(hex)
   })
 
-  it('should decode an empty salt as zero', () => {
+  it('should decode an empty salt', () => {
     const decoded = coder.decode(HexString.EMPTY)
 
-    expect(decoded.salt).toBe(0n)
     expect(decoded.bytes.isEmpty()).toBe(true)
   })
 })
