@@ -17,10 +17,7 @@ export class SaltArgs implements IArgsData {
   constructor(public readonly bytes: HexString) {}
 
   static fromUint64(salt: bigint): SaltArgs {
-    assert(
-      salt >= 0n && salt <= UINT_64_MAX,
-      `Invalid salt value: ${salt}. Must be a valid uint64`,
-    )
+    assert(salt >= 0n && salt <= UINT_64_MAX, `Invalid salt value: ${salt}. Must be a valid uint64`)
 
     return new SaltArgs(new HexString(new BytesBuilder().addUint64(salt).asHex()))
   }

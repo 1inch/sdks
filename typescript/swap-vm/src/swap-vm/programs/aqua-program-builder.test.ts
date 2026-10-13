@@ -7,7 +7,7 @@ import { SwapVmProgram } from './swap-vm-program'
 import { PeggedSwapArgs } from '../instructions/pegged-swap'
 import { extruction, ExtructionArgs } from '../instructions/extruction'
 import type { JumpIfTokenArgs } from '../instructions/controls'
-import * as controls from '../instructions/controls'
+import type * as controls from '../instructions/controls'
 import { SaltArgs } from '../instructions/controls/salt-args'
 
 const USDC = new Address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
@@ -84,9 +84,12 @@ describe('AquaProgramBuilder', () => {
     })
 
     it('should encode a bigint salt as 8 bytes', () => {
-      expect(new AquaProgramBuilder().salt({ bytes: SaltArgs.fromUint64(42n).bytes }).build().toString()).toBe(
-        '0x1408000000000000002a',
-      )
+      expect(
+        new AquaProgramBuilder()
+          .salt({ bytes: SaltArgs.fromUint64(42n).bytes })
+          .build()
+          .toString(),
+      ).toBe('0x1408000000000000002a')
     })
   })
 

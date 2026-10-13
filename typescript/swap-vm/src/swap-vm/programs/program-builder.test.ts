@@ -8,7 +8,7 @@ import { SwapVmProgram } from './swap-vm-program'
 import { _allInstructions } from '../instructions'
 import { PeggedSwapArgs } from '../instructions/pegged-swap'
 import type * as balances from '../instructions/balances'
-import * as controls from '../instructions/controls'
+import type * as controls from '../instructions/controls'
 import { SaltArgs } from '../instructions/controls/salt-args'
 import type * as invalidators from '../instructions/invalidators'
 import * as xycSwap from '../instructions/xyc-swap'
@@ -732,9 +732,12 @@ describe('ProgramBuilder', () => {
   })
 
   it('should encode a bigint salt as 8 bytes', () => {
-    expect(new RegularProgramBuilder().salt({ bytes: SaltArgs.fromUint64(42n).bytes }).build().toString()).toBe(
-      '0x2208000000000000002a',
-    )
+    expect(
+      new RegularProgramBuilder()
+        .salt({ bytes: SaltArgs.fromUint64(42n).bytes })
+        .build()
+        .toString(),
+    ).toBe('0x2208000000000000002a')
   })
 
   it('should reject building an empty program', () => {
