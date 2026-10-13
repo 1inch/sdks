@@ -7,6 +7,8 @@ import { SwapVmProgram } from './swap-vm-program'
 import { PeggedSwapArgs } from '../instructions/pegged-swap'
 import { extruction, ExtructionArgs } from '../instructions/extruction'
 import type { JumpIfTokenArgs } from '../instructions/controls'
+import type * as controls from '../instructions/controls'
+import { SaltArgs } from '../instructions/controls/salt-args'
 
 const USDC = new Address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
 const WETH = new Address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2')
@@ -36,7 +38,7 @@ describe('AquaProgramBuilder', () => {
         sqrtPriceMax: 11n * 10n ** 17n,
       })
       .decayXD({ decayPeriod: 3600n })
-      .salt({ salt: 42n })
+      .salt({ bytes: SaltArgs.fromUint64(42n).bytes })
       .flatFeeAmountInXD({ fee: 100000n })
       .protocolFeeAmountInXD({ fee: 100000n, to: RECEIVER })
       .aquaProtocolFeeAmountInXD({ fee: 100000n, to: RECEIVER })
@@ -49,6 +51,46 @@ describe('AquaProgramBuilder', () => {
 
     expect(decoded.build().toString()).toBe(program.toString())
     expect(decoded.getInstructions()).toHaveLength(18)
+  })
+
+  describe('salt', () => {
+    it.each([
+      ['0 bytes', '0x', '0x1400'],
+      ['4 bytes', '0xdeadbeef', '0x1404deadbeef'],
+      ['8 bytes', '0x0102030405060708', '0x14080102030405060708'],
+      ['32 bytes', '0x' + 'ab'.repeat(32), '0x1420' + 'ab'.repeat(32)],
+    ])('should decode and rebuild a salt of %s byte-identically', (_name, salt, programHex) => {
+      const decoded = AquaProgramBuilder.decode(new SwapVmProgram(programHex))
+      const saltArgs = decoded.getInstructions()[0].args as controls.SaltArgs
+      const built = new AquaProgramBuilder().salt({ bytes: new HexString(salt) }).build()
+
+      expect(decoded.build().toString()).toBe(programHex)
+      expect(saltArgs.bytes.toString()).toBe(salt)
+      expect(built.toString()).toBe(programHex)
+    })
+
+    it('should decode variable-length salts between other instructions', () => {
+      const program = new AquaProgramBuilder()
+        .xycSwapXD()
+        .salt({ bytes: new HexString('0x' + 'ab'.repeat(32)) })
+        .salt({ bytes: HexString.EMPTY })
+        .flatFeeAmountInXD({ fee: 300n })
+        .build()
+
+      const decoded = AquaProgramBuilder.decode(program)
+
+      expect(decoded.build().toString()).toBe(program.toString())
+      expect(decoded.getInstructions()).toHaveLength(4)
+    })
+
+    it('should encode a bigint salt as 8 bytes', () => {
+      expect(
+        new AquaProgramBuilder()
+          .salt({ bytes: SaltArgs.fromUint64(42n).bytes })
+          .build()
+          .toString(),
+      ).toBe('0x1408000000000000002a')
+    })
   })
 
   it('should reject building an empty program', () => {

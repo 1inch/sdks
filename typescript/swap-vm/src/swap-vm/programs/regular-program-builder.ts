@@ -150,9 +150,10 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * No-op instruction used to add uniqueness to order hashes (prevents replay attacks)
+   * `bytes` — arbitrary-length salt payload (use {@link controls.SaltArgs.fromUint64} for uint64).
    **/
   public salt(data: DataFor<controls.SaltArgs>): this {
-    super.add(controls.salt.createIx(new controls.SaltArgs(data.salt)))
+    super.add(controls.salt.createIx(new controls.SaltArgs(data.bytes)))
 
     return this
   }

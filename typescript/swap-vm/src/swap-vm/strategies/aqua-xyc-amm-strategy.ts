@@ -7,6 +7,7 @@ import type { SwapVmProgram } from '../programs'
 import * as concentrate from '../instructions/concentrate'
 import * as fee from '../instructions/fee'
 import { FlatFeeArgs } from '../instructions/fee'
+import { SaltArgs } from '../instructions/controls/salt-args'
 
 export class AquaXYCAmmStrategy extends AquaAMMStrategy {
   constructor(public readonly xycConcentrateArgs?: concentrate.ConcentrateGrowLiquidity2DArgs) {
@@ -67,7 +68,7 @@ export class AquaXYCAmmStrategy extends AquaAMMStrategy {
     builder.xycSwapXD()
 
     if (this.salt) {
-      builder.salt({ salt: this.salt })
+      builder.salt({ bytes: SaltArgs.fromUint64(this.salt).bytes })
     }
 
     return builder.build()

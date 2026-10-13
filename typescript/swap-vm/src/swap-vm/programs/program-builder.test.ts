@@ -9,6 +9,7 @@ import { _allInstructions } from '../instructions'
 import { PeggedSwapArgs } from '../instructions/pegged-swap'
 import type * as balances from '../instructions/balances'
 import type * as controls from '../instructions/controls'
+import { SaltArgs } from '../instructions/controls/salt-args'
 import type * as invalidators from '../instructions/invalidators'
 import * as xycSwap from '../instructions/xyc-swap'
 import type * as concentrate from '../instructions/concentrate'
@@ -55,7 +56,7 @@ describe('ProgramBuilder', () => {
     const originalBuilder = new RegularProgramBuilder()
 
     const program = originalBuilder
-      .salt({ salt: 5n })
+      .salt({ bytes: SaltArgs.fromUint64(5n).bytes })
       .onlyTakerTokenBalanceNonZero({ token: WETH })
       .onlyTakerTokenBalanceGte({
         token: USDC,
@@ -77,7 +78,7 @@ describe('ProgramBuilder', () => {
     expect(ixs).toHaveLength(6)
 
     expect(ixs[0].opcode.id.toString()).toContain('salt')
-    expect((ixs[0].args as controls.SaltArgs).salt).toBe(5n)
+    expect((ixs[0].args as controls.SaltArgs).bytes).toEqual(SaltArgs.fromUint64(5n).bytes)
 
     expect(ixs[1].opcode.id.toString()).toContain('onlyTakerTokenBalanceNonZero')
     expect((ixs[1].args as controls.OnlyTakerTokenBalanceNonZeroArgs).token.toString()).toBe(
@@ -106,7 +107,7 @@ describe('ProgramBuilder', () => {
     const originalBuilder = new RegularProgramBuilder()
 
     const program = originalBuilder
-      .salt({ salt: 5n })
+      .salt({ bytes: SaltArgs.fromUint64(5n).bytes })
       .staticBalancesXD({
         tokenBalances: [
           { token: USDC, value: 5000n * 10n ** 6n },
@@ -137,7 +138,7 @@ describe('ProgramBuilder', () => {
     expect(ixs).toHaveLength(7)
 
     expect(ixs[0].opcode.id.toString()).toContain('salt')
-    expect((ixs[0].args as controls.SaltArgs).salt).toBe(5n)
+    expect((ixs[0].args as controls.SaltArgs).bytes).toEqual(SaltArgs.fromUint64(5n).bytes)
 
     expect(ixs[1].opcode.id.toString()).toContain('staticBalancesXD')
     const setBalancesArgs = ixs[1].args as balances.BalancesArgs
@@ -204,7 +205,7 @@ describe('ProgramBuilder', () => {
     const originalBuilder = new RegularProgramBuilder()
 
     const program = originalBuilder
-      .salt({ salt: 99n })
+      .salt({ bytes: SaltArgs.fromUint64(99n).bytes })
       .invalidateBit1D({ bitIndex: 1024n })
       .staticBalancesXD({
         tokenBalances: [
@@ -238,7 +239,7 @@ describe('ProgramBuilder', () => {
     expect(ixs).toHaveLength(11)
 
     expect(ixs[0].opcode.id.toString()).toContain('salt')
-    expect((ixs[0].args as controls.SaltArgs).salt).toBe(99n)
+    expect((ixs[0].args as controls.SaltArgs).bytes).toEqual(SaltArgs.fromUint64(99n).bytes)
 
     expect(ixs[1].opcode.id.toString()).toContain('invalidateBit1D')
     expect((ixs[1].args as invalidators.InvalidateBit1DArgs).bitIndex).toBe(1024n)
@@ -326,7 +327,7 @@ describe('ProgramBuilder', () => {
     const originalBuilder = new RegularProgramBuilder()
 
     const program = originalBuilder
-      .salt({ salt: 777n })
+      .salt({ bytes: SaltArgs.fromUint64(777n).bytes })
       .invalidateBit1D({ bitIndex: 512n })
       .staticBalancesXD({
         tokenBalances: [
@@ -355,7 +356,7 @@ describe('ProgramBuilder', () => {
     expect(ixs).toHaveLength(10)
 
     expect(ixs[0].opcode.id.toString()).toContain('salt')
-    expect((ixs[0].args as controls.SaltArgs).salt).toBe(777n)
+    expect((ixs[0].args as controls.SaltArgs).bytes).toEqual(SaltArgs.fromUint64(777n).bytes)
 
     expect(ixs[1].opcode.id.toString()).toContain('invalidateBit1D')
     expect((ixs[1].args as invalidators.InvalidateBit1DArgs).bitIndex).toBe(512n)
@@ -666,7 +667,7 @@ describe('ProgramBuilder', () => {
     const feeRecipient = new Address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45')
 
     const program = originalBuilder
-      .salt({ salt: 12345n })
+      .salt({ bytes: SaltArgs.fromUint64(12345n).bytes })
       .staticBalancesXD({
         tokenBalances: [
           { token: USDC, value: 10000n * 10n ** 6n },
@@ -713,6 +714,30 @@ describe('ProgramBuilder', () => {
     expect(decoded.getInstructions()).toHaveLength(2)
     expect(decoded.getInstructions()[0].opcode.id.toString()).toContain('deadline')
     expect(decoded.getInstructions()[1].opcode.id.toString()).toContain('peggedSwap')
+  })
+
+  it.each([
+    ['0 bytes', '0x', '0x2200'],
+    ['4 bytes', '0xdeadbeef', '0x2204deadbeef'],
+    ['8 bytes', '0x0102030405060708', '0x22080102030405060708'],
+    ['32 bytes', '0x' + 'ab'.repeat(32), '0x2220' + 'ab'.repeat(32)],
+  ])('should decode and rebuild a salt of %s byte-identically', (_name, salt, programHex) => {
+    const decoded = RegularProgramBuilder.decode(new SwapVmProgram(programHex))
+    const saltArgs = decoded.getInstructions()[0].args as controls.SaltArgs
+    const built = new RegularProgramBuilder().salt({ bytes: new HexString(salt) }).build()
+
+    expect(decoded.build().toString()).toBe(programHex)
+    expect(saltArgs.bytes.toString()).toBe(salt)
+    expect(built.toString()).toBe(programHex)
+  })
+
+  it('should encode a bigint salt as 8 bytes', () => {
+    expect(
+      new RegularProgramBuilder()
+        .salt({ bytes: SaltArgs.fromUint64(42n).bytes })
+        .build()
+        .toString(),
+    ).toBe('0x2208000000000000002a')
   })
 
   it('should reject building an empty program', () => {
