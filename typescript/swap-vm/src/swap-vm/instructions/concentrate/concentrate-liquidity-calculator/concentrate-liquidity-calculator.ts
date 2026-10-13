@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import type { Address } from '@1inch/sdk-core'
-import { UINT_256_MAX } from '@1inch/byte-utils'
 import assert from 'assert'
 import type {
   ConcentratedLiquidityInfo,
@@ -11,8 +10,11 @@ import type {
   PriceBounds,
 } from './types'
 import {
+  computeBalances,
   computeLiquidityAndPrice,
   computeLiquidityFromAmounts,
+  computeLiquidityFromGt,
+  computeLiquidityFromLt,
 } from '../concentrate-liquidity-math/concentrate-liquidity-math'
 
 export class ConcentrateLiquidityCalculator {
@@ -49,20 +51,33 @@ export class ConcentrateLiquidityCalculator {
 
     const isFixedLt = fixedReserveForToken.equal(this.token0.address)
 
-    const availableLt = isFixedLt ? fixedReserve : UINT_256_MAX
-    const availableGt = isFixedLt ? UINT_256_MAX : fixedReserve
+    if (isFixedLt) {
+      assert(
+        prices.spotPrice.lt(prices.maxPrice),
+        `cannot fix token0 (${this.token0.address}) amount: the range holds only token1 ` +
+          `when spotPrice equals maxPrice, fix the token1 (${this.token1.address}) amount instead`,
+      )
+    } else {
+      assert(
+        prices.spotPrice.gt(prices.minPrice),
+        `cannot fix token1 (${this.token1.address}) amount: the range holds only token0 ` +
+          `when spotPrice equals minPrice, fix the token0 (${this.token0.address}) amount instead`,
+      )
+    }
 
-    const { actualLt, actualGt } = computeLiquidityFromAmounts(
-      availableLt,
-      availableGt,
-      prices.spotPrice.toSqrt(),
-      prices.minPrice.toSqrt(),
-      prices.maxPrice.toSqrt(),
-    )
+    const sqrtPspot = prices.spotPrice.toSqrt()
+    const sqrtPmin = prices.minPrice.toSqrt()
+    const sqrtPmax = prices.maxPrice.toSqrt()
+
+    const liquidity = isFixedLt
+      ? computeLiquidityFromLt(fixedReserve, sqrtPspot, sqrtPmax)
+      : computeLiquidityFromGt(fixedReserve, sqrtPspot, sqrtPmin)
+
+    const { bLt, bGt } = computeBalances(liquidity, sqrtPspot, sqrtPmin, sqrtPmax)
 
     return {
-      token0Reserve: actualLt,
-      token1Reserve: actualGt,
+      token0Reserve: bLt,
+      token1Reserve: bGt,
     }
   }
 

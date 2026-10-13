@@ -4,6 +4,22 @@ import { describe, it, expect } from 'vitest'
 import { Address, HexString } from '@1inch/sdk-core'
 import { TakerTraits } from './taker-traits'
 
+const fluentChainReceiver = Address.fromBigInt(0xaaaan)
+
+function expectFluentChainResult(traits: TakerTraits, receiver: Address): void {
+  expect(traits.exactIn).toBe(false)
+  expect(traits.threshold).toBe(2000n)
+  expect(traits.customReceiver.equal(receiver)).toBe(true)
+  expect(traits.strictThreshold).toBe(true)
+  expect(traits.useTransferFromAndAquaPush).toBe(true)
+
+  const decoded = TakerTraits.decode(traits.encode())
+  expect(decoded.exactIn).toBe(false)
+  expect(decoded.threshold).toBe(2000n)
+  expect(decoded.customReceiver.equal(receiver)).toBe(true)
+  expect(decoded.strictThreshold).toBe(true)
+}
+
 describe('TakerTraits', () => {
   const mockReceiver = Address.fromBigInt(2n)
 
@@ -114,6 +130,36 @@ describe('TakerTraits', () => {
   })
 
   describe('threshold', () => {
+    // Bytes 18..20 (the uint16 right before the flags) hold the end offset of the threshold
+    // section; the router only checks the threshold when that section is exactly 32 bytes long
+    const thresholdSectionLength = (traits: TakerTraits): number =>
+      Number(traits.encode().sliceBytes(18, 20).toBigInt())
+
+    it('should leave the threshold section out by default, so the swap has no slippage check', () => {
+      expect(TakerTraits.default().threshold).toBe(0n)
+      expect(thresholdSectionLength(TakerTraits.default())).toBe(0)
+      expect(thresholdSectionLength(TakerTraits.new())).toBe(0)
+    })
+
+    it('should encode a threshold derived from a quote and slippage tolerance as a 32-byte section', () => {
+      const quotedAmountOut = 39_123_456_789_012_345n
+      const slippageBps = 50n
+      const minAmountOut = (quotedAmountOut * (10_000n - slippageBps)) / 10_000n
+
+      const traits = TakerTraits.default().with({ threshold: minAmountOut })
+      const encoded = traits.encode()
+
+      expect(thresholdSectionLength(traits)).toBe(32)
+      expect(encoded.sliceBytes(22, 54).toBigInt()).toBe(minAmountOut)
+      expect(TakerTraits.new({ threshold: minAmountOut }).encode()).toEqual(encoded)
+
+      expect(() => traits.validate(1n, quotedAmountOut)).not.toThrow()
+      expect(() => traits.validate(1n, minAmountOut)).not.toThrow()
+      expect(() => traits.validate(1n, minAmountOut - 1n)).toThrow(
+        'TakerTraitsInsufficientMinOutputAmount',
+      )
+    })
+
     it('should set and get threshold', () => {
       const traits = TakerTraits.default()
       const threshold = 1000000n
@@ -123,8 +169,8 @@ describe('TakerTraits', () => {
       expect(withThreshold.threshold).toBe(threshold)
 
       const withoutThreshold = withThreshold.with({ threshold: undefined })
-      expect(!withoutThreshold.threshold || withoutThreshold.threshold === 0n).toBe(true)
-      expect(withoutThreshold.threshold).toBe(undefined)
+      expect(withoutThreshold.threshold).toBe(0n)
+      expect(() => withoutThreshold.encode()).not.toThrow()
     })
   })
 
@@ -139,8 +185,151 @@ describe('TakerTraits', () => {
       expect(withReceiver.customReceiver?.toString()).toBe(mockReceiver.toString())
 
       const withoutReceiver = withReceiver.with({ customReceiver: undefined })
-      expect(!withoutReceiver.customReceiver || withoutReceiver.customReceiver.isZero()).toBe(true)
-      expect(withoutReceiver.customReceiver).toBe(undefined)
+      expect(withoutReceiver.customReceiver.isZero()).toBe(true)
+      expect(() => withoutReceiver.encode()).not.toThrow()
+    })
+  })
+
+  describe('with', () => {
+    it('should mutate the receiver in place and return it', () => {
+      const base = TakerTraits.new({ threshold: 1000n, exactIn: true })
+      const same = base.with({ exactIn: false, threshold: 2000n })
+
+      expect(same).toBe(base)
+      expect(base.exactIn).toBe(false)
+      expect(base.threshold).toBe(2000n)
+    })
+
+    it('should encode after clearing fields with undefined', () => {
+      const traits = TakerTraits.default()
+        .with({ customReceiver: mockReceiver, threshold: 1n })
+        .with({ customReceiver: undefined, threshold: undefined })
+
+      expect(traits.customReceiver.isZero()).toBe(true)
+      expect(traits.threshold).toBe(0n)
+      expect(traits.encode().toString()).toBe(TakerTraits.default().encode().toString())
+    })
+  })
+
+  describe('withNew', () => {
+    const receiverA = fluentChainReceiver
+    const receiverB = Address.fromBigInt(0xbbbbn)
+
+    it('should return a new instance and leave the original unchanged', () => {
+      const base = TakerTraits.new({
+        threshold: 1000n,
+        customReceiver: receiverA,
+        deadline: 1735689600n,
+        instructionsArgs: new HexString('0x0102'),
+      })
+      const baseEncoded = base.encode().toString()
+
+      const derived = base.withNew({ exactIn: false, customReceiver: receiverB })
+
+      expect(derived).toBeInstanceOf(TakerTraits)
+      expect(derived).not.toBe(base)
+      expect(derived.exactIn).toBe(false)
+      expect(derived.customReceiver.equal(receiverB)).toBe(true)
+      expect(derived.threshold).toBe(1000n)
+      expect(derived.deadline).toBe(1735689600n)
+      expect(derived.instructionsArgs.toString()).toBe('0x0102')
+
+      expect(base.exactIn).toBe(true)
+      expect(base.customReceiver.equal(receiverA)).toBe(true)
+      expect(base.encode().toString()).toBe(baseEncoded)
+    })
+
+    it('should derive independent instances from the same base', () => {
+      const base = TakerTraits.default()
+
+      const toA = base.withNew({ customReceiver: receiverA })
+      const toB = base.withNew({ customReceiver: receiverB })
+
+      expect(toA).not.toBe(toB)
+      expect(toA.customReceiver.equal(receiverA)).toBe(true)
+      expect(toB.customReceiver.equal(receiverB)).toBe(true)
+      expect(base.customReceiver.isZero()).toBe(true)
+
+      expect(TakerTraits.decode(toA.encode()).customReceiver.equal(receiverA)).toBe(true)
+      expect(TakerTraits.decode(toB.encode()).customReceiver.equal(receiverB)).toBe(true)
+      expect(base.encode().toString()).toBe(TakerTraits.default().encode().toString())
+    })
+
+    it('should return an equal copy when no fields are updated', () => {
+      const base = TakerTraits.new({ threshold: 5n, signature: new HexString('0xabcd') })
+
+      const copy = base.withNew({})
+
+      expect(copy).not.toBe(base)
+      expect(copy).toEqual(base)
+      expect(copy.encode().toString()).toBe(base.encode().toString())
+    })
+
+    it('should reset keys set to undefined to canonical defaults', () => {
+      const base = TakerTraits.new({
+        exactIn: false,
+        threshold: 1000n,
+        customReceiver: receiverA,
+        deadline: 1735689600n,
+        preTransferInHookData: new HexString('0x1234'),
+        signature: new HexString('0xabcd'),
+      })
+
+      const updated = base.withNew({
+        exactIn: undefined,
+        threshold: undefined,
+        customReceiver: undefined,
+        deadline: undefined,
+        preTransferInHookData: undefined,
+        signature: undefined,
+        shouldUnwrap: true,
+      })
+
+      expect(updated.exactIn).toBe(true)
+      expect(updated.threshold).toBe(0n)
+      expect(updated.customReceiver.isZero()).toBe(true)
+      expect(updated.deadline).toBe(0n)
+      expect(updated.preTransferInHookData.toString()).toBe(HexString.EMPTY.toString())
+      expect(updated.signature.toString()).toBe(HexString.EMPTY.toString())
+      expect(updated.shouldUnwrap).toBe(true)
+      expect(updated.encode().toString()).toBe(
+        TakerTraits.new({ shouldUnwrap: true }).encode().toString(),
+      )
+    })
+
+    it('should encode after updating fields with undefined values', () => {
+      const traits = TakerTraits.default().withNew({
+        customReceiver: undefined,
+        threshold: undefined,
+        deadline: undefined,
+        signature: undefined,
+      })
+
+      expect(() => traits.encode()).not.toThrow()
+      expect(traits.encode().toString()).toBe(TakerTraits.default().encode().toString())
+    })
+  })
+
+  describe('partial update helpers', () => {
+    it.each([
+      {
+        label: 'with',
+        chain: (): TakerTraits =>
+          TakerTraits.default()
+            .with({ exactIn: false, threshold: 2000n })
+            .with({ customReceiver: fluentChainReceiver })
+            .with({ strictThreshold: true }),
+      },
+      {
+        label: 'withNew',
+        chain: (): TakerTraits =>
+          TakerTraits.default()
+            .withNew({ exactIn: false, threshold: 2000n })
+            .withNew({ customReceiver: fluentChainReceiver })
+            .withNew({ strictThreshold: true }),
+      },
+    ])('should support fluent chaining via $label', ({ chain }) => {
+      expectFluentChainResult(chain(), fluentChainReceiver)
     })
   })
 
