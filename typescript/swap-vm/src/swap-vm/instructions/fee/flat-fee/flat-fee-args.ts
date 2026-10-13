@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-import type { HexString } from '@1inch/sdk-core'
+import { Bps, Percent, type HexString } from '@1inch/sdk-core'
 import { UINT_32_MAX } from '@1inch/byte-utils'
 import assert from 'assert'
 import { FlatFeeArgsCoder } from './flat-fee-args-coder'
@@ -32,22 +32,36 @@ export class FlatFeeArgs implements IArgsData {
 
   /**
    * Creates a FlatFeeArgs instance from percentage
-   * @param percent - Fee as percentage (e.g., 1 for 1%, 0.1 for 0.1%)
+   * @param percent - Fee as percentage (e.g., 1 for 1%, 0.1 for 0.1%), or a {@link Percent}
    * @returns FlatFeeArgs instance
    */
-  public static fromPercent(percent: number): FlatFeeArgs {
-    return FlatFeeArgs.fromBps(percent * 100)
+  public static fromPercent(percent: Percent): FlatFeeArgs
+
+  public static fromPercent(percent: number): FlatFeeArgs
+
+  public static fromPercent(percent: number | Percent): FlatFeeArgs {
+    if (percent instanceof Percent) {
+      return new FlatFeeArgs(percent.toScaledBigInt())
+    }
+
+    return new FlatFeeArgs(Percent.fromNumber(percent).toScaledBigInt())
   }
 
   /**
    * Creates a FlatFeeArgs instance from basis points
-   * @param bps - Fee in basis points (10000 bps = 100%)
+   * @param bps - Fee in basis points (10000 bps = 100%), or a {@link Bps}
    * @returns FlatFeeArgs instance
    */
-  public static fromBps(bps: number): FlatFeeArgs {
-    const fee = BigInt(bps * 100000)
+  public static fromBps(bps: Bps): FlatFeeArgs
 
-    return new FlatFeeArgs(fee)
+  public static fromBps(bps: number): FlatFeeArgs
+
+  public static fromBps(bps: number | Bps): FlatFeeArgs
+
+  public static fromBps(bps: number | Bps): FlatFeeArgs {
+    return new FlatFeeArgs(
+      bps instanceof Bps ? bps.toScaledBigInt() : Bps.fromNumber(bps).toScaledBigInt(),
+    )
   }
 
   toJSON(): Record<string, unknown> {
