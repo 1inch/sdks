@@ -42,6 +42,10 @@ export const printContext: Opcode<PrintContextArgs> = new Opcode(
   PrintContextArgs.CODER,
 )
 
+/**
+ * @deprecated The SwapVM `Debug` contract has no printAmountForSwap instruction and
+ * `Debug._injectDebugOpcodes` does not install it, so `withDebug()` does not either
+ */
 export const printAmountForSwap: Opcode<PrintAmountForSwapArgs> = new Opcode(
   Symbol('debug.printAmountForSwap'),
   PrintAmountForSwapArgs.CODER,

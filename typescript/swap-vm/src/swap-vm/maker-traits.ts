@@ -3,6 +3,7 @@
 import { BN, BitMask } from '@1inch/byte-utils'
 import type { DataFor } from '@1inch/sdk-core'
 import { Interaction, HexString, Address } from '@1inch/sdk-core'
+import assert from 'assert'
 
 /**
  * Maker-side order configuration packed into a single `uint256` and an optional hooks data blob.
@@ -58,24 +59,36 @@ export class MakerTraits {
 
   constructor(
     /**
-     * If true, maker WETH proceeds are unwrapped into the native currency when
-     * the order is settled.
+     * If true, the `tokenIn` WETH paid by the taker is unwrapped and delivered
+     * to the receiver as native currency.
+     * Not supported for Aqua orders: SwapVM reverts their swaps with
+     * `MakerTraitsUnwrapIsIncompatibleWithAqua`.
      */
     public readonly shouldUnwrap: boolean,
     /**
      * If true, the order is intended to be authenticated via Aqua (push-based
      * mechanism) instead of a traditional ECDSA signature.
+     * The taker's payment is then credited to the maker's Aqua balance, so
+     * `shouldUnwrap` and a `customReceiver` other than the maker are not supported.
      */
     public readonly useAquaInsteadOfSignature: boolean,
     /**
      * If true, the order accepts `amountIn = 0`. This is useful for flows
      * where the effective input is determined by hooks or Aqua rather than the
      * taker-supplied amount.
+     *
+     * WARNING: in exact-out swaps the program computes the taker's payment
+     * (`amountIn`). If any execution path ends without computing it (e.g. a jump
+     * to the program end, or no swap instruction on that path), the taker
+     * receives the requested `amountOut` without paying when this flag is set.
+     * Only enable it when hooks or an `extruction` enforce the payment.
      */
     public readonly allowZeroAmountIn: boolean,
     /**
-     * Optional receiver of the maker's output assets. When omitted or equal to
-     * the zero address, the maker address is used as the receiver.
+     * Optional receiver of the taker's `tokenIn` payment (the maker's proceeds).
+     * When omitted or equal to the zero address, the maker receives it.
+     * Aqua orders only support the maker: SwapVM reverts their swaps with
+     * `MakerTraitsCustomReceiverIsIncompatibleWithAqua` for any other receiver.
      */
     public readonly customReceiver?: Address,
     /**
@@ -105,9 +118,7 @@ export class MakerTraits {
     public readonly postTransferOutHook?: Interaction,
   ) {}
 
-  /**
-   * Construct traits from a plain data object.
-   */
+  /** Construct traits from a plain data object. */
   static new(data: DataFor<MakerTraits>): MakerTraits {
     return new MakerTraits(
       data.shouldUnwrap,
@@ -122,17 +133,20 @@ export class MakerTraits {
   }
 
   /**
-   * Create traits with library defaults that match the on-chain SwapVM expectations:
+   * Create traits with library defaults for an Aqua order:
    * - `useAquaInsteadOfSignature` = `true`
    * - `shouldUnwrap`             = `false`
    * - `allowZeroAmountIn`        = `false`
    * - no receiver or hooks configured.
+   *
+   * `shouldUnwrap` and a `customReceiver` other than the maker additionally require
+   * `useAquaInsteadOfSignature: false` (signature-based order).
    */
   static default(): MakerTraits {
     return MakerTraits.new({
-      useAquaInsteadOfSignature: true,
-      allowZeroAmountIn: false,
-      shouldUnwrap: false,
+      useAquaInsteadOfSignature: MAKER_TRAITS_DEFAULTS.useAquaInsteadOfSignature,
+      allowZeroAmountIn: MAKER_TRAITS_DEFAULTS.allowZeroAmountIn,
+      shouldUnwrap: MAKER_TRAITS_DEFAULTS.shouldUnwrap,
     })
   }
 
@@ -145,6 +159,11 @@ export class MakerTraits {
    *
    * Both arguments are typically obtained from contract storage / ABI and must
    * follow the bit layout described in the class-level documentation.
+   *
+   * @throws if a flagged hook's data slice is inverted or exceeds `hooksData`, if the
+   *         hooks data ends beyond `hooksData`, or if a hook with the target flag lacks a
+   *         non-zero 20-byte target. {@link encode} never produces such traits, and SwapVM
+   *         cannot execute them as encoded.
    */
   static decode(traits: bigint, hooksData: HexString = HexString.EMPTY): MakerTraits {
     const traitsBN = new BN(traits)
@@ -171,6 +190,7 @@ export class MakerTraits {
       hasPreTransferInHookTarget,
       hooksDataOffsets,
       0,
+      'preTransferInHook',
     )
 
     const hasPostTransferInHook = Boolean(
@@ -186,6 +206,7 @@ export class MakerTraits {
       hasPostTransferInHookTarget,
       hooksDataOffsets,
       1,
+      'postTransferInHook',
     )
 
     const hasPreTransferOutHook = Boolean(
@@ -200,6 +221,7 @@ export class MakerTraits {
       hasPreTransferOutHookTarget,
       hooksDataOffsets,
       2,
+      'preTransferOutHook',
     )
 
     const hasPostTransferOutHook = Boolean(
@@ -215,6 +237,14 @@ export class MakerTraits {
       hasPostTransferOutHookTarget,
       hooksDataOffsets,
       3,
+      'postTransferOutHook',
+    )
+
+    const hooksDataEndsAt = MakerTraits.hooksDataEndsAtByte(traits)
+
+    assert(
+      hooksDataEndsAt <= hooksData.bytesCount(),
+      `Invalid hooks data offsets: hooks data ends at byte ${hooksDataEndsAt}, but only ${hooksData.bytesCount()} bytes are provided`,
     )
 
     return MakerTraits.new({
@@ -242,23 +272,68 @@ export class MakerTraits {
    *
    * This is primarily used for fluent-style construction in tests and examples, e.g.:
    *
-   * `MakerTraits.default().with({ shouldUnwrap: true })`
+   * `MakerTraits.default().with({ useAquaInsteadOfSignature: false, shouldUnwrap: true })`
    *
    * Only fields present in `data` are updated; flags, receiver, and hooks can be
    * changed independently.
    */
   public with(data: Partial<DataFor<MakerTraits>>): this {
-    Object.assign(this, data)
+    const next = MakerTraits.new({ ...this, ...applyUndefinedClears(data) } as DataFor<MakerTraits>)
+
+    Object.assign(this, next)
 
     return this
+  }
+
+  public withNew(data: Partial<DataFor<MakerTraits>>): MakerTraits {
+    return MakerTraits.new({ ...this, ...applyUndefinedClears(data) } as DataFor<MakerTraits>)
+  }
+
+  /**
+   * Checks that the traits can be settled by SwapVM.
+   *
+   * Aqua orders credit the taker's payment to the maker's Aqua balance, so SwapVM rejects
+   * them when `shouldUnwrap` is set (`MakerTraitsUnwrapIsIncompatibleWithAqua`) or when the
+   * receiver is not the maker (`MakerTraitsCustomReceiverIsIncompatibleWithAqua`).
+   * The contract checks this only for swaps with `amountIn > 0`, so such an order can still
+   * be shipped and quoted, but those swaps revert.
+   *
+   * Called by {@link encode}. {@link decode} does not validate, so existing on-chain
+   * orders with such traits can still be read back.
+   *
+   * @param maker - Order maker. For Aqua orders a non-zero `customReceiver` is accepted only
+   *                when it equals `maker`, and rejected when `maker` is omitted.
+   * @throws if `useAquaInsteadOfSignature` is combined with `shouldUnwrap` or with a
+   *         `customReceiver` other than the maker
+   */
+  public validate(maker?: Address): void {
+    if (!this.useAquaInsteadOfSignature) {
+      return
+    }
+
+    assert(
+      !this.shouldUnwrap,
+      'MakerTraitsUnwrapIsIncompatibleWithAqua: shouldUnwrap is not supported for Aqua orders',
+    )
+
+    const receiver = this.customReceiver
+
+    if (!receiver || receiver.isZero()) {
+      return
+    }
+
+    assert(
+      maker && receiver.equal(maker),
+      `MakerTraitsCustomReceiverIsIncompatibleWithAqua: customReceiver ${receiver} must be the maker (${maker ?? 'not provided'}) for Aqua orders`,
+    )
   }
 
   /**
    * Encode traits into the ABI format expected by SwapVM contracts.
    *
-   * @param maker - Maker address for this order. This parameter is required only
-   *                for gas/size optimisation; if omitted, any non-zero hook `target`
-   *                is treated as an explicit target.
+   * @param maker - Maker address for this order. Required to validate Aqua receiver
+   *                rules; if omitted, any non-zero hook `target` is treated as an
+   *                explicit target for encoding.
    *
    * @returns An object containing:
    *   - `traits`    - Packed `uint256` bitfield with flags, receiver and offsets
@@ -291,6 +366,8 @@ export class MakerTraits {
    * | 245 | POST_TRANSFER_OUT_HOOK_HAS_TARGET        |
    */
   public encode(maker?: Address): { traits: bigint; hooksData: HexString } {
+    this.validate(maker)
+
     let traits = new BN(0n)
 
     // flags
@@ -379,12 +456,45 @@ export class MakerTraits {
   }
 }
 
+type MakerTraitsFieldDefaults = {
+  shouldUnwrap: boolean
+  useAquaInsteadOfSignature: boolean
+  allowZeroAmountIn: boolean
+  customReceiver?: Address
+  preTransferInHook?: Interaction
+  postTransferInHook?: Interaction
+  preTransferOutHook?: Interaction
+  postTransferOutHook?: Interaction
+}
+
+const MAKER_TRAITS_DEFAULTS: MakerTraitsFieldDefaults = {
+  shouldUnwrap: false,
+  useAquaInsteadOfSignature: true,
+  allowZeroAmountIn: false,
+  customReceiver: undefined,
+  preTransferInHook: undefined,
+  postTransferInHook: undefined,
+  preTransferOutHook: undefined,
+  postTransferOutHook: undefined,
+}
+
+function applyUndefinedClears(data: Partial<DataFor<MakerTraits>>): Partial<DataFor<MakerTraits>> {
+  return Object.fromEntries(
+    Object.entries(data).map(([key, value]) => {
+      const field = key as keyof MakerTraitsFieldDefaults
+
+      return [field, value ?? MAKER_TRAITS_DEFAULTS[field]]
+    }),
+  ) as Partial<DataFor<MakerTraits>>
+}
+
 function parseHook(
   fullHookData: HexString,
   hasHook: boolean,
   hasHookTarget: boolean,
   offsets: bigint,
   idx: number,
+  hookName: string,
 ): Interaction | undefined {
   if (!hasHook) {
     return undefined
@@ -392,11 +502,35 @@ function parseHook(
 
   const startDataIdx = idx === 0 ? 0 : Number((offsets >> (16n * BigInt(idx - 1))) & 0xffffn)
   const endDataIdx = Number((offsets >> (16n * BigInt(idx))) & 0xffffn)
+
+  assert(
+    endDataIdx <= fullHookData.bytesCount(),
+    `MakerTraitsMissingHookData: ${hookName} data ends at byte ${endDataIdx}, but only ${fullHookData.bytesCount()} bytes are provided`,
+  )
+  assert(
+    startDataIdx <= endDataIdx,
+    `Invalid ${hookName} data offsets: start ${startDataIdx} is greater than end ${endDataIdx}`,
+  )
+
+  const hookDataLength = endDataIdx - startDataIdx
+
+  assert(
+    !hasHookTarget || hookDataLength >= 20,
+    `MakerTraitsMissingHookTarget: ${hookName} has the target flag set, but its data is only ${hookDataLength} bytes long`,
+  )
+
   const hookData = fullHookData.sliceBytes(startDataIdx, endDataIdx)
 
   if (!hasHookTarget) {
     return new Interaction(Address.ZERO_ADDRESS, hookData)
   }
 
-  return Interaction.decode(hookData)
+  const hook = Interaction.decode(hookData)
+
+  assert(
+    !hook.target.isZero(),
+    `Invalid ${hookName} target: the target flag is set, but the target is the zero address`,
+  )
+
+  return hook
 }

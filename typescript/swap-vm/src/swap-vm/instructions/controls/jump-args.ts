@@ -30,7 +30,7 @@ export class JumpArgs implements IArgsData {
 
   toJSON(): Record<string, unknown> {
     return {
-      nextPC: this.nextPC,
+      nextPC: this.nextPC.toString(),
     }
   }
 }

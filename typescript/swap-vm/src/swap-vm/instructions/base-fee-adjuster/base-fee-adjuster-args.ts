@@ -6,13 +6,16 @@ import assert from 'assert'
 import { BaseFeeAdjusterArgsCoder } from './base-fee-adjuster-args-coder'
 import type { IArgsCoder, IArgsData } from '../types'
 
+const PRICE_COEFFICIENT_ONE = 10n ** 18n
+
 /**
  * @notice Base Fee Gas Price Adjuster instruction for dynamic price adjustment based on network gas costs
  * @dev Adjusts swap prices based on current gas conditions to compensate for transaction costs:
  * - Works only for 1=>0 swaps (token1 to token0), compatible with LimitSwap and DutchAuction
  * - When gas price exceeds base level, maker improves the price to compensate taker for gas costs
  * - The adjustment is proportional to the difference between current and base gas prices
- * - Maximum adjustment is limited by maxPriceDecay parameter
+ * - Maximum adjustment is limited by maxPriceDecay, the minimum price coefficient (1e18 = unadjusted
+ *   price) rather than a discount amount: e.g. 0.99e18 lets the taker's price improve by at most 1%
  *
  * This creates adaptive limit orders that automatically become more attractive during high gas periods,
  * ensuring execution even when transaction costs are elevated.
@@ -33,6 +36,12 @@ export class BaseFeeAdjusterArgs implements IArgsData {
    * ethToToken1Price - ETH price in token1 units, e.g.,
    * 3000e18 for 1 ETH = 3000 USDC (uint96)
    * gasAmount - gas amount to compensate for (uint24)
+   * maxPriceDecay - minimum price coefficient, 1e18 = unadjusted price
+   * (uint64, 0 < maxPriceDecay < 1e18). It is not a discount amount: e.g. 0.99e18 lets
+   * the taker's price improve by at most 1% (exactOut scales amountIn by no less than 0.99,
+   * exactIn scales amountOut by no more than 1.01). 0 would leave the exactOut discount
+   * uncapped, 1e18 disables the adjustment and larger values make the taker's price worse
+   * (exactIn reverts above 2e18)
    **/
   constructor(
     public readonly baseGasPrice: bigint,
@@ -55,6 +64,10 @@ export class BaseFeeAdjusterArgs implements IArgsData {
     assert(
       maxPriceDecay >= 0n && maxPriceDecay <= UINT_64_MAX,
       `Invalid maxPriceDecay: ${maxPriceDecay}. Must be a valid uint64`,
+    )
+    assert(
+      maxPriceDecay > 0n && maxPriceDecay < PRICE_COEFFICIENT_ONE,
+      `Invalid maxPriceDecay: ${maxPriceDecay}. Must be > 0 and < 1e18 (minimum price coefficient)`,
     )
   }
 
