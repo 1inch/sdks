@@ -47,7 +47,7 @@ describe('JumpArgsCoder', () => {
   it('should convert to JSON', () => {
     const args = new JumpArgs(42n)
     expect(args.toJSON()).toEqual({
-      nextPC: 42n,
+      nextPC: '42',
     })
   })
 

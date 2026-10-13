@@ -72,7 +72,12 @@ export class TakerTraits {
     public readonly useTransferFromAndAquaPush: boolean,
     /**
      * Minimum output amount (for exactIn) or maximum input amount (for exactOut).
-     * Must fit in uint256. Set to 0n for no threshold.
+     * Must fit in uint256.
+     *
+     * ⚠️ This is the only slippage check enforced on-chain. `0n` (the default) leaves the
+     * threshold out of the encoded traits, which disables the check: the swap then accepts
+     * any `amountOut > 0`. Swaps should always set a threshold, e.g. the quoted amount
+     * adjusted by an explicit slippage tolerance.
      */
     public readonly threshold: bigint = TAKER_TRAITS_DEFAULTS.threshold,
     /**
@@ -158,6 +163,11 @@ export class TakerTraits {
    * - No callbacks
    * - No custom receiver
    * - transferFromAndAquaPush enabled
+   * - No threshold (`0n`)
+   *
+   * ⚠️ Without a threshold the on-chain slippage check is disabled. That is fine for `quote`,
+   * but swaps should set one derived from the quote, e.g. for exactIn:
+   * `TakerTraits.default().with({ threshold: minAmountOut })`.
    */
   static default(): TakerTraits {
     return TakerTraits.new()

@@ -25,6 +25,10 @@ export type ConcentrateSqrtPrices = {
  * BigInt(WETH) > BigInt(USDC), so
  * rawPriceMin = (1n * 10n ** BigInt(WETH_DECIMALS)) * 10n ** 18n / parseUnits('3000.11', USDC_DECIMALS)
  * rawPriceMax = (1n * 10n ** BigInt(WETH_DECIMALS)) * 10n ** 18n / parseUnits('1500.23', USDC_DECIMALS)
+ *
+ * Raw prices below ConcentrateGrowLiquidity2DArgs.MIN_RAW_PRICE (1e5) are rejected as too coarse.
+ * They occur when tokenLt is cheap and has more decimals than tokenGt (0.00001 USDC per PEPE is
+ * raw price 10). Use ConcentrateSqrtPrices with Price.toSqrt() instead; it keeps the exact sqrt price.
  */
 export type ConcentrateRawPrices = {
   rawPriceMin: bigint

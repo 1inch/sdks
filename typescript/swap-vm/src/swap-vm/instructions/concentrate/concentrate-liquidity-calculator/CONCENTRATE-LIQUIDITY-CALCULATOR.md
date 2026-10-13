@@ -116,6 +116,8 @@ Fixes the amount of one token to `fixedReserve` and computes the required amount
 
 **One-sided ranges**: With the spot on `maxPrice` the range holds only token1, with the spot on `minPrice` only token0. Fixing the held token returns `0` for the other one; fixing the token the range does not hold throws.
 
+**One-sided ranges**: With the spot on `maxPrice` the range holds only token1, with the spot on `minPrice` only token0. Fixing the held token returns `0` for the other one; fixing the token the range does not hold throws.
+
 **Use case**: “I want to deposit exactly 1 WETH; how much USDC do I need?”
 
 ```ts

@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
-import { Address } from '@1inch/sdk-core'
+import { Address, Bps } from '@1inch/sdk-core'
 import { AquaPeggedAmmStrategy } from './aqua-pegged-amm-strategy'
 import { AquaProgramBuilder } from '../programs/aqua-program-builder'
+import type { SwapVmProgram } from '../programs'
+import * as fee from '../instructions/fee'
 
 const USDC = new Address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
 const DAI = new Address('0x6B175474E89094C44Da98b954EedeAC495271d0F')
@@ -49,5 +51,79 @@ describe('AquaPeggedAmmStrategy', () => {
       AquaPeggedAmmStrategy.new({ tokenA, tokenB, linearWidth: LINEAR_WIDTH }).build().toString()
         .length,
     )
+  })
+
+  describe('fees', () => {
+    const newStrategy = (): AquaPeggedAmmStrategy =>
+      AquaPeggedAmmStrategy.new({ tokenA, tokenB, linearWidth: LINEAR_WIDTH })
+
+    const feeArgs = (
+      program: SwapVmProgram,
+    ): { flatFee?: fee.FlatFeeArgs; protocolFee?: fee.ProtocolFeeArgs } => {
+      const ixs = AquaProgramBuilder.decode(program).getInstructions()
+
+      return {
+        flatFee: ixs.find((ix) => ix.opcode.id === fee.flatFeeAmountInXD.id)?.args as
+          | fee.FlatFeeArgs
+          | undefined,
+        protocolFee: ixs.find((ix) => ix.opcode.id === fee.aquaProtocolFeeAmountInXD.id)?.args as
+          | fee.ProtocolFeeArgs
+          | undefined,
+      }
+    }
+
+    it('should build fractional bps fees exactly', () => {
+      const program = newStrategy().withProtocolFee(2.3, RECEIVER).withFeeTokenIn(1.1).build()
+      const { flatFee, protocolFee } = feeArgs(program)
+
+      expect(flatFee?.fee).toBe(110000n)
+      expect(protocolFee?.fee).toBe(230000n)
+      expect(protocolFee?.to.toString()).toBe(RECEIVER.toString())
+      expect(program.toString()).toContain('1504' + '0001adb0')
+    })
+
+    it('should accept a Bps instance', () => {
+      const program = newStrategy()
+        .withProtocolFee(Bps.fromNumber(2.3), RECEIVER)
+        .withFeeTokenIn(Bps.fromNumber(1.1))
+        .build()
+      const { flatFee, protocolFee } = feeArgs(program)
+
+      expect(flatFee?.fee).toBe(110000n)
+      expect(protocolFee?.fee).toBe(230000n)
+      expect(program.toString()).toBe(
+        newStrategy().withProtocolFee(2.3, RECEIVER).withFeeTokenIn(1.1).build().toString(),
+      )
+    })
+
+    it('should use the fee that was set last', () => {
+      const { flatFee, protocolFee } = feeArgs(
+        newStrategy()
+          .withFeeTokenIn(5)
+          .withFeeTokenIn(Bps.fromNumber(1))
+          .withProtocolFee(7, RECEIVER)
+          .withProtocolFee(Bps.fromNumber(1), ACCESS)
+          .build(),
+      )
+
+      expect(flatFee?.fee).toBe(100000n)
+      expect(protocolFee?.fee).toBe(100000n)
+      expect(protocolFee?.to.toString()).toBe(ACCESS.toString())
+    })
+
+    it('should reject invalid fees in the setters', () => {
+      const strategy = newStrategy()
+
+      expect(() => strategy.withFeeTokenIn(10000.1)).toThrow('Fee out of range')
+      expect(() => strategy.withFeeTokenIn(Bps.fromScaledBigInt(1_000_000_001n))).toThrow(
+        'Fee out of range',
+      )
+      expect(() => strategy.withProtocolFee(Infinity, RECEIVER)).toThrow('Must be a finite number')
+      expect(() =>
+        strategy.withProtocolFee(Bps.fromScaledBigInt(1_000_000_001n), RECEIVER),
+      ).toThrow('Fee out of range')
+
+      expect(feeArgs(strategy.build())).toEqual({ flatFee: undefined, protocolFee: undefined })
+    })
   })
 })
