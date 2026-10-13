@@ -1,6 +1,14 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-import { add0x, BN, BytesBuilder, BytesIter, trim0x } from '@1inch/byte-utils'
+import {
+  add0x,
+  BN,
+  BytesBuilder,
+  BytesIter,
+  trim0x,
+  UINT_256_MAX,
+  UINT_40_MAX,
+} from '@1inch/byte-utils'
 import type { DataFor } from '@1inch/sdk-core'
 import { Address, HexString } from '@1inch/sdk-core'
 import assert from 'assert'
@@ -64,7 +72,12 @@ export class TakerTraits {
     public readonly useTransferFromAndAquaPush: boolean,
     /**
      * Minimum output amount (for exactIn) or maximum input amount (for exactOut).
-     * Set to 0n for no threshold.
+     * Must fit in uint256.
+     *
+     * ⚠️ This is the only slippage check enforced on-chain. `0n` (the default) leaves the
+     * threshold out of the encoded traits, which disables the check: the swap then accepts
+     * any `amountOut > 0`. Swaps should always set a threshold, e.g. the quoted amount
+     * adjusted by an explicit slippage tolerance.
      */
     public readonly threshold: bigint = TAKER_TRAITS_DEFAULTS.threshold,
     /**
@@ -110,7 +123,9 @@ export class TakerTraits {
      * Can be empty when using Aqua authentication.
      */
     public readonly signature: HexString = TAKER_TRAITS_DEFAULTS.signature,
-  ) {}
+  ) {
+    TakerTraits.assertValueRanges({ threshold, deadline })
+  }
 
   /**
    * Creates a new TakerTraits instance with the specified data.
@@ -148,6 +163,11 @@ export class TakerTraits {
    * - No callbacks
    * - No custom receiver
    * - transferFromAndAquaPush enabled
+   * - No threshold (`0n`)
+   *
+   * ⚠️ Without a threshold the on-chain slippage check is disabled. That is fine for `quote`,
+   * but swaps should set one derived from the quote, e.g. for exactIn:
+   * `TakerTraits.default().with({ threshold: minAmountOut })`.
    */
   static default(): TakerTraits {
     return TakerTraits.new()
@@ -283,6 +303,30 @@ export class TakerTraits {
   }
 
   /**
+   * The contract reads the threshold only from an exactly 32-byte section and the
+   * deadline only from an exactly 5-byte section (uint40), so values outside these
+   * ranges cannot be encoded without changing their on-chain meaning.
+   * Fields that are not provided are skipped.
+   */
+  private static assertValueRanges(
+    data: Partial<Pick<DataFor<TakerTraits>, 'threshold' | 'deadline'>>,
+  ): void {
+    if (data.threshold !== undefined) {
+      assert(
+        data.threshold >= 0n && data.threshold <= UINT_256_MAX,
+        `Invalid threshold: ${data.threshold}. Must be >= 0 and <= UINT_256_MAX`,
+      )
+    }
+
+    if (data.deadline !== undefined) {
+      assert(
+        data.deadline >= 0n && data.deadline <= UINT_40_MAX,
+        `Invalid deadline: ${data.deadline}. Must be >= 0 and <= UINT_40_MAX`,
+      )
+    }
+  }
+
+  /**
    * Mutate this instance in-place with a partial update and return it.
    *
    * Matches {@link MakerTraits.with}: fields from `data` are copied onto the receiver.
@@ -292,8 +336,11 @@ export class TakerTraits {
    *
    * To build a derived traits object without changing the original (e.g. reuse a base
    * template for several receivers), use {@link TakerTraits.withNew} instead.
+   *
+   * @throws Error if `threshold` or `deadline` is out of range; the instance is left unchanged
    */
   public with(data: Partial<DataFor<TakerTraits>>): this {
+    TakerTraits.assertValueRanges(data)
     const next = TakerTraits.new({ ...this, ...applyUndefinedClears(data) })
 
     Object.assign(this, next)
