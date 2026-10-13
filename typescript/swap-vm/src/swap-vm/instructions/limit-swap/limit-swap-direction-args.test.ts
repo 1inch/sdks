@@ -44,6 +44,15 @@ describe('LimitSwapDirectionArgs', () => {
     expect(decoded2.makerDirectionLt).toBe(false)
   })
 
+  it('should reject direction bytes other than 0x00 and 0x01', () => {
+    expect(() => LimitSwapDirectionArgs.decode(new HexString('0x02'))).toThrow(
+      'Invalid makerDirectionLt byte: 0x02. Must be 0x00 or 0x01',
+    )
+    expect(() => LimitSwapDirectionArgs.decode(new HexString('0xff'))).toThrow(
+      'Invalid makerDirectionLt byte: 0xff. Must be 0x00 or 0x01',
+    )
+  })
+
   it('should derive direction from token addresses', () => {
     const tokenA = new Address('0x0000000000000000000000000000000000000001')
     const tokenB = new Address('0x0000000000000000000000000000000000000002')

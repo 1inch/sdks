@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
-import { Address, AddressHalf, HexString } from '@1inch/sdk-core'
+import { Address, HexString } from '@1inch/sdk-core'
 import type { DataFor } from '@1inch/sdk-core'
 import { AquaProgramBuilder } from './aqua-program-builder'
 import { ProgramBuilder } from './program-builder'
@@ -25,7 +25,7 @@ const SWAP_SIZE = 2n
 const FEE_SIZE = 6n
 
 const jumpIfToken = (nextPC: bigint): DataFor<controls.JumpIfTokenArgs> => ({
-  tokenTail: AddressHalf.fromAddress(USDC),
+  token: USDC,
   nextPC,
 })
 
