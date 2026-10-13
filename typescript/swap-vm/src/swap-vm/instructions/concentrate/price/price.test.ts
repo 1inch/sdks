@@ -8,6 +8,7 @@ import type { PricePair } from './types'
 const USDC = new Address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
 const MUSD = new Address('0xe2f2a5c287993345a840db3b0845fbc70f5935a5')
 const WETH = new Address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2')
+const PEPE = new Address('0x6982508145454Ce325dDbE47a25d4ec3d2311933')
 
 const pairUsdcQuoteWethBase: PricePair = {
   quoteToken: { address: USDC, decimals: 6n },
@@ -28,6 +29,11 @@ const pairMusdQuoteWethBase: PricePair = {
 const pairWethQuoteMusdBase: PricePair = {
   quoteToken: { address: WETH, decimals: 18n },
   baseToken: { address: MUSD, decimals: 18n },
+}
+
+const pairUsdcQuotePepeBase: PricePair = {
+  quoteToken: { address: USDC, decimals: 6n },
+  baseToken: { address: PEPE, decimals: 18n },
 }
 
 describe('Price', () => {
@@ -191,6 +197,16 @@ describe('Price', () => {
     expect(p3.toRaw()).toBe(3000000000000002999909n)
     expect(p3.toHuman(MUSD)).toBe('3000.00000000000299991')
     expect(p3.toHuman(WETH)).toBe('0.000333333333333333')
+  })
+
+  it('toSqrt keeps the exact sqrt price where toRaw truncates (usdc quote and pepe base)', () => {
+    // PEPE < USDC, so P = raw USDC per raw PEPE = 0.00001 * 1e6 / 1e18, which is 10 in 1e18
+    // fixed-point; the sqrt bound is floor(sqrt(10 * 1e18))
+    const p = Price.fromHuman('0.00001', pairUsdcQuotePepeBase)
+
+    expect(p.toSqrt()).toBe(3162277660n)
+    expect(p.toRaw()).toBe(9n)
+    expect(p.toHuman(USDC)).toBe('0.00001')
   })
 
   it('should compare prices with gt and gte', () => {

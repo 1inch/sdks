@@ -2,11 +2,17 @@
 
 import { describe, it, expect } from 'vitest'
 import { Address, HexString } from '@1inch/sdk-core'
+import { AquaProgramBuilder } from './aqua-program-builder'
+import { ProgramBuilder } from './program-builder'
 import { RegularProgramBuilder } from './regular-program-builder'
 import { SwapVmProgram } from './swap-vm-program'
+import { _allInstructions } from '../instructions'
+import * as debug from '../instructions/debug/opcodes'
+import { EMPTY_OPCODE } from '../instructions/empty'
 import { PeggedSwapArgs } from '../instructions/pegged-swap'
 import type * as balances from '../instructions/balances'
 import type * as controls from '../instructions/controls'
+import { SaltArgs } from '../instructions/controls/salt-args'
 import type * as invalidators from '../instructions/invalidators'
 import * as xycSwap from '../instructions/xyc-swap'
 import type * as concentrate from '../instructions/concentrate'
@@ -53,7 +59,7 @@ describe('ProgramBuilder', () => {
     const originalBuilder = new RegularProgramBuilder()
 
     const program = originalBuilder
-      .salt({ salt: 5n })
+      .salt({ bytes: SaltArgs.fromUint64(5n).bytes })
       .onlyTakerTokenBalanceNonZero({ token: WETH })
       .onlyTakerTokenBalanceGte({
         token: USDC,
@@ -75,7 +81,7 @@ describe('ProgramBuilder', () => {
     expect(ixs).toHaveLength(6)
 
     expect(ixs[0].opcode.id.toString()).toContain('salt')
-    expect((ixs[0].args as controls.SaltArgs).salt).toBe(5n)
+    expect((ixs[0].args as controls.SaltArgs).bytes).toEqual(SaltArgs.fromUint64(5n).bytes)
 
     expect(ixs[1].opcode.id.toString()).toContain('onlyTakerTokenBalanceNonZero')
     expect((ixs[1].args as controls.OnlyTakerTokenBalanceNonZeroArgs).token.toString()).toBe(
@@ -103,8 +109,8 @@ describe('ProgramBuilder', () => {
   it('should serialize jump instructions to JSON', () => {
     const builder = new RegularProgramBuilder()
       .jump({ nextPC: 20n })
-      .jumpIfTokenIn({ tokenTail: USDC_HALF, nextPC: 30n })
-      .jumpIfTokenOut({ tokenTail: WETH_HALF, nextPC: 40n })
+      .jumpIfTokenIn({ token: USDC, nextPC: 30n })
+      .jumpIfTokenOut({ token: WETH, nextPC: 40n })
     const decoded = RegularProgramBuilder.decode(builder.build())
 
     const json = JSON.stringify(builder.getInstructions())
@@ -114,11 +120,11 @@ describe('ProgramBuilder', () => {
       { opcode: 'Symbol(Controls.jump)', args: { nextPC: '20' } },
       {
         opcode: 'Symbol(Controls.jumpIfTokenIn)',
-        args: { tokenTail: USDC_HALF.toString(), nextPC: '30' },
+        args: { token: USDC.toString(), nextPC: '30' },
       },
       {
         opcode: 'Symbol(Controls.jumpIfTokenOut)',
-        args: { tokenTail: WETH_HALF.toString(), nextPC: '40' },
+        args: { token: WETH.toString(), nextPC: '40' },
       },
     ])
   })
@@ -127,7 +133,7 @@ describe('ProgramBuilder', () => {
     const originalBuilder = new RegularProgramBuilder()
 
     const program = originalBuilder
-      .salt({ salt: 5n })
+      .salt({ bytes: SaltArgs.fromUint64(5n).bytes })
       .staticBalancesXD({
         tokenBalances: [
           { token: USDC, value: 5000n * 10n ** 6n },
@@ -158,7 +164,7 @@ describe('ProgramBuilder', () => {
     expect(ixs).toHaveLength(7)
 
     expect(ixs[0].opcode.id.toString()).toContain('salt')
-    expect((ixs[0].args as controls.SaltArgs).salt).toBe(5n)
+    expect((ixs[0].args as controls.SaltArgs).bytes).toEqual(SaltArgs.fromUint64(5n).bytes)
 
     expect(ixs[1].opcode.id.toString()).toContain('staticBalancesXD')
     const setBalancesArgs = ixs[1].args as balances.BalancesArgs
@@ -225,7 +231,7 @@ describe('ProgramBuilder', () => {
     const originalBuilder = new RegularProgramBuilder()
 
     const program = originalBuilder
-      .salt({ salt: 99n })
+      .salt({ bytes: SaltArgs.fromUint64(99n).bytes })
       .invalidateBit1D({ bitIndex: 1024n })
       .staticBalancesXD({
         tokenBalances: [
@@ -259,7 +265,7 @@ describe('ProgramBuilder', () => {
     expect(ixs).toHaveLength(11)
 
     expect(ixs[0].opcode.id.toString()).toContain('salt')
-    expect((ixs[0].args as controls.SaltArgs).salt).toBe(99n)
+    expect((ixs[0].args as controls.SaltArgs).bytes).toEqual(SaltArgs.fromUint64(99n).bytes)
 
     expect(ixs[1].opcode.id.toString()).toContain('invalidateBit1D')
     expect((ixs[1].args as invalidators.InvalidateBit1DArgs).bitIndex).toBe(1024n)
@@ -347,7 +353,7 @@ describe('ProgramBuilder', () => {
     const originalBuilder = new RegularProgramBuilder()
 
     const program = originalBuilder
-      .salt({ salt: 777n })
+      .salt({ bytes: SaltArgs.fromUint64(777n).bytes })
       .invalidateBit1D({ bitIndex: 512n })
       .staticBalancesXD({
         tokenBalances: [
@@ -376,7 +382,7 @@ describe('ProgramBuilder', () => {
     expect(ixs).toHaveLength(10)
 
     expect(ixs[0].opcode.id.toString()).toContain('salt')
-    expect((ixs[0].args as controls.SaltArgs).salt).toBe(777n)
+    expect((ixs[0].args as controls.SaltArgs).bytes).toEqual(SaltArgs.fromUint64(777n).bytes)
 
     expect(ixs[1].opcode.id.toString()).toContain('invalidateBit1D')
     expect((ixs[1].args as invalidators.InvalidateBit1DArgs).bitIndex).toBe(512n)
@@ -687,7 +693,7 @@ describe('ProgramBuilder', () => {
     const feeRecipient = new Address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45')
 
     const program = originalBuilder
-      .salt({ salt: 12345n })
+      .salt({ bytes: SaltArgs.fromUint64(12345n).bytes })
       .staticBalancesXD({
         tokenBalances: [
           { token: USDC, value: 10000n * 10n ** 6n },
@@ -736,12 +742,235 @@ describe('ProgramBuilder', () => {
     expect(decoded.getInstructions()[1].opcode.id.toString()).toContain('peggedSwap')
   })
 
+  it.each([
+    ['0 bytes', '0x', '0x2200'],
+    ['4 bytes', '0xdeadbeef', '0x2204deadbeef'],
+    ['8 bytes', '0x0102030405060708', '0x22080102030405060708'],
+    ['32 bytes', '0x' + 'ab'.repeat(32), '0x2220' + 'ab'.repeat(32)],
+  ])('should decode and rebuild a salt of %s byte-identically', (_name, salt, programHex) => {
+    const decoded = RegularProgramBuilder.decode(new SwapVmProgram(programHex))
+    const saltArgs = decoded.getInstructions()[0].args as controls.SaltArgs
+    const built = new RegularProgramBuilder().salt({ bytes: new HexString(salt) }).build()
+
+    expect(decoded.build().toString()).toBe(programHex)
+    expect(saltArgs.bytes.toString()).toBe(salt)
+    expect(built.toString()).toBe(programHex)
+  })
+
+  it('should encode a bigint salt as 8 bytes', () => {
+    expect(
+      new RegularProgramBuilder()
+        .salt({ bytes: SaltArgs.fromUint64(42n).bytes })
+        .build()
+        .toString(),
+    ).toBe('0x2208000000000000002a')
+  })
+
+  it('should reject building an empty program', () => {
+    const error = 'Cannot build an empty program'
+
+    expect(() => new ProgramBuilder(_allInstructions).build()).toThrow(error)
+    expect(() => new RegularProgramBuilder().build()).toThrow(error)
+  })
+
+  it('should build a program with a single instruction without args', () => {
+    const program = new RegularProgramBuilder().xycSwapXD().build()
+
+    expect(program.toString()).toBe('0x1600')
+    expect(RegularProgramBuilder.decode(program).build().toString()).toBe(program.toString())
+  })
+
   it('should reject reserved and unknown opcodes on decode', () => {
     expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x0000'))).toThrow(
       'Invalid opcode: 0',
     )
     expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0xfe00'))).toThrow(
       'Opcode at index 254 is missing',
+    )
+  })
+
+  const toOpcodeByte = (opcodeIdx: number): string => opcodeIdx.toString(16).padStart(2, '0')
+
+  it.each([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])(
+    'should reject reserved regular opcode %i on decode',
+    (opcodeIdx) => {
+      const program = new SwapVmProgram(`0x${toOpcodeByte(opcodeIdx)}00`)
+
+      expect(() => RegularProgramBuilder.decode(program)).toThrow(
+        `Invalid opcode: ${opcodeIdx} (NOT_INSTRUCTION) at offset 0`,
+      )
+    },
+  )
+
+  it.each([0, 9, 22, 23, 24, 25, 26])(
+    'should reject reserved aqua opcode %i on decode',
+    (opcodeIdx) => {
+      const program = new SwapVmProgram(`0x${toOpcodeByte(opcodeIdx)}00`)
+
+      expect(() => AquaProgramBuilder.decode(program)).toThrow(
+        `Invalid opcode: ${opcodeIdx} (NOT_INSTRUCTION) at offset 0`,
+      )
+    },
+  )
+
+  it('should reject a reserved opcode carrying args instead of dropping them', () => {
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x0503aabbcc1600'))).toThrow(
+      'Invalid opcode: 5 (NOT_INSTRUCTION) at offset 0',
+    )
+  })
+
+  it('should report the offset of a reserved opcode inside the program', () => {
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x16000a020005030100'))).toThrow(
+      'Invalid opcode: 3 (NOT_INSTRUCTION) at offset 6',
+    )
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x1600fe00'))).toThrow(
+      'Opcode at index 254 is missing (instruction at offset 2)',
+    )
+  })
+
+  it('should decode opcode bytes against the builder opcode table', () => {
+    const regular = RegularProgramBuilder.decode(new SwapVmProgram('0x1600'))
+
+    expect(regular.getInstructions()).toHaveLength(1)
+    expect(regular.getInstructions()[0].opcode).toBe(xycSwap.xycSwapXD)
+    expect(() => AquaProgramBuilder.decode(new SwapVmProgram('0x1600'))).toThrow(
+      'Invalid opcode: 22 (NOT_INSTRUCTION) at offset 0',
+    )
+
+    const aqua = AquaProgramBuilder.decode(new SwapVmProgram('0x1100'))
+
+    expect(aqua.getInstructions()[0].opcode).toBe(xycSwap.xycSwapXD)
+    expect(aqua.build().toString()).toBe('0x1100')
+  })
+
+  it('should reject args with trailing bytes on decode', () => {
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x190201ff'))).toThrow(
+      'Non-canonical args for opcode 25 (Symbol(LimitSwap.limitSwap1D)) at offset 0: 0x01ff re-encodes as 0x01',
+    )
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x0a03000aff'))).toThrow(
+      'Non-canonical args for opcode 10 (Symbol(Controls.jump)) at offset 0',
+    )
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x16001601aa'))).toThrow(
+      'Non-canonical args for opcode 22 (Symbol(XYCSwap.xycSwapXD)) at offset 2: 0xaa re-encodes as 0x',
+    )
+  })
+
+  it('should reject limit swap direction bytes other than 0x00 and 0x01 on decode', () => {
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x190102'))).toThrow(
+      'Invalid makerDirectionLt byte: 0x02',
+    )
+    expect(RegularProgramBuilder.decode(new SwapVmProgram('0x190101')).build().toString()).toBe(
+      '0x190101',
+    )
+    expect(RegularProgramBuilder.decode(new SwapVmProgram('0x1a0100')).build().toString()).toBe(
+      '0x1a0100',
+    )
+  })
+
+  it('should compare re-encoded args case-insensitively', () => {
+    const program = new RegularProgramBuilder()
+      .xycSwapXD()
+      .salt({ bytes: SaltArgs.fromUint64(0xdeadbeefn).bytes })
+      .extruction({ target: Address.fromBigInt(1n), extructionArgs: new HexString('0xabcdef') })
+      .build()
+    const upperCased = new SwapVmProgram(`0x${program.toString().slice(2).toUpperCase()}`)
+
+    const decoded = RegularProgramBuilder.decode(upperCased)
+
+    expect(decoded.getInstructions()).toHaveLength(3)
+    expect(decoded.build().toString().toLowerCase()).toBe(program.toString().toLowerCase())
+  })
+
+  it('should leave the builder unchanged when decode fails', () => {
+    const builder = new RegularProgramBuilder().xycSwapXD()
+
+    expect(() => builder.decode(new SwapVmProgram('0x16000100'))).toThrow(
+      'Invalid opcode: 1 (NOT_INSTRUCTION) at offset 2',
+    )
+    expect(builder.getInstructions()).toHaveLength(1)
+    expect(builder.build().toString()).toBe('0x1600')
+  })
+
+  it('should round-trip debug programs starting with byte 0x00 after withDebug()', () => {
+    const program = new RegularProgramBuilder()
+      .withDebug()
+      .debugPrintSwapRegisters()
+      .xycSwapXD()
+      .debugPrintContext()
+      .build()
+
+    expect(program.toString()).toBe('0x000016000200')
+    expect(() => RegularProgramBuilder.decode(program)).toThrow(
+      'Invalid opcode: 0 (NOT_INSTRUCTION) at offset 0',
+    )
+
+    const decoded = new RegularProgramBuilder().withDebug().decode(program)
+    const ixs = decoded.getInstructions()
+
+    expect(decoded.build().toString()).toBe(program.toString())
+    expect(ixs).toHaveLength(3)
+    expect(ixs[0].opcode).toBe(debug.printSwapRegisters)
+    expect(ixs[1].opcode).toBe(xycSwap.xycSwapXD)
+    expect(ixs[2].opcode).toBe(debug.printContext)
+
+    const aquaProgram = new AquaProgramBuilder()
+      .withDebug()
+      .debugPrintSwapRegisters()
+      .debugPrintSwapQuery()
+      .xycSwapXD()
+      .build()
+
+    expect(aquaProgram.toString()).toBe('0x000001001100')
+    expect(new AquaProgramBuilder().withDebug().decode(aquaProgram).build().toString()).toBe(
+      aquaProgram.toString(),
+    )
+  })
+
+  it('should reject EMPTY_OPCODE instructions on add', () => {
+    const builder = new RegularProgramBuilder()
+
+    expect(() =>
+      builder.add(EMPTY_OPCODE.createIx(EMPTY_OPCODE.coder.decode(HexString.EMPTY))),
+    ).toThrow(
+      'Invalid opcode Symbol(empty): EMPTY_OPCODE marks a reserved slot and is not an instruction',
+    )
+    expect(builder.getInstructions()).toHaveLength(0)
+  })
+
+  it('should not list reserved slots as supported opcodes', () => {
+    const ix = new RegularProgramBuilder().invalidateTokenIn1D().getInstructions()[0]
+    let message = ''
+
+    try {
+      new AquaProgramBuilder().add(ix)
+    } catch (error) {
+      message = (error as Error).message
+    }
+
+    expect(message).toMatch(
+      /^Invalid opcode Symbol\(Invalidators\.invalidateTokenIn1D\): Supported opcodes: Symbol\(Controls\.jump\), /,
+    )
+    expect(message).toContain('Symbol(Controls.onlyTxOriginTokenBalanceNonZero)')
+    expect(message).not.toContain('Symbol(empty)')
+  })
+
+  it('should refuse to build instructions that do not map to an instruction slot', () => {
+    const withEmpty = new RegularProgramBuilder().xycSwapXD()
+    withEmpty
+      .getInstructions()
+      .push(EMPTY_OPCODE.createIx(EMPTY_OPCODE.coder.decode(HexString.EMPTY)))
+
+    expect(() => withEmpty.build()).toThrow(
+      'Opcode Symbol(empty) does not map to an instruction slot of this opcode table',
+    )
+
+    const withForeignOpcode = new AquaProgramBuilder()
+    withForeignOpcode
+      .getInstructions()
+      .push(new RegularProgramBuilder().invalidateTokenIn1D().getInstructions()[0])
+
+    expect(() => withForeignOpcode.build()).toThrow(
+      'Opcode Symbol(Invalidators.invalidateTokenIn1D) does not map to an instruction slot of this opcode table',
     )
   })
 
