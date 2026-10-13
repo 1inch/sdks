@@ -41,7 +41,7 @@ export class FlatFeeArgs implements IArgsData {
 
   public static fromPercent(percent: number | Percent): FlatFeeArgs {
     if (percent instanceof Percent) {
-      return new FlatFeeArgs(percent.value)
+      return new FlatFeeArgs(percent.toScaledBigInt())
     }
 
     return FlatFeeArgs.fromBps(percent * 100)
@@ -57,7 +57,9 @@ export class FlatFeeArgs implements IArgsData {
   public static fromBps(bps: number): FlatFeeArgs
 
   public static fromBps(bps: number | Bps): FlatFeeArgs {
-    return new FlatFeeArgs(bps instanceof Bps ? bps.value : new Bps(bps).value)
+    return new FlatFeeArgs(
+      bps instanceof Bps ? bps.toScaledBigInt() : Bps.fromNumber(bps).toScaledBigInt(),
+    )
   }
 
   toJSON(): Record<string, unknown> {

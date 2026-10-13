@@ -49,7 +49,7 @@ export class ProtocolFeeArgs implements IArgsData {
 
   public static fromPercent(percent: number | Percent, to: Address): ProtocolFeeArgs {
     if (percent instanceof Percent) {
-      return new ProtocolFeeArgs(percent.value, to)
+      return new ProtocolFeeArgs(percent.toScaledBigInt(), to)
     }
 
     return ProtocolFeeArgs.fromBps(percent * 100, to)
@@ -66,7 +66,10 @@ export class ProtocolFeeArgs implements IArgsData {
   public static fromBps(bps: number, to: Address): ProtocolFeeArgs
 
   public static fromBps(bps: number | Bps, to: Address): ProtocolFeeArgs {
-    return new ProtocolFeeArgs(bps instanceof Bps ? bps.value : new Bps(bps).value, to)
+    return new ProtocolFeeArgs(
+      bps instanceof Bps ? bps.toScaledBigInt() : Bps.fromNumber(bps).toScaledBigInt(),
+      to,
+    )
   }
 
   toJSON(): Record<string, unknown> {

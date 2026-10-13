@@ -5,26 +5,35 @@ import assert from 'assert'
  * Basis points (10_000 bps = 100%).
  *
  * {@link scale} is the viem `parseUnits` / `formatUnits` scaler: 1 bps = 10^5 raw units.
- * That raw {@link value} is the SwapVM fee amount (1e9 = 100%).
+ * {@link toScaledBigInt} is the SwapVM fee amount (1e9 = 100%).
  */
 export class Bps {
   static readonly scale = 5
 
-  readonly value: bigint
+  constructor(private readonly value: bigint) {
+    assert(value >= 0n, `Invalid bps: ${value}. Must be non-negative`)
+  }
 
-  constructor(value: number | string) {
-    assert(
-      typeof value === 'string' || Number.isFinite(value),
-      `Invalid bps: ${value}. Must be a finite number`,
-    )
+  static fromNumber(value: number): Bps {
+    assert(Number.isFinite(value), `Invalid bps: ${value}. Must be a finite number`)
 
-    this.value = parseUnits(typeof value === 'number' ? value.toFixed(Bps.scale) : value, Bps.scale)
+    return new Bps(parseUnits(value.toFixed(Bps.scale), Bps.scale))
+  }
 
-    assert(this.value >= 0n, `Invalid bps: ${value}. Must be non-negative`)
+  static fromString(value: string): Bps {
+    return new Bps(parseUnits(value, Bps.scale))
+  }
+
+  toScaledBigInt(): bigint {
+    return this.value
   }
 
   toString(): string {
     return formatUnits(this.value, Bps.scale)
+  }
+
+  toNumber(): number {
+    return Number(this.toString())
   }
 
   toJSON(): string {

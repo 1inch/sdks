@@ -148,15 +148,17 @@ describe('FlatFeeArgs', () => {
     expect(FlatFeeArgs.fromPercent(0.0000001).fee).toBe(1n)
 
     expect(FlatFeeArgs.CODER.encode(FlatFeeArgs.fromBps(1.1)).toString()).toBe('0x0001adb0')
-    expect(FlatFeeArgs.fromBps(new Bps(1.1)).fee).toBe(FlatFeeArgs.fromBps(1.1).fee)
-    expect(FlatFeeArgs.fromPercent(new Percent(0.57)).fee).toBe(FlatFeeArgs.fromPercent(0.57).fee)
+    expect(FlatFeeArgs.fromBps(Bps.fromNumber(1.1)).fee).toBe(FlatFeeArgs.fromBps(1.1).fee)
+    expect(FlatFeeArgs.fromPercent(Percent.fromNumber(0.57)).fee).toBe(
+      FlatFeeArgs.fromPercent(0.57).fee,
+    )
   })
 
   it('should round digits past the bps and percent scales', () => {
-    expect(FlatFeeArgs.fromBps(1.234567).fee).toBe(new Bps(1.234567).value)
-    expect(FlatFeeArgs.fromBps(new Bps('1.234567')).fee).toBe(123457n)
+    expect(FlatFeeArgs.fromBps(1.234567).fee).toBe(Bps.fromNumber(1.234567).toScaledBigInt())
+    expect(FlatFeeArgs.fromBps(Bps.fromString('1.234567')).fee).toBe(123457n)
     expect(FlatFeeArgs.fromPercent(0.00000001).fee).toBe(0n)
-    expect(FlatFeeArgs.fromPercent(new Percent('1.23456789')).fee).toBe(12345679n)
+    expect(FlatFeeArgs.fromPercent(Percent.fromString('1.23456789')).fee).toBe(12345679n)
   })
 
   it('should reject non-finite and negative basis points and percent', () => {

@@ -176,17 +176,17 @@ describe('ProtocolFeeArgs', () => {
     expect(
       ProtocolFeeArgs.CODER.encode(ProtocolFeeArgs.fromBps(1.1, feeRecipient)).toString(),
     ).toBe('0x0001adb068b3465833fb72a70ecdf485e0e4c7bd8665fc45')
-    expect(ProtocolFeeArgs.fromBps(new Bps(1.1), feeRecipient).fee).toBe(
+    expect(ProtocolFeeArgs.fromBps(Bps.fromNumber(1.1), feeRecipient).fee).toBe(
       ProtocolFeeArgs.fromBps(1.1, feeRecipient).fee,
     )
-    expect(ProtocolFeeArgs.fromPercent(new Percent(0.57), feeRecipient).fee).toBe(
+    expect(ProtocolFeeArgs.fromPercent(Percent.fromNumber(0.57), feeRecipient).fee).toBe(
       ProtocolFeeArgs.fromPercent(0.57, feeRecipient).fee,
     )
   })
 
   it('should round digits past the bps and percent scales', () => {
-    expect(ProtocolFeeArgs.fromBps(new Bps('1.234567'), feeRecipient).fee).toBe(123457n)
-    expect(ProtocolFeeArgs.fromPercent(new Percent(0.00000001), feeRecipient).fee).toBe(0n)
+    expect(ProtocolFeeArgs.fromBps(Bps.fromString('1.234567'), feeRecipient).fee).toBe(123457n)
+    expect(ProtocolFeeArgs.fromPercent(Percent.fromNumber(0.00000001), feeRecipient).fee).toBe(0n)
   })
 
   it('should reject non-finite and negative basis points and percent', () => {
