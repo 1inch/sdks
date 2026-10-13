@@ -4,8 +4,11 @@ import { describe, it, expect } from 'vitest'
 import { Address, Bps } from '@1inch/sdk-core'
 import { AquaXYCAmmStrategy } from './aqua-xyc-amm-strategy'
 import { AquaProgramBuilder } from '../programs/aqua-program-builder'
-import { Price, type ConcentrateGrowLiquidity2DArgs } from '../instructions/concentrate'
-import { FlatFeeArgs, ProtocolFeeArgs } from '../instructions/fee'
+import * as concentrate from '../instructions/concentrate'
+import * as controls from '../instructions/controls'
+import * as decay from '../instructions/decay'
+import * as fee from '../instructions/fee'
+import * as xycSwap from '../instructions/xyc-swap'
 
 describe('AquaXYCAMMStrategy', () => {
   describe('buildProgram', () => {
@@ -32,6 +35,50 @@ describe('AquaXYCAMMStrategy', () => {
       const decoded = AquaProgramBuilder.decode(program)
       const rebuilt = decoded.build()
       expect(rebuilt.toString()).toBe(program.toString())
+    })
+
+    it('should emit every instruction in the documented order', () => {
+      const program = AquaXYCAmmStrategy.newConcentrate({
+        sqrtPriceMin: 100000n,
+        sqrtPriceMax: 200000n,
+      })
+        .withSalt(12345n)
+        .withFeeTokenIn(0.5)
+        .withDecayPeriod(3600n)
+        .withProtocolFee(0.1, new Address('0x0000000000000000000000000000000000000002'))
+        .withTxOriginAccessToken(new Address('0x0000000000000000000000000000000000000001'))
+        .build()
+
+      const ids = AquaProgramBuilder.decode(program)
+        .getInstructions()
+        .map((ix) => ix.opcode.id)
+      expect(ids).toEqual([
+        controls.onlyTxOriginTokenBalanceNonZero.id,
+        fee.aquaProtocolFeeAmountInXD.id,
+        decay.decayXD.id,
+        concentrate.concentrateGrowLiquidity2D.id,
+        fee.flatFeeAmountInXD.id,
+        xycSwap.xycSwapXD.id,
+        controls.salt.id,
+      ])
+    })
+
+    it('should emit decay before concentrate', () => {
+      const program = AquaXYCAmmStrategy.newConcentrate({
+        sqrtPriceMin: 100000n,
+        sqrtPriceMax: 200000n,
+      })
+        .withDecayPeriod(3600n)
+        .build()
+
+      const ids = AquaProgramBuilder.decode(program)
+        .getInstructions()
+        .map((ix) => ix.opcode.id)
+      expect(ids).toEqual([
+        decay.decayXD.id,
+        concentrate.concentrateGrowLiquidity2D.id,
+        xycSwap.xycSwapXD.id,
+      ])
     })
 
     it('should add concentrate when deltas are non-zero', () => {
@@ -127,12 +174,12 @@ describe('AquaXYCAMMStrategy', () => {
         },
       }
       const program = AquaXYCAmmStrategy.newConcentrate({
-        sqrtPriceMin: Price.fromHuman('0.00001', pair).toSqrt(),
-        sqrtPriceMax: Price.fromHuman('0.00002', pair).toSqrt(),
+        sqrtPriceMin: concentrate.Price.fromHuman('0.00001', pair).toSqrt(),
+        sqrtPriceMax: concentrate.Price.fromHuman('0.00002', pair).toSqrt(),
       }).build()
 
       const [concentrateIx] = AquaProgramBuilder.decode(program).getInstructions()
-      const args = concentrateIx.args as ConcentrateGrowLiquidity2DArgs
+      const args = concentrateIx.args as concentrate.ConcentrateGrowLiquidity2DArgs
       // 0.00001 USDC per PEPE is P = 10 in 1e18 fixed-point: floor(sqrt(10 * 1e18))
       expect(args.sqrtPriceMin).toBe(3162277660n)
       expect(args.sqrtPriceMax).toBe(4472135954n)
@@ -196,16 +243,16 @@ describe('AquaXYCAMMStrategy', () => {
     it('should store fee args on the public fields', () => {
       const strategy = AquaXYCAmmStrategy.new().withFeeTokenIn(1.1).withProtocolFee(2.3, receiver)
 
-      expect(strategy.feeBpsIn).toEqual(FlatFeeArgs.fromBps(1.1))
-      expect(strategy.protocolFee).toEqual(ProtocolFeeArgs.fromBps(2.3, receiver))
+      expect(strategy.feeBpsIn).toEqual(fee.FlatFeeArgs.fromBps(1.1))
+      expect(strategy.protocolFee).toEqual(fee.ProtocolFeeArgs.fromBps(2.3, receiver))
 
       strategy.withFeeTokenIn(Bps.fromNumber(1)).withProtocolFee(Bps.fromNumber(1), receiver)
 
-      expect(strategy.feeBpsIn).toEqual(FlatFeeArgs.fromBps(1))
-      expect(strategy.protocolFee).toEqual(ProtocolFeeArgs.fromBps(1, receiver))
+      expect(strategy.feeBpsIn).toEqual(fee.FlatFeeArgs.fromBps(1))
+      expect(strategy.protocolFee).toEqual(fee.ProtocolFeeArgs.fromBps(1, receiver))
 
-      strategy.feeBpsIn = FlatFeeArgs.fromBps(1.1)
-      strategy.protocolFee = ProtocolFeeArgs.fromBps(2.3, receiver)
+      strategy.feeBpsIn = fee.FlatFeeArgs.fromBps(1.1)
+      strategy.protocolFee = fee.ProtocolFeeArgs.fromBps(2.3, receiver)
 
       expect(strategy.build().toString()).toBe(
         AquaXYCAmmStrategy.new()

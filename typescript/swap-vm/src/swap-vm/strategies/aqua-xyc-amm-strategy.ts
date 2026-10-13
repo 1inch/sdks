@@ -50,12 +50,12 @@ export class AquaXYCAmmStrategy extends AquaAMMStrategy {
       builder.add(fee.aquaProtocolFeeAmountInXD.createIx(this.protocolFee))
     }
 
-    if (this.xycConcentrateArgs) {
-      builder.add(concentrate.concentrateGrowLiquidity2D.createIx(this.xycConcentrateArgs))
-    }
-
     if (this.decayPeriod) {
       builder.decayXD({ decayPeriod: this.decayPeriod })
+    }
+
+    if (this.xycConcentrateArgs) {
+      builder.add(concentrate.concentrateGrowLiquidity2D.createIx(this.xycConcentrateArgs))
     }
 
     if (this.feeBpsIn?.fee) {
