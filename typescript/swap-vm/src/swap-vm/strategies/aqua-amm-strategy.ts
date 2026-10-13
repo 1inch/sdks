@@ -12,14 +12,14 @@ function feeUnits(fee: number | Bps | Percent): bigint {
 }
 
 export abstract class AquaAMMStrategy {
-  /** Taker fee: basis points as a number, or fee units as {@link Bps} / {@link Percent}. */
-  feeBpsIn?: number | Bps | Percent
+  /** Taker fee in basis points. */
+  feeBpsIn?: number
 
   decayPeriod?: bigint
 
-  /** Protocol fee: `bps` is basis points, or fee units when it is a {@link Bps} / {@link Percent}. */
+  /** Protocol fee. `bps` is always basis points. */
   protocolFee?: {
-    bps: number | Bps | Percent
+    bps: number
     receiver: Address
   }
 
@@ -51,7 +51,7 @@ export abstract class AquaAMMStrategy {
     new ProtocolFeeArgs(units, receiver)
 
     this.protocolFee = {
-      bps: typeof fee === 'number' ? Bps.fromScaledBigInt(units) : fee,
+      bps: Bps.fromScaledBigInt(units).toNumber(),
       receiver,
     }
 
@@ -85,7 +85,7 @@ export abstract class AquaAMMStrategy {
 
     new FlatFeeArgs(units)
 
-    this.feeBpsIn = typeof fee === 'number' ? Bps.fromScaledBigInt(units) : fee
+    this.feeBpsIn = Bps.fromScaledBigInt(units).toNumber()
 
     return this
   }
@@ -102,37 +102,19 @@ export abstract class AquaAMMStrategy {
     return this
   }
 
-  /**
-   * Protocol fee currently stored on `protocolFee`.
-   * A number is basis points. A {@link Bps} or {@link Percent} is fee units.
-   */
   protected protocolFeeArgs(): ProtocolFeeArgs | undefined {
     if (!this.protocolFee) {
       return undefined
     }
 
-    const { bps, receiver } = this.protocolFee
-
-    if (typeof bps === 'number') {
-      return ProtocolFeeArgs.fromBps(bps, receiver)
-    }
-
-    return new ProtocolFeeArgs(bps.toScaledBigInt(), receiver)
+    return ProtocolFeeArgs.fromBps(this.protocolFee.bps, this.protocolFee.receiver)
   }
 
-  /**
-   * Taker fee currently stored on `feeBpsIn`.
-   * A number is basis points. A {@link Bps} or {@link Percent} is fee units.
-   */
   protected feeTokenInArgs(): FlatFeeArgs | undefined {
     if (this.feeBpsIn === undefined) {
       return undefined
     }
 
-    if (typeof this.feeBpsIn === 'number') {
-      return FlatFeeArgs.fromBps(this.feeBpsIn)
-    }
-
-    return new FlatFeeArgs(this.feeBpsIn.toScaledBigInt())
+    return FlatFeeArgs.fromBps(this.feeBpsIn)
   }
 }

@@ -195,8 +195,8 @@ describe('AquaXYCAMMStrategy', () => {
 
       strategy.withFeeTokenInRaw(5).withProtocolFeeRaw(7, receiver)
 
-      expect(strategy.feeBpsIn).toEqual(Bps.fromScaledBigInt(5n))
-      expect(strategy.protocolFee).toEqual({ bps: Bps.fromScaledBigInt(7n), receiver })
+      expect(strategy.feeBpsIn).toBe(0.00005)
+      expect(strategy.protocolFee).toEqual({ bps: 0.00007, receiver })
 
       strategy.feeBpsIn = 1.1
       strategy.protocolFee = { bps: 2.3, receiver }
