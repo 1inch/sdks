@@ -120,6 +120,16 @@ describe('BalancesArgsCoder', () => {
     expect(() => BalancesArgs.decode(truncatedLayout)).toThrow('Can not consume 32 bytes')
   })
 
+  it('should reject data using truncated 10-byte token tails', () => {
+    const truncatedLayout = new HexString(
+      '0x0001' +
+        '9d4a2e9eb0ce3606eb48' +
+        '0000000000000000000000000000000000000000000000000000000000000064',
+    )
+
+    expect(() => BalancesArgs.decode(truncatedLayout)).toThrow('Can not consume 32 bytes')
+  })
+
   it('should convert balances to JSON', () => {
     const args = new BalancesArgs([
       { token: USDC, value: 2000n },

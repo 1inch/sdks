@@ -30,17 +30,20 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Enables debug mode for the program
+   * Enables debug mode for the program by installing the debug opcodes into slots 0-4
+   * (wire bytes 0x00-0x04), the layout of `Debug._injectDebugOpcodes` in SwapVM
+   *
+   * Debug opcodes only exist on `*Debug` router deployments (e.g. `SwapVMRouterDebug`). On other
+   * routers these slots are `_notInstruction`, so debug instructions are no-ops there.
    * WARNING: Debug instructions will throw an error if debug mode is not enabled
    */
   public withDebug(): this {
-    // Inject debug opcodes into slots 1-6
+    // Must match the slot order of Debug._injectDebugOpcodes
     this.ixsSet[0] = debug.printSwapRegisters
     this.ixsSet[1] = debug.printSwapQuery
     this.ixsSet[2] = debug.printContext
-    this.ixsSet[3] = debug.printAmountForSwap
-    this.ixsSet[4] = debug.printFreeMemoryPointer
-    this.ixsSet[5] = debug.printGasLeft
+    this.ixsSet[3] = debug.printFreeMemoryPointer
+    this.ixsSet[4] = debug.printGasLeft
 
     return this
   }
@@ -150,9 +153,10 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * No-op instruction used to add uniqueness to order hashes (prevents replay attacks)
+   * `bytes` — arbitrary-length salt payload (use {@link controls.SaltArgs.fromUint64} for uint64).
    **/
   public salt(data: DataFor<controls.SaltArgs>): this {
-    super.add(controls.salt.createIx(new controls.SaltArgs(data.salt)))
+    super.add(controls.salt.createIx(new controls.SaltArgs(data.bytes)))
 
     return this
   }
@@ -303,7 +307,9 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Adjusts swap prices based on network gas costs
+   * Adjusts swap prices based on network gas costs.
+   * `maxPriceDecay` is the minimum price coefficient (1e18 = unadjusted price, must be in (0, 1e18)),
+   * not a discount amount: e.g. `0.99e18` lets the taker's price improve by at most 1%
    **/
   public baseFeeAdjuster1D(data: DataFor<baseFeeAdjuster.BaseFeeAdjusterArgs>): this {
     super.add(
@@ -481,12 +487,14 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * DEBUG: Prints calculated amount for swap
-   * WARNING: Requires withDebug() to be called first, otherwise will throw an error
+   * @deprecated The SwapVM debug routers have no printAmountForSwap opcode, so this method always
+   * throws. Use {@link debugPrintSwapRegisters} to print the swap amounts instead
    */
   public debugPrintAmountForSwap(): this {
-    super.add(debug.printAmountForSwap.createIx(new debug.PrintAmountForSwapArgs()))
-
-    return this
+    throw new Error(
+      'debugPrintAmountForSwap() is not supported by the SwapVM debug routers: ' +
+        'they have no printAmountForSwap opcode, use debugPrintSwapRegisters() instead',
+    )
   }
 
   /**

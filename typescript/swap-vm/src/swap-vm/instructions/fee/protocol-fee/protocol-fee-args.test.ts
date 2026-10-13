@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
-import { Address, HexString } from '@1inch/sdk-core'
+import { Address, Bps, HexString, Percent } from '@1inch/sdk-core'
 import { ProtocolFeeArgs } from './protocol-fee-args'
 
 describe('ProtocolFeeArgs', () => {
@@ -206,5 +206,47 @@ describe('ProtocolFeeArgs', () => {
     const bps100 = ProtocolFeeArgs.fromBps(100, feeRecipient)
     expect(percent1.fee).toBe(bps100.fee)
     expect(percent1.to).toBe(bps100.to)
+  })
+
+  it('should create from fractional basis points and percent exactly', () => {
+    expect(ProtocolFeeArgs.fromBps(1.1, feeRecipient).fee).toBe(110000n)
+    expect(ProtocolFeeArgs.fromBps(2.3, feeRecipient).fee).toBe(230000n)
+    expect(ProtocolFeeArgs.fromBps(0.00001, feeRecipient).fee).toBe(1n)
+    expect(ProtocolFeeArgs.fromPercent(0.011, feeRecipient).fee).toBe(110000n)
+    expect(ProtocolFeeArgs.fromPercent(0.57, feeRecipient).fee).toBe(5700000n)
+    expect(ProtocolFeeArgs.fromPercent(Percent.fromString('0.0000001'), feeRecipient).fee).toBe(1n)
+
+    expect(
+      ProtocolFeeArgs.CODER.encode(ProtocolFeeArgs.fromBps(1.1, feeRecipient)).toString(),
+    ).toBe('0x0001adb068b3465833fb72a70ecdf485e0e4c7bd8665fc45')
+    expect(ProtocolFeeArgs.fromBps(Bps.fromNumber(1.1), feeRecipient).fee).toBe(
+      ProtocolFeeArgs.fromBps(1.1, feeRecipient).fee,
+    )
+    expect(ProtocolFeeArgs.fromPercent(Percent.fromNumber(0.57), feeRecipient).fee).toBe(
+      ProtocolFeeArgs.fromPercent(0.57, feeRecipient).fee,
+    )
+  })
+
+  it('should reject a fraction longer than the bps and percent scales', () => {
+    expect(() => ProtocolFeeArgs.fromBps(Bps.fromString('1.234567'), feeRecipient)).toThrow(
+      'Must have at most 5 decimal places',
+    )
+    expect(() => ProtocolFeeArgs.fromPercent(0.00000001, feeRecipient)).toThrow(
+      'Exponent notation is not allowed',
+    )
+  })
+
+  it('should reject non-finite and negative basis points and percent', () => {
+    expect(() => ProtocolFeeArgs.fromBps(NaN, feeRecipient)).toThrow('Must be a finite number')
+    expect(() => ProtocolFeeArgs.fromPercent(-Infinity, feeRecipient)).toThrow(
+      'Must be a finite number',
+    )
+    expect(() => ProtocolFeeArgs.fromBps(-1, feeRecipient)).toThrow('Must be non-negative')
+    expect(() => ProtocolFeeArgs.fromPercent(-0.1, feeRecipient)).toThrow('Must be non-negative')
+  })
+
+  it('should reject basis points and percent above 100%', () => {
+    expect(() => ProtocolFeeArgs.fromBps(10000.00001, feeRecipient)).toThrow('Fee out of range')
+    expect(() => ProtocolFeeArgs.fromPercent(100.1, feeRecipient)).toThrow('Fee out of range')
   })
 })

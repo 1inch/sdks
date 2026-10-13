@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 /**
- * Round a decimal string to `maxFrac` fractional digits (half-up: if the first dropped digit
- * is `5`–`9`, round the last kept digit up), then strip trailing zeros after the dot.
+ * Round a decimal string to `maxFrac` fractional digits, then strip trailing zeros after the dot.
  *
- * @param s Decimal string as produced by e.g. `formatUnits` (no scientific notation).
+ * Rounding is half away from zero: the magnitude is rounded half-up (if the first dropped digit
+ * is `5`–`9`, round the last kept digit up) and the sign is kept, so `-0.25` with `maxFrac = 1`
+ * gives `-0.3`. A negative value that rounds to zero gives `0`, never `-0`.
+ *
+ * @param s Decimal string as produced by e.g. `formatUnits` (no scientific notation), optionally
+ * prefixed with `-`.
  * @param maxFrac Maximum number of digits after `.`; `0` means integer only (round using the
  * first fractional digit).
  */
@@ -13,6 +17,13 @@ export function truncateHumanDecimalString(s: string, maxFrac: number): string {
     throw new Error('maxFrac must be non-negative')
   }
 
+  const negative = s.startsWith('-')
+  const magnitude = roundMagnitudeHalfUp(negative ? s.slice(1) : s, maxFrac)
+
+  return negative && !/^0+$/.test(magnitude) ? `-${magnitude}` : magnitude
+}
+
+function roundMagnitudeHalfUp(s: string, maxFrac: number): string {
   const dot = s.indexOf('.')
 
   if (dot === -1) {
