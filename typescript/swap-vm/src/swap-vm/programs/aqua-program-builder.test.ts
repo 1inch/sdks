@@ -53,6 +53,29 @@ describe('AquaProgramBuilder', () => {
     expect(decoded.getInstructions()).toHaveLength(18)
   })
 
+  it('should serialize jump instructions to JSON', () => {
+    const builder = new AquaProgramBuilder()
+      .jump({ nextPC: 5n })
+      .jumpIfTokenIn({ token: USDC, nextPC: 6n })
+      .jumpIfTokenOut({ token: WETH, nextPC: 7n })
+    const decoded = AquaProgramBuilder.decode(builder.build())
+
+    const json = JSON.stringify(builder.getInstructions())
+
+    expect(JSON.stringify(decoded.getInstructions())).toBe(json)
+    expect(JSON.parse(json)).toEqual([
+      { opcode: 'Symbol(Controls.jump)', args: { nextPC: '5' } },
+      {
+        opcode: 'Symbol(Controls.jumpIfTokenIn)',
+        args: { token: USDC.toString(), nextPC: '6' },
+      },
+      {
+        opcode: 'Symbol(Controls.jumpIfTokenOut)',
+        args: { token: WETH.toString(), nextPC: '7' },
+      },
+    ])
+  })
+
   describe('salt', () => {
     it.each([
       ['0 bytes', '0x', '0x1400'],
