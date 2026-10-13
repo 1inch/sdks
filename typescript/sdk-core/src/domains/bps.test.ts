@@ -26,7 +26,12 @@ describe('Bps', () => {
     expect(() => Bps.fromNumber(1.234567)).toThrow('Must have at most 5 decimal places')
     expect(() => Bps.fromString('1.234567')).toThrow('Must have at most 5 decimal places')
     expect(() => Bps.fromString('1.100000')).toThrow('Must have at most 5 decimal places')
-    expect(() => Bps.fromNumber(1e-7)).toThrow('Must have at most 5 decimal places')
+  })
+
+  it('should reject exponent notation', () => {
+    expect(() => Bps.fromNumber(1e-7)).toThrow('Exponent notation is not allowed')
+    expect(() => Bps.fromString('1e-7')).toThrow('Exponent notation is not allowed')
+    expect(() => Bps.fromString('1E+5')).toThrow('Exponent notation is not allowed')
   })
 
   it('should convert back to a number from the formatted string', () => {

@@ -145,7 +145,7 @@ describe('FlatFeeArgs', () => {
     expect(FlatFeeArgs.fromBps(0.00001).fee).toBe(1n)
     expect(FlatFeeArgs.fromPercent(0.011).fee).toBe(110000n)
     expect(FlatFeeArgs.fromPercent(0.57).fee).toBe(5700000n)
-    expect(FlatFeeArgs.fromPercent(0.0000001).fee).toBe(1n)
+    expect(FlatFeeArgs.fromPercent(Percent.fromString('0.0000001')).fee).toBe(1n)
 
     expect(FlatFeeArgs.CODER.encode(FlatFeeArgs.fromBps(1.1)).toString()).toBe('0x0001adb0')
     expect(FlatFeeArgs.fromBps(Bps.fromNumber(1.1)).fee).toBe(FlatFeeArgs.fromBps(1.1).fee)
@@ -159,7 +159,7 @@ describe('FlatFeeArgs', () => {
     expect(() => FlatFeeArgs.fromBps(Bps.fromString('1.234567'))).toThrow(
       'Must have at most 5 decimal places',
     )
-    expect(() => FlatFeeArgs.fromPercent(0.00000001)).toThrow('Must have at most 7 decimal places')
+    expect(() => FlatFeeArgs.fromPercent(0.00000001)).toThrow('Exponent notation is not allowed')
     expect(() => FlatFeeArgs.fromPercent(Percent.fromString('1.23456789'))).toThrow(
       'Must have at most 7 decimal places',
     )

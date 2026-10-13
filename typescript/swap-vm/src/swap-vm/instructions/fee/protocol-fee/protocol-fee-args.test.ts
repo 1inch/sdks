@@ -171,7 +171,7 @@ describe('ProtocolFeeArgs', () => {
     expect(ProtocolFeeArgs.fromBps(0.00001, feeRecipient).fee).toBe(1n)
     expect(ProtocolFeeArgs.fromPercent(0.011, feeRecipient).fee).toBe(110000n)
     expect(ProtocolFeeArgs.fromPercent(0.57, feeRecipient).fee).toBe(5700000n)
-    expect(ProtocolFeeArgs.fromPercent(0.0000001, feeRecipient).fee).toBe(1n)
+    expect(ProtocolFeeArgs.fromPercent(Percent.fromString('0.0000001'), feeRecipient).fee).toBe(1n)
 
     expect(
       ProtocolFeeArgs.CODER.encode(ProtocolFeeArgs.fromBps(1.1, feeRecipient)).toString(),
@@ -189,7 +189,7 @@ describe('ProtocolFeeArgs', () => {
       'Must have at most 5 decimal places',
     )
     expect(() => ProtocolFeeArgs.fromPercent(0.00000001, feeRecipient)).toThrow(
-      'Must have at most 7 decimal places',
+      'Exponent notation is not allowed',
     )
   })
 

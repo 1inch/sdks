@@ -17,20 +17,24 @@ describe('Percent', () => {
     expect(Percent.fromString('0.57').toScaledBigInt()).toBe(5_700_000n)
   })
 
-  it('should scale the smallest fee unit', () => {
-    expect(Percent.fromNumber(0.0000001).toScaledBigInt()).toBe(1n)
+  it('should scale the smallest fee unit from a decimal string', () => {
+    expect(Percent.fromString('0.0000001').toScaledBigInt()).toBe(1n)
     expect(Percent.fromString('0.0000001').toString()).toBe('0.0000001')
   })
 
   it('should accept a fraction as long as the scale', () => {
     expect(Percent.fromString('1.1234567').toScaledBigInt()).toBe(11_234_567n)
-    expect(Percent.fromNumber(1e-7).toScaledBigInt()).toBe(1n)
   })
 
   it('should reject a fraction longer than the scale', () => {
     expect(() => Percent.fromNumber(1.23456789)).toThrow('Must have at most 7 decimal places')
     expect(() => Percent.fromString('1.23456789')).toThrow('Must have at most 7 decimal places')
-    expect(() => Percent.fromNumber(1e-8)).toThrow('Must have at most 7 decimal places')
+  })
+
+  it('should reject exponent notation', () => {
+    expect(() => Percent.fromNumber(0.0000001)).toThrow('Exponent notation is not allowed')
+    expect(() => Percent.fromNumber(1e-7)).toThrow('Exponent notation is not allowed')
+    expect(() => Percent.fromString('1e-8')).toThrow('Exponent notation is not allowed')
   })
 
   it('should convert back to a number from the formatted string', () => {
