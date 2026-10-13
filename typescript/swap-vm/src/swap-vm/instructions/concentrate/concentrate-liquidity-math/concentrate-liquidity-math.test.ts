@@ -99,6 +99,10 @@ describe('concentrate-liquidity-math', () => {
       expect(bGt).toBe(124915432000000n)
     })
 
+    it('should throw when a balance would exceed uint256', () => {
+      expect(() => computeBalances(UINT_256_MAX, 1n, 1n, 2n)).toThrow('exceeds UINT_256_MAX')
+    })
+
     it('should not throw when sqrtPmax * sqrtPspot < 1e18 (the stale form divided by zero)', () => {
       const { bLt, bGt } = computeBalances(10n ** 24n, 500_000_000n, 400_000_000n, 600_000_000n)
 
@@ -371,6 +375,18 @@ describe('concentrate-liquidity-math', () => {
       expect(actualLt).toBe(1211682943485n)
       // 399.999999999999998795n WETH
       expect(actualGt).toBe(399999999999999998795n)
+    })
+
+    it('should throw when both available amounts are large enough to overflow uint256', () => {
+      expect(() =>
+        computeLiquidityFromAmounts(
+          UINT_256_MAX / 2n,
+          UINT_256_MAX / 2n,
+          ONE_E18,
+          9n * 10n ** 17n,
+          11n * 10n ** 17n,
+        ),
+      ).toThrow('mulDiv: operands must be uint256 values')
     })
 
     it('should reject inverted price bounds', () => {
