@@ -27,20 +27,16 @@ export class AquaPeggedAmmStrategy extends AquaAMMStrategy {
       builder.onlyTxOriginTokenBalanceNonZero({ token: this.accessToken })
     }
 
-    const protocolFee = this.protocolFeeArgs()
-
-    if (protocolFee) {
-      builder.add(fee.aquaProtocolFeeAmountInXD.createIx(protocolFee))
+    if (this.protocolFee) {
+      builder.add(fee.aquaProtocolFeeAmountInXD.createIx(this.protocolFee))
     }
 
     if (this.decayPeriod) {
       builder.decayXD({ decayPeriod: this.decayPeriod })
     }
 
-    const feeTokenIn = this.feeTokenInArgs()
-
-    if (feeTokenIn?.fee) {
-      builder.add(fee.flatFeeAmountInXD.createIx(feeTokenIn))
+    if (this.feeBpsIn?.fee) {
+      builder.add(fee.flatFeeAmountInXD.createIx(this.feeBpsIn))
     }
 
     const peggedArgs = PeggedSwapArgs.fromTokens(

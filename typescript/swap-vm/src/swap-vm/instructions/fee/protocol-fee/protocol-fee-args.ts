@@ -65,6 +65,8 @@ export class ProtocolFeeArgs implements IArgsData {
 
   public static fromBps(bps: number, to: Address): ProtocolFeeArgs
 
+  public static fromBps(bps: number | Bps, to: Address): ProtocolFeeArgs
+
   public static fromBps(bps: number | Bps, to: Address): ProtocolFeeArgs {
     return new ProtocolFeeArgs(
       bps instanceof Bps ? bps.toScaledBigInt() : Bps.fromNumber(bps).toScaledBigInt(),
