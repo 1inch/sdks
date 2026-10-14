@@ -22,8 +22,77 @@ import type * as minRate from '../instructions/min-rate'
 import type * as dutchAuction from '../instructions/dutch-auction'
 import type * as baseFeeAdjuster from '../instructions/base-fee-adjuster'
 import type * as twapSwap from '../instructions/twap-swap'
-import type * as fee from '../instructions/fee'
+import * as fee from '../instructions/fee'
 import type * as extruction from '../instructions/extruction'
+
+function registerProgramDecodeEdgeCases(usdc: Address): void {
+  it('should apply instruction args validation when decoding programs', () => {
+    const valid = new RegularProgramBuilder()
+      .deadline({ deadline: 1735689600n })
+      .decayXD({ decayPeriod: 3600n })
+      .flatFeeAmountInXD({ fee: 30000000n })
+      .build()
+
+    // deadline (0x0d) | decayXD (0x18) | flatFeeAmountInXD (0x23)
+    expect(valid.toString()).toBe('0x0d050067748580' + '18020e10' + '230401c9c380')
+
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x0d050000000000'))).toThrow(
+      'Invalid deadline: 0',
+    )
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x18020000'))).toThrow(
+      'Invalid decayPeriod value: 0',
+    )
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x23043b9aca00'))).toThrow(
+      'Fee out of range: 1000000000',
+    )
+
+    // staticBalancesXD (0x11) setting a balance for a single token
+    const singleTokenBalances = new SwapVmProgram(
+      '0x1136' + '0001' + usdc.toString().slice(2) + '00'.repeat(31) + '01',
+    )
+    expect(() => RegularProgramBuilder.decode(singleTokenBalances)).toThrow(
+      'Invalid tokenBalances length: 1',
+    )
+  })
+
+  it.each([
+    ['0 bytes', '0x', '0x2200'],
+    ['4 bytes', '0xdeadbeef', '0x2204deadbeef'],
+    ['8 bytes', '0x0102030405060708', '0x22080102030405060708'],
+    ['32 bytes', '0x' + 'ab'.repeat(32), '0x2220' + 'ab'.repeat(32)],
+  ])('should decode and rebuild a salt of %s byte-identically', (_name, salt, programHex) => {
+    const decoded = RegularProgramBuilder.decode(new SwapVmProgram(programHex))
+    const saltArgs = decoded.getInstructions()[0].args as controls.SaltArgs
+    const built = new RegularProgramBuilder().salt({ bytes: new HexString(salt) }).build()
+
+    expect(decoded.build().toString()).toBe(programHex)
+    expect(saltArgs.bytes.toString()).toBe(salt)
+    expect(built.toString()).toBe(programHex)
+  })
+
+  it('should encode a bigint salt as 8 bytes', () => {
+    expect(
+      new RegularProgramBuilder()
+        .salt({ bytes: SaltArgs.fromUint64(42n).bytes })
+        .build()
+        .toString(),
+    ).toBe('0x2208000000000000002a')
+  })
+
+  it('should reject building an empty program', () => {
+    const error = 'Cannot build an empty program'
+
+    expect(() => new ProgramBuilder(_allInstructions).build()).toThrow(error)
+    expect(() => new RegularProgramBuilder().build()).toThrow(error)
+  })
+
+  it('should build a program with a single instruction without args', () => {
+    const program = new RegularProgramBuilder().xycSwapXD().build()
+
+    expect(program.toString()).toBe('0x1600')
+    expect(RegularProgramBuilder.decode(program).build().toString()).toBe(program.toString())
+  })
+}
 
 describe('ProgramBuilder', () => {
   const USDC = new Address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
@@ -147,7 +216,10 @@ describe('ProgramBuilder', () => {
       })
       .jumpIfTokenOut({ token: DAI, nextPC: 15n })
       .dynamicBalancesXD({
-        tokenBalances: [{ token: WETH, value: 10n ** 18n }],
+        tokenBalances: [
+          { token: WETH, value: 10n ** 18n },
+          { token: DAI, value: 3000n * 10n ** 18n },
+        ],
       })
       .onlyTakerTokenSupplyShareGte({
         token: LINK,
@@ -184,8 +256,9 @@ describe('ProgramBuilder', () => {
 
     expect(ixs[4].opcode.id.toString()).toContain('dynamicBalancesXD')
     const balancesArgs = ixs[4].args as balances.BalancesArgs
-    expect(balancesArgs.tokenBalances).toHaveLength(1)
+    expect(balancesArgs.tokenBalances).toHaveLength(2)
     expect(balancesArgs.tokenBalances[0].value).toBe(10n ** 18n)
+    expect(balancesArgs.tokenBalances[1].value).toBe(3000n * 10n ** 18n)
 
     expect(ixs[5].opcode.id.toString()).toContain('onlyTakerTokenSupplyShareGte')
     const supplyShare = ixs[5].args as controls.OnlyTakerTokenSupplyShareGteArgs
@@ -243,7 +316,10 @@ describe('ProgramBuilder', () => {
       .invalidateTokenIn1D()
       .jumpIfTokenIn({ token: USDC, nextPC: 20n })
       .dynamicBalancesXD({
-        tokenBalances: [{ token: LINK, value: 50n * 10n ** 18n }],
+        tokenBalances: [
+          { token: LINK, value: 50n * 10n ** 18n },
+          { token: USDC, value: 750n * 10n ** 6n },
+        ],
       })
       .onlyTakerTokenBalanceGte({
         token: DAI,
@@ -288,8 +364,9 @@ describe('ProgramBuilder', () => {
 
     expect(ixs[6].opcode.id.toString()).toContain('dynamicBalancesXD')
     const readBalances = ixs[6].args as balances.BalancesArgs
-    expect(readBalances.tokenBalances).toHaveLength(1)
+    expect(readBalances.tokenBalances).toHaveLength(2)
     expect(readBalances.tokenBalances[0].value).toBe(50n * 10n ** 18n)
+    expect(readBalances.tokenBalances[1].value).toBe(750n * 10n ** 6n)
 
     expect(ixs[7].opcode.id.toString()).toContain('onlyTakerTokenBalanceGte')
     const balanceGte = ixs[7].args as controls.OnlyTakerTokenBalanceGteArgs
@@ -461,7 +538,10 @@ describe('ProgramBuilder', () => {
 
     const program = originalBuilder
       .staticBalancesXD({
-        tokenBalances: [{ token: USDC, value: 1000n * 10n ** 6n }],
+        tokenBalances: [
+          { token: USDC, value: 1000n * 10n ** 6n },
+          { token: WETH, value: 1n * 10n ** 18n },
+        ],
       })
       .dutchAuctionBalanceIn1D({
         startTime,
@@ -682,10 +762,64 @@ describe('ProgramBuilder', () => {
     expect((ixs[7].args as fee.FlatFeeArgs).fee).toBe(35000000n)
 
     expect(ixs[8].opcode.id.toString()).toContain('progressiveFeeInXD')
-    expect((ixs[8].args as fee.FlatFeeArgs).fee).toBe(45000000n)
+    expect(ixs[8].args).toBeInstanceOf(fee.ProgressiveFeeArgs)
+    expect((ixs[8].args as fee.ProgressiveFeeArgs).fee).toBe(45000000n)
 
     expect(ixs[9].opcode.id.toString()).toContain('progressiveFeeOutXD')
-    expect((ixs[9].args as fee.FlatFeeArgs).fee).toBe(55000000n)
+    expect(ixs[9].args).toBeInstanceOf(fee.ProgressiveFeeArgs)
+    expect((ixs[9].args as fee.ProgressiveFeeArgs).fee).toBe(55000000n)
+  })
+
+  it('should accept progressive fees up to 100%', () => {
+    const FEE_100_PERCENT = 1000000000n
+
+    const program = new RegularProgramBuilder()
+      .progressiveFeeInXD({ fee: FEE_100_PERCENT })
+      .progressiveFeeOutXD({ fee: FEE_100_PERCENT })
+      .build()
+
+    // progressiveFeeInXD (0x25) | progressiveFeeOutXD (0x26)
+    expect(program.toString()).toBe('0x25043b9aca00' + '26043b9aca00')
+
+    const decoded = RegularProgramBuilder.decode(program)
+    expect(decoded.build().toString()).toBe(program.toString())
+
+    const ixs = decoded.getInstructions()
+    expect(ixs).toHaveLength(2)
+    expect(ixs[0].opcode.id.toString()).toContain('progressiveFeeInXD')
+    expect(ixs[1].opcode.id.toString()).toContain('progressiveFeeOutXD')
+    ixs.forEach((ix) => {
+      expect(ix.args).toBeInstanceOf(fee.ProgressiveFeeArgs)
+      expect((ix.args as fee.ProgressiveFeeArgs).fee).toBe(FEE_100_PERCENT)
+    })
+
+    expect(() =>
+      new RegularProgramBuilder().progressiveFeeInXD({ fee: FEE_100_PERCENT + 1n }),
+    ).toThrow('Fee out of range: 1000000001. Must be <= 1000000000')
+    expect(() =>
+      new RegularProgramBuilder().progressiveFeeOutXD({ fee: FEE_100_PERCENT + 1n }),
+    ).toThrow('Fee out of range: 1000000001. Must be <= 1000000000')
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x25043b9aca01'))).toThrow(
+      'Fee out of range: 1000000001. Must be <= 1000000000',
+    )
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x26043b9aca01'))).toThrow(
+      'Fee out of range: 1000000001. Must be <= 1000000000',
+    )
+  })
+
+  it('should reject a 100% flat fee in both directions', () => {
+    const FEE_100_PERCENT = 1000000000n
+
+    expect(() => new RegularProgramBuilder().flatFeeAmountInXD({ fee: FEE_100_PERCENT })).toThrow(
+      'Fee out of range: 1000000000. Must be < 1000000000',
+    )
+    expect(() => new RegularProgramBuilder().flatFeeAmountOutXD({ fee: FEE_100_PERCENT })).toThrow(
+      'Fee out of range: 1000000000. Must be < 1000000000',
+    )
+    // flatFeeAmountOutXD (0x24)
+    expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x24043b9aca00'))).toThrow(
+      'Fee out of range: 1000000000. Must be < 1000000000',
+    )
   })
 
   it('should handle complex program with new instructions', () => {
@@ -742,43 +876,7 @@ describe('ProgramBuilder', () => {
     expect(decoded.getInstructions()[1].opcode.id.toString()).toContain('peggedSwap')
   })
 
-  it.each([
-    ['0 bytes', '0x', '0x2200'],
-    ['4 bytes', '0xdeadbeef', '0x2204deadbeef'],
-    ['8 bytes', '0x0102030405060708', '0x22080102030405060708'],
-    ['32 bytes', '0x' + 'ab'.repeat(32), '0x2220' + 'ab'.repeat(32)],
-  ])('should decode and rebuild a salt of %s byte-identically', (_name, salt, programHex) => {
-    const decoded = RegularProgramBuilder.decode(new SwapVmProgram(programHex))
-    const saltArgs = decoded.getInstructions()[0].args as controls.SaltArgs
-    const built = new RegularProgramBuilder().salt({ bytes: new HexString(salt) }).build()
-
-    expect(decoded.build().toString()).toBe(programHex)
-    expect(saltArgs.bytes.toString()).toBe(salt)
-    expect(built.toString()).toBe(programHex)
-  })
-
-  it('should encode a bigint salt as 8 bytes', () => {
-    expect(
-      new RegularProgramBuilder()
-        .salt({ bytes: SaltArgs.fromUint64(42n).bytes })
-        .build()
-        .toString(),
-    ).toBe('0x2208000000000000002a')
-  })
-
-  it('should reject building an empty program', () => {
-    const error = 'Cannot build an empty program'
-
-    expect(() => new ProgramBuilder(_allInstructions).build()).toThrow(error)
-    expect(() => new RegularProgramBuilder().build()).toThrow(error)
-  })
-
-  it('should build a program with a single instruction without args', () => {
-    const program = new RegularProgramBuilder().xycSwapXD().build()
-
-    expect(program.toString()).toBe('0x1600')
-    expect(RegularProgramBuilder.decode(program).build().toString()).toBe(program.toString())
-  })
+  registerProgramDecodeEdgeCases(USDC)
 
   it('should reject reserved and unknown opcodes on decode', () => {
     expect(() => RegularProgramBuilder.decode(new SwapVmProgram('0x0000'))).toThrow(

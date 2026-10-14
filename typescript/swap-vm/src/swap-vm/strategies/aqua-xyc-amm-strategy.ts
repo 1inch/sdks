@@ -50,7 +50,7 @@ export class AquaXYCAmmStrategy extends AquaAMMStrategy {
       builder.add(fee.aquaProtocolFeeAmountInXD.createIx(this.protocolFee))
     }
 
-    if (this.decayPeriod) {
+    if (this.decayPeriod !== undefined) {
       builder.decayXD({ decayPeriod: this.decayPeriod })
     }
 

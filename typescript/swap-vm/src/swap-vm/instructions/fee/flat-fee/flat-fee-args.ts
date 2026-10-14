@@ -9,7 +9,7 @@ import type { IArgsCoder, IArgsData } from '../../types'
 const FEE_100_PERCENT = 1e9 // 1e9 = 100%
 
 /**
- * Arguments for flat fee instructions (flatFeeAmountInXD)
+ * Arguments for flat fee instructions (flatFeeAmountInXD, flatFeeAmountOutXD)
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Fee.sol#L66
  **/
 export class FlatFeeArgs implements IArgsData {
@@ -17,10 +17,7 @@ export class FlatFeeArgs implements IArgsData {
 
   constructor(public readonly fee: bigint) {
     assert(fee >= 0n && fee <= UINT_32_MAX, `Invalid fee: ${fee}. Must be a valid uint32`)
-    assert(
-      fee <= BigInt(FEE_100_PERCENT),
-      `Fee out of range: ${fee}. Must be <= ${FEE_100_PERCENT}`,
-    )
+    assert(fee < BigInt(FEE_100_PERCENT), `Fee out of range: ${fee}. Must be < ${FEE_100_PERCENT}`)
   }
 
   /**

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import type { Address, HexString } from '@1inch/sdk-core'
+import assert from 'assert'
 import { ExtructionArgsCoder } from './extruction-args-coder'
 import type { IArgsCoder, IArgsData } from '../types'
 
@@ -18,7 +19,9 @@ export class ExtructionArgs implements IArgsData {
   constructor(
     public readonly target: Address,
     public readonly extructionArgs: HexString,
-  ) {}
+  ) {
+    assert(!target.isZero(), 'Invalid target. Must be non zero address')
+  }
 
   /**
    * Decodes hex data into ExtructionArgs instance

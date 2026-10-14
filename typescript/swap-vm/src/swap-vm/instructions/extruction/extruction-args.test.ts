@@ -20,6 +20,20 @@ describe('ExtructionArgs', () => {
     })
   })
 
+  it('should reject a zero target address', () => {
+    expect(() => new ExtructionArgs(Address.ZERO_ADDRESS, payload)).toThrow(
+      'Invalid target. Must be non zero address',
+    )
+  })
+
+  it('should reject a zero target address when decoding', () => {
+    const zeroTarget = new HexString('0x' + '00'.repeat(20) + 'abcdef')
+
+    expect(() => ExtructionArgs.decode(zeroTarget)).toThrow(
+      'Invalid target. Must be non zero address',
+    )
+  })
+
   it('should encode empty extruction args as the target only', () => {
     const encoded = ExtructionArgs.CODER.encode(new ExtructionArgs(target, HexString.EMPTY))
 

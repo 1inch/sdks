@@ -85,6 +85,29 @@ describe('Cross-validation with Solidity', () => {
     expect(dynamicProgram.toString()).toBe('0x126a' + BALANCES_ARGS_HEX)
   })
 
+  it('should match exact staticBalancesXD and dynamicBalancesXD bytes from BalancesArgsBuilder', () => {
+    const tokenA = new Address('0x1111111111111111111111111111111111111111')
+    const tokenB = new Address('0x2222222222222222222222222222222222222222')
+    const tokenBalances = [
+      { token: tokenA, value: 100n * 10n ** 18n },
+      { token: tokenB, value: 200n * 10n ** 18n },
+    ]
+
+    // BalancesArgsBuilder.build([0x11..11, 0x22..22], [100e18, 200e18]), 106 (0x6a) bytes
+    const BALANCES_ARGS_HEX =
+      '0002' +
+      '11'.repeat(20) +
+      '22'.repeat(20) +
+      '0000000000000000000000000000000000000000000000056bc75e2d63100000' +
+      '00000000000000000000000000000000000000000000000ad78ebc5ac6200000'
+
+    const staticProgram = new RegularProgramBuilder().staticBalancesXD({ tokenBalances }).build()
+    const dynamicProgram = new RegularProgramBuilder().dynamicBalancesXD({ tokenBalances }).build()
+
+    expect(staticProgram.toString()).toBe('0x116a' + BALANCES_ARGS_HEX)
+    expect(dynamicProgram.toString()).toBe('0x126a' + BALANCES_ARGS_HEX)
+  })
+
   it('should encode MinRate instruction correctly for Solidity', () => {
     const program = new RegularProgramBuilder()
       .requireMinRate1D({
