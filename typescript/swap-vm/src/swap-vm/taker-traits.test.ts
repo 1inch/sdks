@@ -1,12 +1,27 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { afterEach, describe, it, expect, vi } from 'vitest'
-import { Address, HexString } from '@1inch/sdk-core'
+import { UINT_256_MAX, UINT_40_MAX } from '@1inch/byte-utils'
+import { Address, HexString, type DataFor } from '@1inch/sdk-core'
 import { TakerTraits } from './taker-traits'
 
-describe('TakerTraits', () => {
-  const mockReceiver = Address.fromBigInt(2n)
+const fluentChainReceiver = Address.fromBigInt(0xaaaan)
 
+function expectFluentChainResult(traits: TakerTraits, receiver: Address): void {
+  expect(traits.exactIn).toBe(false)
+  expect(traits.threshold).toBe(2000n)
+  expect(traits.customReceiver.equal(receiver)).toBe(true)
+  expect(traits.strictThreshold).toBe(true)
+  expect(traits.useTransferFromAndAquaPush).toBe(true)
+
+  const decoded = TakerTraits.decode(traits.encode())
+  expect(decoded.exactIn).toBe(false)
+  expect(decoded.threshold).toBe(2000n)
+  expect(decoded.customReceiver.equal(receiver)).toBe(true)
+  expect(decoded.strictThreshold).toBe(true)
+}
+
+function registerDefaultTraitsTests(): void {
   describe('default', () => {
     it('should create default traits with all flags off', () => {
       const traits = TakerTraits.default()
@@ -23,6 +38,12 @@ describe('TakerTraits', () => {
       expect(traits.customReceiver?.toString()).toBe(Address.ZERO_ADDRESS.toString())
     })
   })
+}
+
+describe('TakerTraits', () => {
+  const mockReceiver = Address.fromBigInt(2n)
+
+  registerDefaultTraitsTests()
 
   describe('fromParams', () => {
     it('should build traits with specified flags', () => {
@@ -114,6 +135,36 @@ describe('TakerTraits', () => {
   })
 
   describe('threshold', () => {
+    // Bytes 18..20 (the uint16 right before the flags) hold the end offset of the threshold
+    // section; the router only checks the threshold when that section is exactly 32 bytes long
+    const thresholdSectionLength = (traits: TakerTraits): number =>
+      Number(traits.encode().sliceBytes(18, 20).toBigInt())
+
+    it('should leave the threshold section out by default, so the swap has no slippage check', () => {
+      expect(TakerTraits.default().threshold).toBe(0n)
+      expect(thresholdSectionLength(TakerTraits.default())).toBe(0)
+      expect(thresholdSectionLength(TakerTraits.new())).toBe(0)
+    })
+
+    it('should encode a threshold derived from a quote and slippage tolerance as a 32-byte section', () => {
+      const quotedAmountOut = 39_123_456_789_012_345n
+      const slippageBps = 50n
+      const minAmountOut = (quotedAmountOut * (10_000n - slippageBps)) / 10_000n
+
+      const traits = TakerTraits.default().with({ threshold: minAmountOut })
+      const encoded = traits.encode()
+
+      expect(thresholdSectionLength(traits)).toBe(32)
+      expect(encoded.sliceBytes(22, 54).toBigInt()).toBe(minAmountOut)
+      expect(TakerTraits.new({ threshold: minAmountOut }).encode()).toEqual(encoded)
+
+      expect(() => traits.validate(1n, quotedAmountOut)).not.toThrow()
+      expect(() => traits.validate(1n, minAmountOut)).not.toThrow()
+      expect(() => traits.validate(1n, minAmountOut - 1n)).toThrow(
+        'TakerTraitsInsufficientMinOutputAmount',
+      )
+    })
+
     it('should set and get threshold', () => {
       const traits = TakerTraits.default()
       const threshold = 1000000n
@@ -123,8 +174,8 @@ describe('TakerTraits', () => {
       expect(withThreshold.threshold).toBe(threshold)
 
       const withoutThreshold = withThreshold.with({ threshold: undefined })
-      expect(!withoutThreshold.threshold || withoutThreshold.threshold === 0n).toBe(true)
-      expect(withoutThreshold.threshold).toBe(undefined)
+      expect(withoutThreshold.threshold).toBe(0n)
+      expect(() => withoutThreshold.encode()).not.toThrow()
     })
   })
 
@@ -139,8 +190,151 @@ describe('TakerTraits', () => {
       expect(withReceiver.customReceiver?.toString()).toBe(mockReceiver.toString())
 
       const withoutReceiver = withReceiver.with({ customReceiver: undefined })
-      expect(!withoutReceiver.customReceiver || withoutReceiver.customReceiver.isZero()).toBe(true)
-      expect(withoutReceiver.customReceiver).toBe(undefined)
+      expect(withoutReceiver.customReceiver.isZero()).toBe(true)
+      expect(() => withoutReceiver.encode()).not.toThrow()
+    })
+  })
+
+  describe('with', () => {
+    it('should mutate the receiver in place and return it', () => {
+      const base = TakerTraits.new({ threshold: 1000n, exactIn: true })
+      const same = base.with({ exactIn: false, threshold: 2000n })
+
+      expect(same).toBe(base)
+      expect(base.exactIn).toBe(false)
+      expect(base.threshold).toBe(2000n)
+    })
+
+    it('should encode after clearing fields with undefined', () => {
+      const traits = TakerTraits.default()
+        .with({ customReceiver: mockReceiver, threshold: 1n })
+        .with({ customReceiver: undefined, threshold: undefined })
+
+      expect(traits.customReceiver.isZero()).toBe(true)
+      expect(traits.threshold).toBe(0n)
+      expect(traits.encode().toString()).toBe(TakerTraits.default().encode().toString())
+    })
+  })
+
+  describe('withNew', () => {
+    const receiverA = fluentChainReceiver
+    const receiverB = Address.fromBigInt(0xbbbbn)
+
+    it('should return a new instance and leave the original unchanged', () => {
+      const base = TakerTraits.new({
+        threshold: 1000n,
+        customReceiver: receiverA,
+        deadline: 1735689600n,
+        instructionsArgs: new HexString('0x0102'),
+      })
+      const baseEncoded = base.encode().toString()
+
+      const derived = base.withNew({ exactIn: false, customReceiver: receiverB })
+
+      expect(derived).toBeInstanceOf(TakerTraits)
+      expect(derived).not.toBe(base)
+      expect(derived.exactIn).toBe(false)
+      expect(derived.customReceiver.equal(receiverB)).toBe(true)
+      expect(derived.threshold).toBe(1000n)
+      expect(derived.deadline).toBe(1735689600n)
+      expect(derived.instructionsArgs.toString()).toBe('0x0102')
+
+      expect(base.exactIn).toBe(true)
+      expect(base.customReceiver.equal(receiverA)).toBe(true)
+      expect(base.encode().toString()).toBe(baseEncoded)
+    })
+
+    it('should derive independent instances from the same base', () => {
+      const base = TakerTraits.default()
+
+      const toA = base.withNew({ customReceiver: receiverA })
+      const toB = base.withNew({ customReceiver: receiverB })
+
+      expect(toA).not.toBe(toB)
+      expect(toA.customReceiver.equal(receiverA)).toBe(true)
+      expect(toB.customReceiver.equal(receiverB)).toBe(true)
+      expect(base.customReceiver.isZero()).toBe(true)
+
+      expect(TakerTraits.decode(toA.encode()).customReceiver.equal(receiverA)).toBe(true)
+      expect(TakerTraits.decode(toB.encode()).customReceiver.equal(receiverB)).toBe(true)
+      expect(base.encode().toString()).toBe(TakerTraits.default().encode().toString())
+    })
+
+    it('should return an equal copy when no fields are updated', () => {
+      const base = TakerTraits.new({ threshold: 5n, signature: new HexString('0xabcd') })
+
+      const copy = base.withNew({})
+
+      expect(copy).not.toBe(base)
+      expect(copy).toEqual(base)
+      expect(copy.encode().toString()).toBe(base.encode().toString())
+    })
+
+    it('should reset keys set to undefined to canonical defaults', () => {
+      const base = TakerTraits.new({
+        exactIn: false,
+        threshold: 1000n,
+        customReceiver: receiverA,
+        deadline: 1735689600n,
+        preTransferInHookData: new HexString('0x1234'),
+        signature: new HexString('0xabcd'),
+      })
+
+      const updated = base.withNew({
+        exactIn: undefined,
+        threshold: undefined,
+        customReceiver: undefined,
+        deadline: undefined,
+        preTransferInHookData: undefined,
+        signature: undefined,
+        shouldUnwrap: true,
+      })
+
+      expect(updated.exactIn).toBe(true)
+      expect(updated.threshold).toBe(0n)
+      expect(updated.customReceiver.isZero()).toBe(true)
+      expect(updated.deadline).toBe(0n)
+      expect(updated.preTransferInHookData.toString()).toBe(HexString.EMPTY.toString())
+      expect(updated.signature.toString()).toBe(HexString.EMPTY.toString())
+      expect(updated.shouldUnwrap).toBe(true)
+      expect(updated.encode().toString()).toBe(
+        TakerTraits.new({ shouldUnwrap: true }).encode().toString(),
+      )
+    })
+
+    it('should encode after updating fields with undefined values', () => {
+      const traits = TakerTraits.default().withNew({
+        customReceiver: undefined,
+        threshold: undefined,
+        deadline: undefined,
+        signature: undefined,
+      })
+
+      expect(() => traits.encode()).not.toThrow()
+      expect(traits.encode().toString()).toBe(TakerTraits.default().encode().toString())
+    })
+  })
+
+  describe('partial update helpers', () => {
+    it.each([
+      {
+        label: 'with',
+        chain: (): TakerTraits =>
+          TakerTraits.default()
+            .with({ exactIn: false, threshold: 2000n })
+            .with({ customReceiver: fluentChainReceiver })
+            .with({ strictThreshold: true }),
+      },
+      {
+        label: 'withNew',
+        chain: (): TakerTraits =>
+          TakerTraits.default()
+            .withNew({ exactIn: false, threshold: 2000n })
+            .withNew({ customReceiver: fluentChainReceiver })
+            .withNew({ strictThreshold: true }),
+      },
+    ])('should support fluent chaining via $label', ({ chain }) => {
+      expectFluentChainResult(chain(), fluentChainReceiver)
     })
   })
 
@@ -196,6 +390,380 @@ describe('TakerTraits', () => {
 
       expect(decoded.deadline).toBe(deadline)
       expect(decoded.exactIn).toBe(true)
+    })
+  })
+
+  describe('decode', () => {
+    const EXACT_IN_AQUA_PUSH_FLAGS = 0x41
+    const PRE_TRANSFER_IN_CALLBACK_FLAG = 0x04
+    const PRE_TRANSFER_OUT_CALLBACK_FLAG = 0x08
+
+    const packRaw = (
+      offsets: number[],
+      data: string,
+      flags = EXACT_IN_AQUA_PUSH_FLAGS,
+    ): HexString =>
+      new HexString(
+        '0x' +
+          [...offsets]
+            .reverse()
+            .map((offset) => offset.toString(16).padStart(4, '0'))
+            .join('') +
+          flags.toString(16).padStart(4, '0') +
+          data,
+      )
+
+    const pack = (
+      sections: string[],
+      flags = EXACT_IN_AQUA_PUSH_FLAGS,
+      signature = '',
+    ): HexString => {
+      const offsets = Array.from({ length: 10 }, (_, i) =>
+        sections.slice(0, i + 1).reduce((sum, section) => sum + section.length / 2, 0),
+      )
+
+      return packRaw(offsets, sections.join('') + signature, flags)
+    }
+
+    const expectByteIdenticalRoundTrip = (traits: TakerTraits, label?: string): void => {
+      const encoded = traits.encode()
+
+      expect(TakerTraits.decode(encoded).encode().toString(), label).toBe(encoded.toString())
+    }
+
+    const signature = new HexString(
+      '0x1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d' +
+        '4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c1b',
+    )
+
+    it('should decode TakerTraitsLib.build output and re-encode it byte-identically', () => {
+      const built = new HexString(
+        '0x004a004600440041003f003d003b003900340020003e' +
+          '0000000000000000000000000000000000000000000000000de0b6b3a7640000' +
+          '742d35cc6634c0532925a3b844bc9e7595f0beb7' +
+          '0067748580' +
+          '123456789abcdef0' +
+          'abcdef0102' +
+          'aabbccdd' +
+          signature.toString().slice(2),
+      )
+
+      const decoded = TakerTraits.decode(built)
+
+      expect(decoded.exactIn).toBe(false)
+      expect(decoded.shouldUnwrap).toBe(true)
+      expect(decoded.strictThreshold).toBe(true)
+      expect(decoded.firstTransferFromTaker).toBe(true)
+      expect(decoded.useTransferFromAndAquaPush).toBe(false)
+      expect(decoded.threshold).toBe(10n ** 18n)
+      expect(decoded.customReceiver.toString()).toBe('0x742d35cc6634c0532925a3b844bc9e7595f0beb7')
+      expect(decoded.deadline).toBe(1735689600n)
+      expect(decoded.preTransferInHookData.toString()).toBe('0x1234')
+      expect(decoded.postTransferInHookData.toString()).toBe('0x5678')
+      expect(decoded.preTransferOutHookData.toString()).toBe('0x9abc')
+      expect(decoded.postTransferOutHookData.toString()).toBe('0xdef0')
+      expect(decoded.preTransferInCallbackEnabled).toBe(true)
+      expect(decoded.preTransferInCallbackData.toString()).toBe('0xabcdef')
+      expect(decoded.preTransferOutCallbackEnabled).toBe(true)
+      expect(decoded.preTransferOutCallbackData.toString()).toBe('0x0102')
+      expect(decoded.instructionsArgs.toString()).toBe('0xaabbccdd')
+      expect(decoded.signature.equal(signature)).toBe(true)
+      expect(decoded.encode().toString()).toBe(built.toString())
+    })
+
+    it('should decode callback flags without callback data and re-encode them', () => {
+      const built = new HexString('0x0000000000000000000000000000000000000000000d')
+
+      const decoded = TakerTraits.decode(built)
+
+      expect(decoded.preTransferInCallbackEnabled).toBe(true)
+      expect(decoded.preTransferOutCallbackEnabled).toBe(true)
+      expect(decoded.preTransferInCallbackData.isEmpty()).toBe(true)
+      expect(decoded.preTransferOutCallbackData.isEmpty()).toBe(true)
+      expect(decoded.encode().toString()).toBe(built.toString())
+    })
+
+    it('should round-trip every flag combination byte-identically', () => {
+      const allFields: Partial<DataFor<TakerTraits>> = {
+        threshold: 1n,
+        customReceiver: mockReceiver,
+        deadline: 1n,
+        preTransferInHookData: new HexString('0x01'),
+        postTransferInHookData: new HexString('0x02'),
+        preTransferOutHookData: new HexString('0x03'),
+        postTransferOutHookData: new HexString('0x04'),
+        preTransferInCallbackData: new HexString('0x05'),
+        preTransferOutCallbackData: new HexString('0x06'),
+        instructionsArgs: new HexString('0x07'),
+        signature,
+      }
+
+      for (let flags = 0; flags < 1 << 7; flags++) {
+        const flagFields: Partial<DataFor<TakerTraits>> = {
+          exactIn: Boolean(flags & 0x01),
+          shouldUnwrap: Boolean(flags & 0x02),
+          preTransferInCallbackEnabled: Boolean(flags & 0x04),
+          preTransferOutCallbackEnabled: Boolean(flags & 0x08),
+          strictThreshold: Boolean(flags & 0x10),
+          firstTransferFromTaker: Boolean(flags & 0x20),
+          useTransferFromAndAquaPush: Boolean(flags & 0x40),
+        }
+
+        expectByteIdenticalRoundTrip(TakerTraits.new(flagFields), `flags ${flags}`)
+        expectByteIdenticalRoundTrip(
+          TakerTraits.new({ ...flagFields, ...allFields }),
+          `flags ${flags} with all fields`,
+        )
+      }
+    })
+
+    it('should round-trip every combination of optional fields byte-identically', () => {
+      const optionalFields: Partial<DataFor<TakerTraits>>[] = [
+        { threshold: 25000000000000000000n },
+        { customReceiver: new Address('0x742d35cc6634c0532925a3b844bc9e7595f0beb7') },
+        { deadline: 1735689600n },
+        { preTransferInHookData: new HexString('0x1234') },
+        { postTransferInHookData: new HexString('0x5678') },
+        { preTransferOutHookData: new HexString('0x9abc') },
+        { postTransferOutHookData: new HexString('0xdef0') },
+        { preTransferInCallbackData: new HexString('0xabcdef') },
+        { preTransferOutCallbackData: new HexString('0x0102') },
+        { instructionsArgs: new HexString('0xaabbccdd') },
+        { signature },
+      ]
+
+      for (let mask = 0; mask < 1 << optionalFields.length; mask++) {
+        const fields = optionalFields.filter((_, i) => (mask >> i) & 1)
+        const traits = TakerTraits.new(Object.assign({ exactIn: mask % 3 !== 0 }, ...fields))
+
+        expectByteIdenticalRoundTrip(traits, `fields mask ${mask}`)
+      }
+    })
+
+    it.each([1, 31, 33, 64])('should decode a threshold section of length %i as absent', (size) => {
+      const decoded = TakerTraits.decode(pack(['ff'.repeat(size), '', '', '1234']))
+
+      expect(decoded.threshold).toBe(0n)
+      expect(decoded.preTransferInHookData.toString()).toBe('0x1234')
+    })
+
+    it.each([1, 19, 21, 32])(
+      'should decode a receiver section of length %i as the taker',
+      (size) => {
+        const decoded = TakerTraits.decode(pack(['', '11'.repeat(size), '', '1234']))
+
+        expect(decoded.customReceiver.isZero()).toBe(true)
+        expect(decoded.preTransferInHookData.toString()).toBe('0x1234')
+      },
+    )
+
+    it.each([1, 4, 6, 8])('should decode a deadline section of length %i as absent', (size) => {
+      const decoded = TakerTraits.decode(pack(['', '', 'ff'.repeat(size), '1234']))
+
+      expect(decoded.deadline).toBe(0n)
+      expect(decoded.preTransferInHookData.toString()).toBe('0x1234')
+    })
+
+    it('should decode exactly sized threshold, receiver and deadline sections', () => {
+      const decoded = TakerTraits.decode(
+        pack(['00'.repeat(31) + '2a', '00'.repeat(19) + '02', '0000000001']),
+      )
+
+      expect(decoded.threshold).toBe(42n)
+      expect(decoded.customReceiver.equal(mockReceiver)).toBe(true)
+      expect(decoded.deadline).toBe(1n)
+    })
+
+    it('should decode a 5-byte zero deadline as no deadline', () => {
+      const decoded = TakerTraits.decode(pack(['', '', '00'.repeat(5)]))
+
+      expect(decoded.deadline).toBe(0n)
+    })
+
+    it('should reject a 32-byte zero threshold', () => {
+      expect(() => TakerTraits.decode(pack(['00'.repeat(32)]))).toThrow(
+        'Unsupported TakerTraits: 32-byte zero threshold',
+      )
+    })
+
+    it('should reject a 20-byte zero receiver', () => {
+      expect(() => TakerTraits.decode(pack(['', '00'.repeat(20)]))).toThrow(
+        'Unsupported TakerTraits: 20-byte zero receiver',
+      )
+    })
+
+    it('should reject pre-transfer-in callback data without its callback flag', () => {
+      const sections = ['', '', '', '', '', '', '', 'abcd']
+
+      expect(() => TakerTraits.decode(pack(sections))).toThrow(
+        'Unsupported TakerTraits: preTransferInCallbackData is set but its callback flag is not',
+      )
+
+      const withFlag = pack(sections, EXACT_IN_AQUA_PUSH_FLAGS | PRE_TRANSFER_IN_CALLBACK_FLAG)
+      const decoded = TakerTraits.decode(withFlag)
+      expect(decoded.preTransferInCallbackEnabled).toBe(true)
+      expect(decoded.preTransferInCallbackData.toString()).toBe('0xabcd')
+      expect(decoded.encode().toString()).toBe(withFlag.toString())
+    })
+
+    it('should reject pre-transfer-out callback data without its callback flag', () => {
+      const sections = ['', '', '', '', '', '', '', '', 'abcd']
+
+      expect(() => TakerTraits.decode(pack(sections))).toThrow(
+        'Unsupported TakerTraits: preTransferOutCallbackData is set but its callback flag is not',
+      )
+
+      const withFlag = pack(sections, EXACT_IN_AQUA_PUSH_FLAGS | PRE_TRANSFER_OUT_CALLBACK_FLAG)
+      const decoded = TakerTraits.decode(withFlag)
+      expect(decoded.preTransferOutCallbackEnabled).toBe(true)
+      expect(decoded.preTransferOutCallbackData.toString()).toBe('0xabcd')
+      expect(decoded.encode().toString()).toBe(withFlag.toString())
+    })
+
+    it('should reject decreasing section offsets', () => {
+      expect(() => TakerTraits.decode(packRaw([0, 0, 4, 2, 2, 2, 2, 2, 2, 2], 'aabbccdd'))).toThrow(
+        'Invalid TakerTraits: section offset 2 is lower than the previous offset 4',
+      )
+      expect(() => TakerTraits.decode(packRaw([2, 2, 2, 2, 2, 2, 2, 2, 2, 1], 'aabb'))).toThrow(
+        'Invalid TakerTraits: section offset 1 is lower than the previous offset 2',
+      )
+    })
+
+    it('should reject section offsets beyond the data', () => {
+      expect(() => TakerTraits.decode(packRaw([0, 0, 0, 8, 8, 8, 8, 8, 8, 8], 'aabb'))).toThrow(
+        'Invalid TakerTraits: section offset 8 exceeds the data length 2',
+      )
+      expect(() => TakerTraits.decode(packRaw([0, 0, 0, 0, 0, 0, 0, 0, 0, 3], 'aabb'))).toThrow(
+        'Invalid TakerTraits: section offset 3 exceeds the data length 2',
+      )
+    })
+
+    it('should read the signature from the bytes after the last section', () => {
+      const withSignature = TakerTraits.decode(
+        pack(['', '', '', '', '', '', '', '', '', 'aabb'], EXACT_IN_AQUA_PUSH_FLAGS, 'ccdd'),
+      )
+      expect(withSignature.instructionsArgs.toString()).toBe('0xaabb')
+      expect(withSignature.signature.toString()).toBe('0xccdd')
+
+      const withoutSignature = TakerTraits.decode(
+        pack(['', '', '', '', '', '', '', '', '', 'aabb']),
+      )
+      expect(withoutSignature.instructionsArgs.toString()).toBe('0xaabb')
+      expect(withoutSignature.signature.isEmpty()).toBe(true)
+    })
+  })
+
+  describe('value ranges', () => {
+    const sectionEnds = (encoded: HexString): number[] =>
+      Array.from({ length: 10 }, (_, i) =>
+        Number(encoded.sliceBytes(i * 2, i * 2 + 2).toBigInt()),
+      ).reverse()
+
+    const construct = (threshold: bigint, deadline: bigint): TakerTraits =>
+      new TakerTraits(
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        threshold,
+        Address.ZERO_ADDRESS,
+        deadline,
+      )
+
+    it('should encode the max threshold as a 32-byte section that round-trips', () => {
+      const encoded = TakerTraits.new({ threshold: UINT_256_MAX }).encode()
+
+      expect(encoded.toString()).toBe(
+        '0x00200020002000200020002000200020002000200041' + 'ff'.repeat(32),
+      )
+      expect(sectionEnds(encoded)[0]).toBe(32)
+
+      const decoded = TakerTraits.decode(encoded)
+      expect(decoded.threshold).toBe(UINT_256_MAX)
+      expect(decoded.encode().toString()).toBe(encoded.toString())
+    })
+
+    it('should encode the max deadline as a 5-byte section that round-trips', () => {
+      const encoded = TakerTraits.new({ deadline: UINT_40_MAX }).encode()
+
+      expect(encoded.toString()).toBe(
+        '0x00050005000500050005000500050005000000000041' + 'ff'.repeat(5),
+      )
+      const [thresholdEnd, toEnd, deadlineEnd] = sectionEnds(encoded)
+      expect(thresholdEnd).toBe(0)
+      expect(deadlineEnd - toEnd).toBe(5)
+
+      const decoded = TakerTraits.decode(encoded)
+      expect(decoded.deadline).toBe(UINT_40_MAX)
+      expect(decoded.encode().toString()).toBe(encoded.toString())
+    })
+
+    it('should match TakerTraitsLib.build output for max threshold and deadline', () => {
+      const encoded = TakerTraits.new({ threshold: UINT_256_MAX, deadline: UINT_40_MAX }).encode()
+
+      expect(encoded.toString()).toBe(
+        '0x00250025002500250025002500250025002000200041' + 'ff'.repeat(37),
+      )
+
+      const decoded = TakerTraits.decode(encoded)
+      expect(decoded.threshold).toBe(UINT_256_MAX)
+      expect(decoded.deadline).toBe(UINT_40_MAX)
+    })
+
+    it('should accept boundary values via constructor, new() and with()', () => {
+      for (const [threshold, deadline] of [
+        [0n, 0n],
+        [UINT_256_MAX, UINT_40_MAX],
+      ]) {
+        expect(construct(threshold, deadline).threshold).toBe(threshold)
+        expect(TakerTraits.new({ threshold, deadline }).deadline).toBe(deadline)
+
+        const updated = TakerTraits.default().with({ threshold, deadline })
+        expect(updated.threshold).toBe(threshold)
+        expect(updated.deadline).toBe(deadline)
+      }
+    })
+
+    it.each([
+      { label: '-1', threshold: -1n },
+      { label: 'UINT_256_MAX + 1', threshold: UINT_256_MAX + 1n },
+      { label: '2^264 - 1', threshold: 2n ** 264n - 1n },
+    ])('should reject threshold $label via constructor, new() and with()', ({ threshold }) => {
+      const message = `Invalid threshold: ${threshold}. Must be >= 0 and <= UINT_256_MAX`
+
+      expect(() => construct(threshold, 0n)).toThrow(message)
+      expect(() => TakerTraits.new({ threshold })).toThrow(message)
+      expect(() => TakerTraits.default().with({ threshold })).toThrow(message)
+    })
+
+    it.each([
+      { label: '-1', deadline: -1n },
+      { label: 'UINT_40_MAX + 1', deadline: UINT_40_MAX + 1n },
+      { label: '2^44', deadline: 2n ** 44n },
+    ])('should reject deadline $label via constructor, new() and with()', ({ deadline }) => {
+      const message = `Invalid deadline: ${deadline}. Must be >= 0 and <= UINT_40_MAX`
+
+      expect(() => construct(0n, deadline)).toThrow(message)
+      expect(() => TakerTraits.new({ deadline })).toThrow(message)
+      expect(() => TakerTraits.default().with({ deadline })).toThrow(message)
+    })
+
+    it('should leave the instance unchanged when with() rejects a value', () => {
+      const traits = TakerTraits.new({ threshold: 1000n, deadline: 1735689600n })
+      const encoded = traits.encode().toString()
+
+      expect(() => traits.with({ exactIn: false, threshold: -1n })).toThrow('Invalid threshold')
+      expect(() => traits.with({ exactIn: false, deadline: UINT_40_MAX + 1n })).toThrow(
+        'Invalid deadline',
+      )
+
+      expect(traits.exactIn).toBe(true)
+      expect(traits.threshold).toBe(1000n)
+      expect(traits.deadline).toBe(1735689600n)
+      expect(traits.encode().toString()).toBe(encoded)
     })
   })
 
