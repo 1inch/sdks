@@ -384,6 +384,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * Applies fee to amountOut
+   * @experimental FeeExperimental opcode, not recommended for production
    **/
   public flatFeeAmountOutXD(data: DataFor<fee.FlatFeeArgs>): this {
     super.add(fee.flatFeeAmountOutXD.createIx(new fee.FlatFeeArgs(data.fee)))
@@ -393,6 +394,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * Applies progressive fee to amountIn
+   * @experimental FeeExperimental opcode, not recommended for production
    **/
   public progressiveFeeInXD(data: DataFor<fee.ProgressiveFeeArgs>): this {
     super.add(fee.progressiveFeeInXD.createIx(new fee.ProgressiveFeeArgs(data.fee)))
@@ -402,6 +404,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
 
   /**
    * Applies progressive fee to amountOut
+   * @experimental FeeExperimental opcode, not recommended for production
    **/
   public progressiveFeeOutXD(data: DataFor<fee.ProgressiveFeeArgs>): this {
     super.add(fee.progressiveFeeOutXD.createIx(new fee.ProgressiveFeeArgs(data.fee)))

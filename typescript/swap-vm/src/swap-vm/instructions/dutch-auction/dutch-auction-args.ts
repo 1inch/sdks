@@ -37,7 +37,7 @@ export class DutchAuctionArgs implements IArgsData {
   /**
    * startTime - auction start time (uint40)
    * duration - auction duration in seconds (uint16)
-   * decayFactor - price decay per second, 1e18 = no decay (uint64)
+   * decayFactor - price decay per second, must be less than 1e18, e.g. 0.99e18 = 1% (uint64)
    **/
   constructor(
     public readonly startTime: bigint,

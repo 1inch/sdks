@@ -10,10 +10,10 @@ import { AQUA_ABI } from '../abi/Aqua.abi'
 const UINT_248_MAX = 2n ** 248n - 1n
 
 /**
- * Aqua Protocol Contract - Encoding/decoding for ship, dock, push, pull
+ * Aqua Protocol Contract - Encoding for ship and dock
  *
- * This class provides methods to encode and decode calldata for the Aqua Protocol
- * smart contract's core functions.
+ * This class provides methods to encode calldata and build transactions for the Aqua Protocol
+ * smart contract's `ship` and `dock` functions. `push` and `pull` are not encoded here.
  */
 export class AquaProtocolContract {
   constructor(public readonly address: Address) {}

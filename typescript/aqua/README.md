@@ -95,7 +95,7 @@ const dockTx = aqua.dock({
 **Parameters:**
 - `app` - Address of the application contract
 - `strategyHash` - Keccak256 hash of the strategy bytes
-- `tokens` - Array of token addresses to withdraw
+- `tokens` - Array of all token addresses of the strategy, whose virtual balances are set to zero
 
 **Returns:** `CallInfo` object with encoded transaction data
 
@@ -240,10 +240,11 @@ The SDK exports:
 
 ### Example 1: Ship Liquidity to [XYCSwap.sol](https://github.com/1inch/aqua/blob/0637013a51cd56851f7b143a1f4500fdc93726cc/src/apps/XYCSwap.sol) aqua app
 
-Initialize a liquidity strategy by depositing tokens into Aqua's virtual balance system.
+Initialize a liquidity strategy by setting its virtual balances in Aqua. `ship` does not transfer tokens: they stay in the maker's wallet and Aqua pulls them with `transferFrom` when swaps execute, so the maker must hold the tokens and approve the Aqua contract to spend each of them.
 
-```typescriptimport { AquaProtocolContract, Address, HexString, AQUA_CONTRACT_ADDRESSES, NetworkEnum } from '@1inch/aqua-sdk'
-import { encodeAbiParameters, parseUnits, http, createWalletClient, isHex } from 'viem'
+```typescript
+import { AquaProtocolContract, Address, HexString, AQUA_CONTRACT_ADDRESSES, NetworkEnum } from '@1inch/aqua-sdk'
+import { encodeAbiParameters, parseUnits, http, createWalletClient, isHex, erc20Abi, maxUint256 } from 'viem'
 import { privateKeyToAccount, privateKeyToAddress } from 'viem/accounts'
 import { mainnet } from 'viem/chains'
 import assert from 'assert'
@@ -305,15 +306,24 @@ const shipTx = aqua.ship({
   ]
 })
 
-// Send transaction
 const wallet = createWalletClient({
   chain: mainnet,
   transport: http(),
   account: privateKeyToAccount(makerPrivateKey)
 })
 
-await wallet.sendTransaction(shipTx)
+// Aqua pulls the tokens from the maker's wallet when swaps execute, so it needs an allowance
+for (const token of [USDC, WETH] as const) {
+  await wallet.writeContract({
+    address: token,
+    abi: erc20Abi,
+    functionName: 'approve',
+    args: [aqua.address.toString(), maxUint256]
+  })
+}
 
+// Send transaction
+await wallet.sendTransaction(shipTx)
 ```
 
 **Full test example:** [tests/aqua.spec.ts - should ship](https://github.com/1inch/sdks/blob/master/typescript/aqua/tests/aqua.spec.ts#L27)
@@ -442,7 +452,7 @@ await wallet.waitForTransactionReceipt({ hash: swapTx })
 
 ### Example 3: Dock Liquidity
 
-Withdraw all liquidity from a strategy and close it.
+Close a strategy by setting all of its virtual balances to zero. `dock` does not transfer tokens: they are already in the maker's wallet.
 
 ```typescript
 import { AquaProtocolContract, Address, HexString, AQUA_CONTRACT_ADDRESSES, NetworkEnum } from '@1inch/aqua-sdk'
@@ -464,8 +474,8 @@ const strategy = '0x' // parsed from ship events or fetched from api
 // Initialize Aqua contract
 const aqua = new AquaProtocolContract(AQUA_CONTRACT_ADDRESSES[NetworkEnum.ETHEREUM])
 
-// Create ship transaction
-const shipTx = aqua.dock({
+// Create dock transaction
+const dockTx = aqua.dock({
   app: new Address(app),
   strategyHash: AquaProtocolContract.calculateStrategyHash(new HexString(strategy)),
   tokens: [new Address(USDC), new Address(WETH)]
@@ -478,9 +488,9 @@ const wallet = createWalletClient({
   account: privateKeyToAccount(makerPrivateKey)
 })
 
-await wallet.sendTransaction(shipTx)
+await wallet.sendTransaction(dockTx)
 
-// After transaction is confirmed, all virtual balances are withdrawn
+// After the transaction is confirmed, the strategy's virtual balances are zero
 // and the strategy is closed
 ```
 
