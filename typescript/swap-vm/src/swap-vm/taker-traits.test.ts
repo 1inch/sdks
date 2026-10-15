@@ -861,9 +861,9 @@ describe('TakerTraits', () => {
       const deadline = 1735689600n
       const traits = TakerTraits.new({ deadline })
 
-      expect(() => traits.validate(1n, 1n, { timestamp: deadline - 1n })).not.toThrow()
-      expect(() => traits.validate(1n, 1n, { timestamp: deadline })).not.toThrow()
-      expect(() => traits.validate(1n, 1n, { timestamp: deadline + 1n })).toThrow(
+      expect(() => traits.validate(1n, 1n, deadline - 1n)).not.toThrow()
+      expect(() => traits.validate(1n, 1n, deadline)).not.toThrow()
+      expect(() => traits.validate(1n, 1n, deadline + 1n)).toThrow(
         'TakerTraitsDeadlineExpired: timestamp 1735689601 > deadline 1735689600',
       )
     })
@@ -878,59 +878,35 @@ describe('TakerTraits', () => {
     })
 
     it('should ignore the timestamp when no deadline is set', () => {
-      expect(() => TakerTraits.default().validate(1n, 1n, { timestamp: 2n ** 64n })).not.toThrow()
-    })
-
-    it('should check takerAmount against amountIn for exact input', () => {
-      const traits = TakerTraits.new({ exactIn: true })
-
-      expect(() => traits.validate(100n, 50n, { takerAmount: 100n })).not.toThrow()
-      expect(() => traits.validate(100n, 50n, { takerAmount: 50n })).toThrow(
-        'TakerTraitsTakerAmountInMismatch: takerAmount 50 != amountIn 100',
-      )
-    })
-
-    it('should check takerAmount against amountOut for exact output', () => {
-      const traits = TakerTraits.new({ exactIn: false })
-
-      expect(() => traits.validate(100n, 50n, { takerAmount: 50n })).not.toThrow()
-      expect(() => traits.validate(100n, 50n, { takerAmount: 100n })).toThrow(
-        'TakerTraitsTakerAmountOutMismatch: takerAmount 100 != amountOut 50',
-      )
+      expect(() => TakerTraits.default().validate(1n, 1n, 2n ** 64n)).not.toThrow()
     })
 
     it('should throw for the first failing check in on-chain order for exact input', () => {
       const deadline = 1735689600n
       const traits = TakerTraits.new({ exactIn: true, threshold: 1000n, deadline })
-      const expired = { takerAmount: 1n, timestamp: deadline + 1n }
-      const inTime = { takerAmount: 1n, timestamp: deadline }
 
-      expect(() => traits.validate(100n, 0n, expired)).toThrow(
+      expect(() => traits.validate(100n, 0n, deadline + 1n)).toThrow(
         'TakerTraitsAmountOutMustBeGreaterThanZero',
       )
-      expect(() => traits.validate(100n, 1n, expired)).toThrow('TakerTraitsDeadlineExpired')
-      expect(() => traits.validate(100n, 1n, inTime)).toThrow('TakerTraitsTakerAmountInMismatch')
-      expect(() => traits.validate(100n, 1n, { ...inTime, takerAmount: 100n })).toThrow(
+      expect(() => traits.validate(100n, 1n, deadline + 1n)).toThrow('TakerTraitsDeadlineExpired')
+      expect(() => traits.validate(100n, 1n, deadline)).toThrow(
         'TakerTraitsInsufficientMinOutputAmount',
       )
-      expect(() => traits.validate(100n, 1000n, { ...inTime, takerAmount: 100n })).not.toThrow()
+      expect(() => traits.validate(100n, 1000n, deadline)).not.toThrow()
     })
 
     it('should throw for the first failing check in on-chain order for exact output', () => {
       const deadline = 1735689600n
       const traits = TakerTraits.new({ exactIn: false, threshold: 1000n, deadline })
-      const expired = { takerAmount: 1n, timestamp: deadline + 1n }
-      const inTime = { takerAmount: 1n, timestamp: deadline }
 
-      expect(() => traits.validate(2000n, 0n, expired)).toThrow(
+      expect(() => traits.validate(2000n, 0n, deadline + 1n)).toThrow(
         'TakerTraitsAmountOutMustBeGreaterThanZero',
       )
-      expect(() => traits.validate(2000n, 5n, expired)).toThrow('TakerTraitsDeadlineExpired')
-      expect(() => traits.validate(2000n, 5n, inTime)).toThrow('TakerTraitsTakerAmountOutMismatch')
-      expect(() => traits.validate(2000n, 5n, { ...inTime, takerAmount: 5n })).toThrow(
+      expect(() => traits.validate(2000n, 5n, deadline + 1n)).toThrow('TakerTraitsDeadlineExpired')
+      expect(() => traits.validate(2000n, 5n, deadline)).toThrow(
         'TakerTraitsExceedingMaxInputAmount',
       )
-      expect(() => traits.validate(1000n, 5n, { ...inTime, takerAmount: 5n })).not.toThrow()
+      expect(() => traits.validate(1000n, 5n, deadline)).not.toThrow()
     })
   })
 
