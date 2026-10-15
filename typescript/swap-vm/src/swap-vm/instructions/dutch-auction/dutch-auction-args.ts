@@ -56,6 +56,8 @@ export class DutchAuctionArgs implements IArgsData {
       decayFactor >= 0n && decayFactor <= UINT_64_MAX,
       `Invalid decayFactor: ${decayFactor}. Must be a valid uint64`,
     )
+    assert(duration > 0n, `Invalid duration: ${duration}. Must be > 0`)
+    assert(decayFactor > 0n, `Invalid decayFactor: ${decayFactor}. Must be > 0`)
     assert(decayFactor < 1e18, `Decay factor should be less than 1e18: ${decayFactor}`)
   }
 

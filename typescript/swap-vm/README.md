@@ -6,7 +6,7 @@ A TypeScript SDK for encoding, decoding, and interacting with the 1inch Swap VM 
 
 The Swap VM Protocol is a lightweight virtual machine designed for efficient and flexible token swapping on-chain. This SDK simplifies integration by providing:
 
-- **Transaction Building**: Build typed call data for `quote`, `swap`, and `hash` operations
+- **Transaction Building**: Build typed call data for `quote`, `swap`, `hash`, and `eip712Domain` operations
 - **Instruction System**: Comprehensive instruction set including swaps, liquidity concentration, fees, and controls
 - **Trait management**: Taker and maker traits builders with sensible defaults for standard swaps, plus fine-grained control whenever you need advanced order customization.
 
@@ -45,11 +45,17 @@ const maker = '0xmaker_address'
 const USDC = new Address('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')
 const WETH = new Address('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')
 
-// Price range as P = tokenGt/tokenLt (1e18). E.g. 1500–3000 USDC per WETH → rawPriceMin = 1e18/3000, rawPriceMax = 1e18/1500
-const { ONE_E18 } = instructions.concentrate
+// Price range: 1500–3000 USDC per WETH. `Price.fromHuman` applies the token decimals and `toSqrt()`
+// returns the on-chain bound sqrt(P * 1e18), with P = tokenGt/tokenLt in token base units (1e18 fixed-point).
+// USDC < WETH by address, so P is WETH per USDC and the higher USDC price (3000) is the lower bound
+const { Price } = instructions.concentrate
+const usdcPerWeth = {
+  quoteToken: { address: USDC, decimals: 6n },
+  baseToken: { address: WETH, decimals: 18n }
+}
 const program = AquaXYCAmmStrategy.newConcentrate({
-  rawPriceMin: ONE_E18 / 3000n,
-  rawPriceMax: ONE_E18 / 1500n
+  sqrtPriceMin: Price.fromHuman('3000', usdcPerWeth).toSqrt(),
+  sqrtPriceMax: Price.fromHuman('1500', usdcPerWeth).toSqrt()
 }).build()
 
 const order = Order.new({
@@ -131,8 +137,15 @@ const [_, dstAmount] = decodeFunctionResult({
 
 console.log('dstAmount', dstAmount)
 
+// Slippage protection: the swap reverts if it would deliver less than the quote minus 0.5%
+const slippageBps = 50n
+const minDstAmount = (dstAmount * (10_000n - slippageBps)) / 10_000n
+
 // Swap
-const swapTx = swapVM.swap(swapParams)
+const swapTx = swapVM.swap({
+  ...swapParams,
+  takerTraits: TakerTraits.default().with({ threshold: minDstAmount })
+})
 await taker.send(swapTx)
 ```
 
@@ -166,19 +179,35 @@ const quoteTx = swapVM.quote({
 Execute a swap transaction.
 
 ```typescript
+// quotedAmountOut: amountOut returned by `quote` for the same order, tokens and amount
+const slippageBps = 50n // 0.5%
+const minAmountOut = (quotedAmountOut * (10_000n - slippageBps)) / 10_000n
+
 const swapTx = swapVM.swap({
   order: Order.decode(new HexString('0x...')),
   tokenIn: new Address('0x...'),
   tokenOut: new Address('0x...'),
   amount: 1000000000000000000n,
-  takerTraits: TakerTraits.default(),
+  takerTraits: TakerTraits.new({ exactIn: true, threshold: minAmountOut }),
 })
 ```
 
 **Parameters:**
 - All parameters from `quote`
+- `takerTraits.threshold` - Slippage bound checked on-chain: minimum `amountOut` for exact-in swaps, maximum `amountIn` for exact-out swaps. `0n` (the default) disables the check, see [Slippage protection](#slippage-protection)
 
 **Returns:** `CallInfo` object with encoded transaction data
+
+### Slippage protection
+
+`TakerTraits.threshold` is the only slippage check the router enforces, and it defaults to `0n`. With `0n` the threshold is left out of the encoded taker traits and the router skips the check, so the swap succeeds as long as `amountOut > 0`. Such a swap can be sandwiched, and it accepts whatever the order returns at execution time, even if that is far below the quote.
+
+Set a threshold for every swap, derived from a fresh quote and an explicit slippage tolerance:
+
+- Exact-in (`exactIn: true`, `amount` is the input amount): `threshold` is the minimum `amountOut`, for example `quotedAmountOut * (10_000n - slippageBps) / 10_000n`. Below it, the swap reverts with `TakerTraitsInsufficientMinOutputAmount`.
+- Exact-out (`exactIn: false`, `amount` is the output amount): `threshold` is the maximum `amountIn`, for example `quotedAmountIn * (10_000n + slippageBps) / 10_000n`. Above it, the swap reverts with `TakerTraitsExceedingMaxInputAmount`.
+
+With `strictThreshold: true`, the swap must match `threshold` exactly instead.
 
 ### Hash Order
 
@@ -198,6 +227,40 @@ const hashOrderTx = swapVM.hashOrder(order)
 - `order` - The order to hash
 
 **Returns:** `CallInfo` object with encoded transaction data for the `hash` order function
+
+### EIP-712 domain (signature-based orders)
+
+Orders authorized by a maker signature (`useAquaInsteadOfSignature: false`) are hashed as EIP-712 typed data `Order(address maker,uint256 traits,bytes data)`, so `order.hash(domain)` needs the EIP-712 domain of the router that executes the order. Aqua orders (`MakerTraits.default()`) are hashed as `keccak256(order.encode())` and ignore the domain.
+
+The domain must match the router exactly. A hash computed with another `name`, `version`, `chainId` or `verifyingContract` still looks valid, but the router rejects its signature with `BadSignature`. The deployed `AquaSwapVMRouter` contracts all use the name `1inch SwapVM v1.0`, and the version is `1.0.2` on every chain except Monad, Cronos, HyperEVM and Arc, where it is `1.0`.
+
+For the deployed routers, take the domain from the SDK:
+
+```typescript
+import { Address, getAquaSwapVmEip712Domain, MakerTraits, NetworkEnum, Order } from '@1inch/swap-vm-sdk'
+
+const order = Order.new({
+  maker: new Address('0x...'),
+  traits: MakerTraits.default().with({ useAquaInsteadOfSignature: false }),
+  program, // SwapVmProgram built with a program builder
+})
+
+// { chainId, name, version, verifyingContract }
+const domain = getAquaSwapVmEip712Domain(NetworkEnum.ETHEREUM)
+const orderHash = order.hash(domain)
+```
+
+For any other router, read the domain from the contract (`eip712Domain()`, EIP-5267):
+
+```typescript
+import { Address, HexString, SwapVMContract } from '@1inch/swap-vm-sdk'
+
+const swapVM = new SwapVMContract(new Address('0x...')) // router address
+const { data } = await publicClient.call(swapVM.eip712Domain()) // viem PublicClient
+const domain = SwapVMContract.decodeEip712DomainResult(new HexString(data!))
+
+const orderHash = order.hash(domain)
+```
 
 ## Event Parsing
 
@@ -300,11 +363,26 @@ The generic [`ProgramBuilder`](./src/swap-vm/programs/program-builder.ts):
 - `ProgramBuilder.add(ix)` validates that the instruction’s opcode is present in the provided `ixsSet`.  
   - If you accidentally mix instructions from a different set, it throws with the list of supported opcode IDs.
 - `ProgramBuilder.decode(program)` uses the same `ixsSet` to map opcode indices back to instruction definitions, so your **off-chain opcode table must match the on-chain contract layout**.
+  - Decoding is relative to the builder's opcode table: the same bytes can mean different instructions under different tables (e.g. byte `0x16` is `xycSwapXD` in `_allInstructions` but a reserved slot in `aquaInstructions`). Always decode a program with the table of the router it targets, e.g. `AquaProgramBuilder.decode(program)` for `AquaSwapVMRouter` programs.
+  - `decode` throws on opcode bytes that are missing from the table or map to a reserved `EMPTY_OPCODE` slot, and on instructions whose args do not re-encode to exactly the original bytes. Programs containing debug opcodes decode only on a builder with `withDebug()` enabled.
 
 This makes it safe to:
 
 - Deploy your own `SwapVM`-style contract with a custom opcode mapping.
 - Use `ProgramBuilder` with your custom `ixsSet` to construct and parse programs for that deployment, without changing the rest of the SDK.
+
+**Control flow is not validated**: `jump`, `jumpIfTokenIn` and `jumpIfTokenOut` targets are absolute byte offsets into the built program, and on-chain execution is bounded only by gas, so making a program terminate is up to the maker. `build()` accepts backward jumps (which can loop until the transaction runs out of gas), targets that are not an instruction start, and instructions that no execution path reaches. Call `lint()` on a builder (for a built program, `AquaProgramBuilder.decode(program).lint()`) to get these issues as warnings, without throwing:
+
+```typescript
+new AquaProgramBuilder()
+  .jump({ nextPC: 0n }) // jumps to itself
+  .xycSwapXD()
+  .lint()
+// [
+//   { code: 'backward-jump', instructionIndex: 0, message: 'Instruction 0 (Controls.jump) at offset 0 jumps back to offset 0, so execution can loop until it runs out of gas' },
+//   { code: 'unreachable-instruction', instructionIndex: 1, message: 'Instruction 1 (XYCSwap.xycSwapXD) at offset 4 is unreachable from the program start' },
+// ]
+```
 
 ### Recommended builder for Aqua strategies
 
@@ -361,6 +439,7 @@ For example:
 ```typescript
 import type { SwapVmProgram } from '@1inch/swap-vm-sdk'
 import { AquaProgramBuilder, instructions, Address, Order, MakerTraits } from '@1inch/swap-vm-sdk'
+import { parseUnits } from 'viem'
 const { concentrate, fee } = instructions
 
 /**
@@ -383,7 +462,8 @@ export class SimpleAmmStrategy {
 
   /**
    * Sets the concentrated liquidity price range.
-   * Prices are P = tokenGt/tokenLt in 1e18 fixed-point (e.g. WETH per USDC when USDC < WETH).
+   * Prices are P = tokenGt/tokenLt in 1e18 fixed-point, as a ratio of token base units
+   * (e.g. WETH wei per USDC unit when USDC < WETH), so they depend on both tokens' decimals.
    */
   public withPriceRange(rawPriceMin: bigint, rawPriceMax: bigint): this {
     this.rawPriceMin = rawPriceMin
@@ -429,12 +509,17 @@ export class SimpleAmmStrategy {
   }
 }
 
-// Example usage (price range: e.g. 1500–3000 USDC per WETH → P = WETH per USDC = 1/3000 .. 1/1500 in 1e18):
+// Example usage: 1500–3000 USDC per WETH. USDC < WETH by address, so each raw price is
+// (1 WETH in wei) * 1e18 / (price in USDC units), and the higher USDC price (3000) is the lower bound
 
 const { ONE_E18 } = concentrate
+const oneWeth = parseUnits('1', 18)
 
 const strategy = new SimpleAmmStrategy(USDC, WETH)
-  .withPriceRange(ONE_E18 / 3000n, ONE_E18 / 1500n) // 1500–3000 USDC per WETH
+  .withPriceRange(
+    (oneWeth * ONE_E18) / parseUnits('3000', 6), // rawPriceMin: 3000 USDC per WETH
+    (oneWeth * ONE_E18) / parseUnits('1500', 6), // rawPriceMax: 1500 USDC per WETH
+  )
   .withFeeTokenIn(5) // 5 bps taker fee on input (optional)
 
 const program = strategy.build()
@@ -468,10 +553,7 @@ export class FlatFeeArgs implements IArgsData {
 
   constructor(public readonly fee: bigint) {
     assert(fee >= 0n && fee <= UINT_32_MAX, `Invalid fee: ${fee}. Must be a valid uint32`)
-    assert(
-      fee <= BigInt(FEE_100_PERCENT),
-      `Fee out of range: ${fee}. Must be <= ${FEE_100_PERCENT}`,
-    )
+    assert(fee < BigInt(FEE_100_PERCENT), `Fee out of range: ${fee}. Must be < ${FEE_100_PERCENT}`)
   }
 
   /**
@@ -589,18 +671,19 @@ The SDK exports:
 
 - **[`SwapVMContract`](./src/swap-vm-contract/swap-vm-contract.ts)** - Main contract class for encoding, decoding, and building transactions
 - **[`AQUA_SWAP_VM_CONTRACT_ADDRESSES`](./src/swap-vm-contract/constants.ts)** - Pre-configured contract addresses by network
+- **[`AQUA_SWAP_VM_EIP712_DOMAINS`, `getAquaSwapVmEip712Domain`](./src/swap-vm-contract/constants.ts)** - EIP-712 domain of the deployed routers by network, for hashing signature-based orders
 - **[`SwappedEvent`](./src/swap-vm-contract/events/swapped-event.ts)** - Event class for parsing swapped events
 - **[`Order`](./src/swap-vm/order.ts)** - Order data structure
 - **[`MakerTraits`](./src/swap-vm/maker-traits.ts)** - Maker-side configuration and flags
 - **[`TakerTraits`](./src/swap-vm/taker-traits.ts)** - Taker-side configuration and flags
 - **[`ABI`](./src/abi/)** - Contract ABI exports
-- **Strategies** - [`AquaAMMStrategy`](./src/swap-vm/strategies/aqua-amm-strategy.ts) (base), [`AquaXYCAmmStrategy`](./src/swap-vm/strategies/aqua-xyc-amm-strategy.ts) (use `new()` or `newConcentrate({ rawPriceMin, rawPriceMax })` / `{ sqrtPriceMin, sqrtPriceMax }`), [`AquaPeggedAmmStrategy`](./src/swap-vm/strategies/aqua-pegged-amm-strategy.ts)
+- **Strategies** - [`AquaAMMStrategy`](./src/swap-vm/strategies/aqua-amm-strategy.ts) (base), [`AquaXYCAmmStrategy`](./src/swap-vm/strategies/aqua-xyc-amm-strategy.ts) (use `new()` or `newConcentrate({ sqrtPriceMin, sqrtPriceMax })` with `Price.toSqrt()` bounds; `newConcentrate({ rawPriceMin, rawPriceMax })` rejects raw prices below 1e5), [`AquaPeggedAmmStrategy`](./src/swap-vm/strategies/aqua-pegged-amm-strategy.ts)
 - **[Instructions](./src/swap-vm/instructions/)** - Comprehensive instruction system:
   - `controls` - Flow control instructions
   - `balances` - Balance manipulation instructions
   - `invalidators` - Invalidation instructions
   - `xycSwap` - XYC swap instructions
-  - `concentrate` - Liquidity concentration (e.g. `ConcentrateGrowLiquidity2DArgs.fromSqrtPrices` / `fromRawPrices`; P = tokenGt/tokenLt in 1e18)
+  - `concentrate` - Liquidity concentration (e.g. `ConcentrateGrowLiquidity2DArgs.fromPrices` / `fromSqrtPrices`, exact; `fromRawPrices` takes P = tokenGt/tokenLt in 1e18 and rejects values below 1e5)
   - `peggedSwap` - Pegged-asset swap curve instructions (`stableSwap` is a deprecated alias)
   - `decay` - Decay calculation instructions
   - `limitSwap` - Limit order instructions

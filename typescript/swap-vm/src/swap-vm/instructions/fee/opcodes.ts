@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { FlatFeeArgs } from './flat-fee/flat-fee-args'
+import { ProgressiveFeeArgs } from './progressive-fee/progressive-fee-args'
 import { ProtocolFeeArgs } from './protocol-fee/protocol-fee-args'
 import { DynamicProtocolFeeArgs } from './dynamic-protocol-fee/dynamic-protocol-fee-args'
 import { Opcode } from '../opcode'
@@ -64,18 +65,18 @@ export const flatFeeAmountOutXD: Opcode<FlatFeeArgs> = new Opcode(
  * Applies progressive fee to amountIn
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/FeeExperimental.sol#L46
  **/
-export const progressiveFeeInXD: Opcode<FlatFeeArgs> = new Opcode(
+export const progressiveFeeInXD: Opcode<ProgressiveFeeArgs> = new Opcode(
   Symbol('FeeExperimental.progressiveFeeInXD'),
-  FlatFeeArgs.CODER,
+  ProgressiveFeeArgs.CODER,
 )
 
 /**
  * Applies progressive fee to amountOut
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/FeeExperimental.sol#L74
  **/
-export const progressiveFeeOutXD: Opcode<FlatFeeArgs> = new Opcode(
+export const progressiveFeeOutXD: Opcode<ProgressiveFeeArgs> = new Opcode(
   Symbol('FeeExperimental.progressiveFeeOutXD'),
-  FlatFeeArgs.CODER,
+  ProgressiveFeeArgs.CODER,
 )
 
 /**
