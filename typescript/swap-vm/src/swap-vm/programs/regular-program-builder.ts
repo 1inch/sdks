@@ -217,7 +217,7 @@ export class RegularProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Square-root linear swap curve for pegged assets
+   * Square-root linear swap curve for pegged assets.
    **/
   public peggedSwapGrowPriceRange2D(data: DataFor<peggedSwap.PeggedSwapArgs>): this {
     super.add(
