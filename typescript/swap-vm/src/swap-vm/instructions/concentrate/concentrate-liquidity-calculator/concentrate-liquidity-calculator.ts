@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import type { Address } from '@1inch/sdk-core'
-import assert from 'assert'
 import type {
   ConcentratedLiquidityInfo,
   ConcentrateLiquidityCalculatorArgs,
@@ -16,6 +15,7 @@ import {
   computeLiquidityFromGt,
   computeLiquidityFromLt,
 } from '../concentrate-liquidity-math/concentrate-liquidity-math'
+import { assert } from '../../../../utils/assert'
 
 export class ConcentrateLiquidityCalculator {
   constructor(

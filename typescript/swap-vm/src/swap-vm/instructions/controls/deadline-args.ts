@@ -2,9 +2,9 @@
 
 import type { HexString } from '@1inch/sdk-core'
 import { UINT_40_MAX } from '@1inch/byte-utils'
-import assert from 'assert'
 import { DeadlineArgsCoder } from './deadline-args-coder'
 import type { IArgsCoder, IArgsData } from '../types'
+import { assert } from '../../../utils/assert'
 
 export class DeadlineArgs implements IArgsData {
   public static readonly CODER: IArgsCoder<DeadlineArgs> = new DeadlineArgsCoder()

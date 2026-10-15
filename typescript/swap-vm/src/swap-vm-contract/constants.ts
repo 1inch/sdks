@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { Address, NetworkEnum } from '@1inch/sdk-core'
-import assert from 'assert'
 import type { Eip712Domain } from '../swap-vm/order'
+import { assert } from '../utils/assert'
 
 /**
  * AquaSwapVMRouter contract addresses by chain ID

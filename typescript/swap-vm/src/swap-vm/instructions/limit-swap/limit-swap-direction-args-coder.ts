@@ -2,9 +2,9 @@
 
 import { BytesBuilder, BytesIter, add0x } from '@1inch/byte-utils'
 import { HexString } from '@1inch/sdk-core'
-import assert from 'assert'
 import { LimitSwapDirectionArgs } from './limit-swap-direction-args'
 import type { IArgsCoder } from '../types'
+import { assert } from '../../../utils/assert'
 
 export class LimitSwapDirectionArgsCoder implements IArgsCoder<LimitSwapDirectionArgs> {
   encode(args: LimitSwapDirectionArgs): HexString {

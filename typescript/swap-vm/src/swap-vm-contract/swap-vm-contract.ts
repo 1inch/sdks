@@ -3,10 +3,10 @@
 import { decodeFunctionResult, encodeFunctionData } from 'viem'
 import type { CallInfo } from '@1inch/sdk-core'
 import { Address, HexString } from '@1inch/sdk-core'
-import assert from 'assert'
 import type { QuoteArgs, SwapArgs } from './types'
 import { SWAP_VM_ABI } from '../abi/SwapVM.abi'
 import type { Eip712Domain, Order } from '../swap-vm/order'
+import { assert } from '../utils/assert'
 
 /**
  * SwapVM contract encoding/decoding utilities

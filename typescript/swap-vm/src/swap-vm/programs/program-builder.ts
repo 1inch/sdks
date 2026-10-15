@@ -2,12 +2,12 @@
 
 import { BytesBuilder, BytesIter, trim0x, add0x } from '@1inch/byte-utils'
 import { HexString } from '@1inch/sdk-core'
-import assert from 'assert'
 import { SwapVmProgram } from './swap-vm-program'
 import { lintProgram } from './program-lint'
 import type { ProgramLintWarning } from './program-lint'
 import type { IArgsData, IInstruction, IOpcode } from '../instructions'
 import { EMPTY_OPCODE } from '../instructions/empty'
+import { assert } from '../../utils/assert'
 
 const isEmptyOpcode = (opcode: IOpcode): boolean => opcode.id === EMPTY_OPCODE.id
 

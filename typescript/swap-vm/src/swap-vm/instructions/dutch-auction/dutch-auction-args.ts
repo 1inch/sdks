@@ -3,9 +3,9 @@
 import type { HexString } from '@1inch/sdk-core'
 import { UINT_16_MAX, UINT_40_MAX } from '@1inch/byte-utils'
 import { UINT_64_MAX } from '@1inch/byte-utils/dist/constants'
-import assert from 'assert'
 import { DutchAuctionArgsCoder } from './dutch-auction-args-coder'
 import type { IArgsCoder, IArgsData } from '../types'
+import { assert } from '../../../utils/assert'
 
 /**
  * @notice Dutch Auction instruction for time-based price decay with deadline

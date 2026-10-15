@@ -3,7 +3,7 @@
 import { BN, BitMask } from '@1inch/byte-utils'
 import type { DataFor } from '@1inch/sdk-core'
 import { Interaction, HexString, Address } from '@1inch/sdk-core'
-import assert from 'assert'
+import { assert } from '../utils/assert'
 
 /**
  * Maker-side order configuration packed into a single `uint256` and an optional hooks data blob.

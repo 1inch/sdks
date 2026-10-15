@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { type Address, type Bps } from '@1inch/sdk-core'
-import assert from 'assert'
 
 import { FlatFeeArgs, ProtocolFeeArgs } from '../instructions/fee'
+import { assert } from '../../utils/assert'
 
 export abstract class AquaAMMStrategy {
   /** Taker fee taken from amountIn. */

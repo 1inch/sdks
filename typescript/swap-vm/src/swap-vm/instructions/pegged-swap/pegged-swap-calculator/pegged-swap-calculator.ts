@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import type { Address } from '@1inch/sdk-core'
-import assert from 'assert'
 import type { PeggedInitialBalances, PeggedSwapCalculatorArgs } from './types'
 import type { PeggedPrice, PeggedTokenRef } from '../price'
+import { assert } from '../../../../utils/assert'
 
 export class PeggedSwapCalculator {
   constructor(

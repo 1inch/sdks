@@ -11,7 +11,7 @@ import {
 } from '@1inch/byte-utils'
 import type { DataFor } from '@1inch/sdk-core'
 import { Address, HexString } from '@1inch/sdk-core'
-import assert from 'assert'
+import { assert } from '../utils/assert'
 
 /**
  * TakerTraits encodes taker-specific parameters and flags for swap execution.

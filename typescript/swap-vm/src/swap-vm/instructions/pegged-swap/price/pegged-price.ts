@@ -2,7 +2,6 @@
 
 import { Address } from '@1inch/sdk-core'
 import { formatUnits, parseUnits } from 'viem'
-import assert from 'assert'
 import type {
   PeggedPriceJSON,
   PeggedPriceLegacyJSON,
@@ -13,6 +12,7 @@ import type {
 import { peggedSwapMarginalGtPerLt } from '../pegged-swap-math/pegged-swap-math'
 import { truncateHumanDecimalString } from '../../utils'
 import { resolveRate } from '../rate-resolver'
+import { assert } from '../../../../utils/assert'
 
 const ONE_E18 = 10n ** 18n
 

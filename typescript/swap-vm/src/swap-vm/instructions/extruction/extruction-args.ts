@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import type { Address, HexString } from '@1inch/sdk-core'
-import assert from 'assert'
 import { ExtructionArgsCoder } from './extruction-args-coder'
 import type { IArgsCoder, IArgsData } from '../types'
+import { assert } from '../../../utils/assert'
 
 /**
  * Arguments for extruction instruction to call external contract logic

@@ -2,10 +2,10 @@
 
 import { Address } from '@1inch/sdk-core'
 import { formatUnits, parseUnits } from 'viem'
-import assert from 'assert'
 import type { PriceJSON, PricePair, PriceToken } from './types'
 import { bigintSqrt } from '../../utils/bigint-sqrt'
 import { truncateHumanDecimalString } from '../../utils/truncate-human-decimal-string'
+import { assert } from '../../../../utils/assert'
 
 const ONE_E18 = 10n ** 18n
 

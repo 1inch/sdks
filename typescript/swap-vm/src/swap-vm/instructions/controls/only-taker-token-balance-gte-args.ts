@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import type { Address, HexString } from '@1inch/sdk-core'
-import assert from 'assert'
 import { OnlyTakerTokenBalanceGteArgsCoder } from './only-taker-token-balance-gte-args-coder'
 import type { IArgsCoder, IArgsData } from '../types'
+import { assert } from '../../../utils/assert'
 
 /**
  * Arguments for checking if taker holds at least specified amount of token

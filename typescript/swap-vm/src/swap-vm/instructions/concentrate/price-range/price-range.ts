@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-import assert from 'assert'
 import type {
   PriceAllocationRange,
   PriceBounds,
@@ -18,6 +17,7 @@ import {
   computeLiquidityFromLt,
 } from '../concentrate-liquidity-math/concentrate-liquidity-math'
 import { TokenReserve } from '../token-reserve'
+import { assert } from '../../../../utils/assert'
 
 export class PriceRange {
   private constructor(
