@@ -37,7 +37,7 @@ export class DutchAuctionArgs implements IArgsData {
   /**
    * startTime - auction start time (uint40)
    * duration - auction duration in seconds (uint16)
-   * decayFactor - price decay per second, 1e18 = no decay (uint64)
+   * decayFactor - price decay per second, must be less than 1e18, e.g. 0.99e18 = 1% (uint64)
    **/
   constructor(
     public readonly startTime: bigint,
@@ -56,6 +56,8 @@ export class DutchAuctionArgs implements IArgsData {
       decayFactor >= 0n && decayFactor <= UINT_64_MAX,
       `Invalid decayFactor: ${decayFactor}. Must be a valid uint64`,
     )
+    assert(duration > 0n, `Invalid duration: ${duration}. Must be > 0`)
+    assert(decayFactor > 0n, `Invalid decayFactor: ${decayFactor}. Must be > 0`)
     assert(decayFactor < 1e18, `Decay factor should be less than 1e18: ${decayFactor}`)
   }
 

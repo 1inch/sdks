@@ -22,16 +22,21 @@ export class AquaProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Enables debug mode for the program
+   * Enables debug mode for the program by installing the debug opcodes into slots 0-4
+   * (wire bytes 0x00-0x04), the layout of `Debug._injectDebugOpcodes` in SwapVM
+   *
+   * Debug opcodes only exist on `*Debug` router deployments (e.g. `AquaSwapVMRouterDebug`). On
+   * other routers, including the deployed `AquaSwapVMRouter`, these slots are `_notInstruction`,
+   * so debug instructions are no-ops there.
    * WARNING: Debug instructions will throw an error if debug mode is not enabled
    */
   public withDebug(): this {
+    // Must match the slot order of Debug._injectDebugOpcodes
     this.ixsSet[0] = debug.printSwapRegisters
     this.ixsSet[1] = debug.printSwapQuery
     this.ixsSet[2] = debug.printContext
-    this.ixsSet[3] = debug.printAmountForSwap
-    this.ixsSet[4] = debug.printFreeMemoryPointer
-    this.ixsSet[5] = debug.printGasLeft
+    this.ixsSet[3] = debug.printFreeMemoryPointer
+    this.ixsSet[4] = debug.printGasLeft
 
     return this
   }
@@ -136,9 +141,10 @@ export class AquaProgramBuilder extends ProgramBuilder {
 
   /**
    * No-op instruction used to add uniqueness to order hashes (prevents replay attacks)
+   * `bytes` — arbitrary-length salt payload (use {@link controls.SaltArgs.fromUint64} for uint64).
    **/
   public salt(data: DataFor<controls.SaltArgs>): this {
-    super.add(controls.salt.createIx(new controls.SaltArgs(data.salt)))
+    super.add(controls.salt.createIx(new controls.SaltArgs(data.bytes)))
 
     return this
   }
@@ -168,7 +174,7 @@ export class AquaProgramBuilder extends ProgramBuilder {
   }
 
   /**
-   * Square-root linear swap curve for pegged assets
+   * Square-root linear swap curve for pegged assets.
    **/
   public peggedSwapGrowPriceRange2D(data: DataFor<peggedSwap.PeggedSwapArgs>): this {
     super.add(
@@ -200,6 +206,14 @@ export class AquaProgramBuilder extends ProgramBuilder {
 
   /**
    * Applies protocol fee to amountIn with direct transfer
+   *
+   * The fee is transferred in `tokenIn` from the maker to `to` during program execution, before the
+   * taker's `tokenIn` is received, so the maker must already hold the fee amount of `tokenIn` and
+   * have approved the router to spend it, otherwise the swap reverts.
+   *
+   * WARNING:
+   * - `quote()` skips the transfer, so a quote can succeed while the swap reverts
+   * - Makers must not use backward jumps to this instruction, it can break quote/swap consistency
    **/
   public protocolFeeAmountInXD(data: DataFor<fee.ProtocolFeeArgs>): this {
     super.add(fee.protocolFeeAmountInXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
@@ -209,6 +223,17 @@ export class AquaProgramBuilder extends ProgramBuilder {
 
   /**
    * Applies protocol fee to amountIn through Aqua protocol
+   *
+   * The fee is pulled in `tokenIn` from the maker's Aqua balance for this strategy to `to` during
+   * program execution, before the taker's `tokenIn` is received, so it can only be covered by the
+   * balance the maker already has. If the maker cannot cover it, v1.0.2 routers proceed without the
+   * fee and emit `ProtocolFeeSkipped` (swap amounts are the same either way), while earlier router
+   * versions revert the swap. On v1.0.2 a non-zero fee with a zero `to` always reverts.
+   *
+   * WARNING:
+   * - `quote()` skips the pull, so it cannot tell whether the fee will be collected (v1.0.2), and
+   *   on earlier router versions a quote can succeed while the swap reverts
+   * - Makers must not use backward jumps to this instruction, it can break quote/swap consistency
    **/
   public aquaProtocolFeeAmountInXD(data: DataFor<fee.ProtocolFeeArgs>): this {
     super.add(fee.aquaProtocolFeeAmountInXD.createIx(new fee.ProtocolFeeArgs(data.fee, data.to)))
@@ -218,6 +243,17 @@ export class AquaProgramBuilder extends ProgramBuilder {
 
   /**
    * Applies protocol fee, fetched from external contract, to amountIn with direct transfer
+   *
+   * The fee and its recipient come from a staticcall to the maker-chosen `feeProvider`. The fee is
+   * transferred in `tokenIn` from the maker during program execution, before the taker's `tokenIn`
+   * is received, so the maker must already hold the fee amount of `tokenIn` and have approved the
+   * router to spend it, otherwise the swap reverts.
+   *
+   * WARNING:
+   * - `quote()` skips the transfer, so a quote can succeed while the swap reverts
+   * - Takers should verify the fee provider before executing: a malicious provider can return
+   *   large data to burn gas
+   * - Makers must not use backward jumps to this instruction, it can break quote/swap consistency
    **/
   public dynamicProtocolFeeAmountInXD(data: DataFor<fee.DynamicProtocolFeeArgs>): this {
     super.add(
@@ -229,6 +265,20 @@ export class AquaProgramBuilder extends ProgramBuilder {
 
   /**
    * Applies protocol fee, fetched from external contract, to amountIn through Aqua protocol
+   *
+   * The fee and its recipient come from a staticcall to the maker-chosen `feeProvider`. The fee is
+   * pulled in `tokenIn` from the maker's Aqua balance for this strategy during program execution,
+   * before the taker's `tokenIn` is received, so it can only be covered by the balance the maker
+   * already has. If the maker cannot cover it, v1.0.2 routers proceed without the fee and emit
+   * `ProtocolFeeSkipped` (swap amounts are the same either way), while earlier router versions
+   * revert the swap.
+   *
+   * WARNING:
+   * - `quote()` skips the pull, so it cannot tell whether the fee will be collected (v1.0.2), and
+   *   on earlier router versions a quote can succeed while the swap reverts
+   * - Takers should verify the fee provider before executing: a malicious provider can return
+   *   large data to burn gas
+   * - Makers must not use backward jumps to this instruction, it can break quote/swap consistency
    **/
   public aquaDynamicProtocolFeeAmountInXD(data: DataFor<fee.DynamicProtocolFeeArgs>): this {
     super.add(
@@ -272,12 +322,14 @@ export class AquaProgramBuilder extends ProgramBuilder {
 
   /**
    * DEBUG: Prints calculated amount for swap
-   * WARNING: Requires withDebug() to be called first, otherwise will throw an error
+   * @deprecated The SwapVM debug routers have no printAmountForSwap opcode, so this method always
+   * throws. Use {@link debugPrintSwapRegisters} to print the swap amounts instead
    */
   public debugPrintAmountForSwap(): this {
-    super.add(debug.printAmountForSwap.createIx(new debug.PrintAmountForSwapArgs()))
-
-    return this
+    throw new Error(
+      'debugPrintAmountForSwap() is not supported by the SwapVM debug routers: ' +
+        'they have no printAmountForSwap opcode, use debugPrintSwapRegisters() instead',
+    )
   }
 
   /**

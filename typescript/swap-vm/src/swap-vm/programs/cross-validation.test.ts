@@ -7,6 +7,7 @@ import { AquaProgramBuilder } from './aqua-program-builder'
 import { SwapVmProgram } from '../programs/swap-vm-program'
 import type * as balances from '../instructions/balances'
 import type * as controls from '../instructions/controls'
+import { SaltArgs } from '../instructions/controls/salt-args'
 import type * as limitSwap from '../instructions/limit-swap'
 
 describe('Cross-validation with Solidity', () => {
@@ -37,7 +38,7 @@ describe('Cross-validation with Solidity', () => {
         makerDirectionLt: true,
       })
       .invalidateTokenOut1D()
-      .salt({ salt: 0x1235n })
+      .salt({ bytes: SaltArgs.fromUint64(0x1235n).bytes })
       .build()
 
     const decoded = RegularProgramBuilder.decode(program)
@@ -58,7 +59,30 @@ describe('Cross-validation with Solidity', () => {
     expect(balancesArgs.tokenBalances[1].value).toBe(makerBalanceB)
 
     const saltArgs = instructions[3].args as controls.SaltArgs
-    expect(saltArgs.salt).toBe(0x1235n)
+    expect(saltArgs.bytes).toEqual(SaltArgs.fromUint64(0x1235n).bytes)
+  })
+
+  it('should match exact staticBalancesXD and dynamicBalancesXD bytes from BalancesArgsBuilder', () => {
+    const tokenA = new Address('0x1111111111111111111111111111111111111111')
+    const tokenB = new Address('0x2222222222222222222222222222222222222222')
+    const tokenBalances = [
+      { token: tokenA, value: 100n * 10n ** 18n },
+      { token: tokenB, value: 200n * 10n ** 18n },
+    ]
+
+    // BalancesArgsBuilder.build([0x11..11, 0x22..22], [100e18, 200e18]), 106 (0x6a) bytes
+    const BALANCES_ARGS_HEX =
+      '0002' +
+      '11'.repeat(20) +
+      '22'.repeat(20) +
+      '0000000000000000000000000000000000000000000000056bc75e2d63100000' +
+      '00000000000000000000000000000000000000000000000ad78ebc5ac6200000'
+
+    const staticProgram = new RegularProgramBuilder().staticBalancesXD({ tokenBalances }).build()
+    const dynamicProgram = new RegularProgramBuilder().dynamicBalancesXD({ tokenBalances }).build()
+
+    expect(staticProgram.toString()).toBe('0x116a' + BALANCES_ARGS_HEX)
+    expect(dynamicProgram.toString()).toBe('0x126a' + BALANCES_ARGS_HEX)
   })
 
   it('should match exact staticBalancesXD and dynamicBalancesXD bytes from BalancesArgsBuilder', () => {
@@ -127,7 +151,7 @@ describe('Cross-validation with Solidity', () => {
       .limitSwap1D({ makerDirectionLt: false })
       .requireMinRate1D({ rateLt: 2000n * 10n ** 6n, rateGt: 10n ** 18n })
       .invalidateTokenOut1D()
-      .salt({ salt: 0xdeadbeefn })
+      .salt({ bytes: SaltArgs.fromUint64(0xdeadbeefn).bytes })
       .build()
 
     const decoded = RegularProgramBuilder.decode(program)
@@ -238,7 +262,7 @@ describe('Cross-validation with Aqua Solidity', () => {
     const program = new AquaProgramBuilder()
       .decayXD({ decayPeriod: 3600n })
       .xycSwapXD()
-      .salt({ salt: 0x1234n })
+      .salt({ bytes: SaltArgs.fromUint64(0x1234n).bytes })
       .flatFeeAmountInXD({ fee: 300n })
       .build()
 

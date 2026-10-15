@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { bigintSqrt } from '../../utils'
+import { mulDiv } from '../../utils/mul-div'
 import { assert } from '../../../../utils/assert'
 
 /** Matches `PeggedSwapMath.ONE` in swap-vm. */
@@ -67,11 +68,42 @@ export function symmetricRangePercentFromLinearWidth(linearWidth: bigint): numbe
 }
 
 /**
- * Spot price tokenGt per tokenLt (raw) in 1e18 fixed-point.
+ * Spot price tokenGt per tokenLt (raw units) as an exact fraction `numerator / denominator`.
+ *
+ * P = (Y₀ · (1/(2√u) + A) · rateLt) / (X₀ · (1/(2√v) + A) · rateGt)
+ *
+ * where u = x·ONE/X₀, v = y·ONE/Y₀, x/y are rate-adjusted Lt/Gt balances, A = `linearWidth`.
+ */
+export function peggedSwapMarginalGtPerLt(
+  balanceLtNorm: bigint,
+  balanceGtNorm: bigint,
+  x0: bigint,
+  y0: bigint,
+  linearWidth: bigint,
+  rateLt: bigint,
+  rateGt: bigint,
+): { numerator: bigint; denominator: bigint } {
+  const u = normalizeReserve(balanceLtNorm, x0)
+  const v = normalizeReserve(balanceGtNorm, y0)
+
+  assert(u !== 0n && v !== 0n, 'PeggedSwapMath: reserves cannot be zero')
+
+  const slopeLt = peggedSwapMarginalWeight(bigintSqrt(u * PEGGED_SWAP_ONE), linearWidth)
+  const slopeGt = peggedSwapMarginalWeight(bigintSqrt(v * PEGGED_SWAP_ONE), linearWidth)
+
+  return {
+    numerator: y0 * slopeLt * rateLt,
+    denominator: x0 * slopeGt * rateGt,
+  }
+}
+
+/**
+ * Spot price tokenGt per tokenLt (raw) in 1e18 fixed-point, rounded down.
  *
  * P = (Y₀/X₀) · (1/(2√u) + A) / (1/(2√v) + A) · (rateLt/rateGt)
  *
  * where u = x·ONE/X₀, v = y·ONE/Y₀, x/y are rate-adjusted Lt/Gt balances, A = `linearWidth`.
+ * See {@link peggedSwapMarginalGtPerLt} for the exact fraction.
  */
 export function peggedSwapMarginalGtPerLtE18(
   balanceLtNorm: bigint,
@@ -82,15 +114,17 @@ export function peggedSwapMarginalGtPerLtE18(
   rateLt: bigint,
   rateGt: bigint,
 ): bigint {
-  const u = normalizeReserve(balanceLtNorm, x0)
-  const v = normalizeReserve(balanceGtNorm, y0)
+  const { numerator, denominator } = peggedSwapMarginalGtPerLt(
+    balanceLtNorm,
+    balanceGtNorm,
+    x0,
+    y0,
+    linearWidth,
+    rateLt,
+    rateGt,
+  )
 
-  assert(u !== 0n && v !== 0n, 'PeggedSwapMath: reserves cannot be zero')
-
-  const slopeLt = peggedSwapMarginalWeight(bigintSqrt(u * PEGGED_SWAP_ONE), linearWidth)
-  const slopeGt = peggedSwapMarginalWeight(bigintSqrt(v * PEGGED_SWAP_ONE), linearWidth)
-
-  return (y0 * slopeLt * rateLt * MARGINAL_PRICE_ONE) / (x0 * slopeGt * rateGt)
+  return (numerator * MARGINAL_PRICE_ONE) / denominator
 }
 
 /**
@@ -119,12 +153,4 @@ function scaledFractionToSymmetricRangePercent(scaledFraction: bigint): number {
     Number(mulDiv(scaledFraction, 100n * PERCENT_PRECISION, PEGGED_SWAP_ONE)) /
     PERCENT_PRECISION_NUMBER
   )
-}
-
-function mulDiv(a: bigint, b: bigint, c: bigint): bigint {
-  if (c === 0n) {
-    throw new Error('mulDiv: division by zero')
-  }
-
-  return (a * b) / c
 }
