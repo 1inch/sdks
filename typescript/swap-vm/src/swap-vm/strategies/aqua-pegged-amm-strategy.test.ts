@@ -5,6 +5,7 @@ import { Address, Bps } from '@1inch/sdk-core'
 import { AquaPeggedAmmStrategy } from './aqua-pegged-amm-strategy'
 import { AquaProgramBuilder } from '../programs/aqua-program-builder'
 import type { SwapVmProgram } from '../programs'
+import * as controls from '../instructions/controls'
 import * as fee from '../instructions/fee'
 
 const USDC = new Address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
@@ -51,6 +52,40 @@ describe('AquaPeggedAmmStrategy', () => {
       AquaPeggedAmmStrategy.new({ tokenA, tokenB, linearWidth: LINEAR_WIDTH }).build().toString()
         .length,
     )
+  })
+
+  describe('salt', () => {
+    const params = { tokenA, tokenB, linearWidth: LINEAR_WIDTH }
+
+    it('should add salt when set to zero', () => {
+      const unsalted = AquaPeggedAmmStrategy.new(params).build()
+      const program = AquaPeggedAmmStrategy.new(params).withSalt(0n).build()
+
+      expect(program.toString()).toBe(unsalted.toString() + '1408' + '0000000000000000')
+    })
+
+    it('should not add salt when not set', () => {
+      const program = AquaPeggedAmmStrategy.new(params).withFeeTokenIn(1).build()
+      const opcodes = AquaProgramBuilder.decode(program)
+        .getInstructions()
+        .map((ix) => ix.opcode.id)
+
+      expect(opcodes).not.toContain(controls.salt.id)
+    })
+
+    it('should add a random salt unique per strategy', () => {
+      const first = AquaPeggedAmmStrategy.new(params).withRandomSalt()
+      const second = AquaPeggedAmmStrategy.new(params).withRandomSalt()
+      const ixs = AquaProgramBuilder.decode(first.build()).getInstructions()
+      const saltIx = ixs[ixs.length - 1]
+
+      expect(saltIx.opcode.id).toBe(controls.salt.id)
+      expect((saltIx.args as controls.SaltArgs).bytes.toString()).toBe(
+        controls.SaltArgs.fromUint64(first.salt!).bytes.toString(),
+      )
+      expect(first.salt).not.toBe(second.salt)
+      expect(first.build().toString()).not.toBe(second.build().toString())
+    })
   })
 
   it('should reject a zero decay period instead of omitting decayXD', () => {
