@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
+import { HexString } from '@1inch/sdk-core'
 import { TWAPSwapArgs } from './twap-swap-args'
 
 describe('TWAPSwapArgs', () => {
@@ -76,18 +77,80 @@ describe('TWAPSwapArgs', () => {
     })
   })
 
-  it('should handle zero values', () => {
-    const args = new TWAPSwapArgs(0n, 0n, 0n, 0n, 0n, 0n)
+  it('should handle minimal executable values', () => {
+    const args = new TWAPSwapArgs(1n, 1n, 0n, 1n, 10n ** 18n, 0n)
 
     const encoded = TWAPSwapArgs.CODER.encode(args)
     const decoded = TWAPSwapArgs.decode(encoded)
 
-    expect(decoded.balanceIn).toBe(0n)
-    expect(decoded.balanceOut).toBe(0n)
+    expect(decoded.balanceIn).toBe(1n)
+    expect(decoded.balanceOut).toBe(1n)
     expect(decoded.startTime).toBe(0n)
-    expect(decoded.duration).toBe(0n)
-    expect(decoded.priceBumpAfterIlliquidity).toBe(0n)
+    expect(decoded.duration).toBe(1n)
+    expect(decoded.priceBumpAfterIlliquidity).toBe(10n ** 18n)
     expect(decoded.minTradeAmountOut).toBe(0n)
+  })
+
+  describe('validation', () => {
+    const params = {
+      balanceIn: 3000n * 10n ** 6n,
+      balanceOut: 1n * 10n ** 18n,
+      startTime: 1700000000n,
+      duration: 86400n,
+      priceBumpAfterIlliquidity: 1100000000000000000n,
+      minTradeAmountOut: 10n ** 16n,
+    }
+
+    const create = (overrides: Partial<typeof params>): TWAPSwapArgs => {
+      const p = { ...params, ...overrides }
+
+      return new TWAPSwapArgs(
+        p.balanceIn,
+        p.balanceOut,
+        p.startTime,
+        p.duration,
+        p.priceBumpAfterIlliquidity,
+        p.minTradeAmountOut,
+      )
+    }
+
+    const encodeWords = (words: bigint[]): HexString =>
+      new HexString('0x' + words.map((word) => word.toString(16).padStart(64, '0')).join(''))
+
+    it('should reject zero balanceIn, balanceOut and duration', () => {
+      expect(() => create({ balanceIn: 0n })).toThrow('Invalid balanceIn: 0. Must be > 0')
+      expect(() => create({ balanceOut: 0n })).toThrow('Invalid balanceOut: 0. Must be > 0')
+      expect(() => create({ duration: 0n })).toThrow('Invalid duration: 0. Must be > 0')
+    })
+
+    it('should reject priceBumpAfterIlliquidity below 1e18', () => {
+      expect(() => create({ priceBumpAfterIlliquidity: 10n ** 18n - 1n })).toThrow(
+        'Invalid priceBumpAfterIlliquidity: 999999999999999999. Must be >= 1e18',
+      )
+      expect(() => create({ priceBumpAfterIlliquidity: 0n })).toThrow(
+        'Invalid priceBumpAfterIlliquidity: 0. Must be >= 1e18',
+      )
+    })
+
+    it('should keep rejecting values outside the uint256 range', () => {
+      expect(() => create({ startTime: -1n })).toThrow(
+        'Invalid startTime: -1. Must be >= 0 and <= UINT_256_MAX',
+      )
+      expect(() => create({ minTradeAmountOut: 1n << 256n })).toThrow('Invalid minTradeAmountOut')
+      expect(() => create({ duration: 1n << 256n })).toThrow('Invalid duration')
+    })
+
+    it('should reject non-executable args when decoding', () => {
+      expect(() => TWAPSwapArgs.decode(encodeWords([0n, 0n, 0n, 0n, 0n, 0n]))).toThrow(
+        'Invalid balanceIn: 0. Must be > 0',
+      )
+      expect(() => TWAPSwapArgs.decode(encodeWords([1n, 1n, 0n, 0n, 10n ** 18n, 0n]))).toThrow(
+        'Invalid duration: 0. Must be > 0',
+      )
+      expect(() => TWAPSwapArgs.decode(encodeWords([1n, 1n, 0n, 1n, 10n ** 18n - 1n, 0n]))).toThrow(
+        'Invalid priceBumpAfterIlliquidity',
+      )
+    })
   })
 
   it('should handle realistic TWAP scenarios', () => {

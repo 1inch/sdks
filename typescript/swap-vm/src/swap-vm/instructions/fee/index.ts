@@ -2,5 +2,6 @@
 
 export * from './opcodes'
 export { FlatFeeArgs } from './flat-fee/flat-fee-args'
+export { ProgressiveFeeArgs } from './progressive-fee/progressive-fee-args'
 export { ProtocolFeeArgs } from './protocol-fee/protocol-fee-args'
 export { DynamicProtocolFeeArgs } from './dynamic-protocol-fee/dynamic-protocol-fee-args'

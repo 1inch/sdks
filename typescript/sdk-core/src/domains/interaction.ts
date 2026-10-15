@@ -1,5 +1,4 @@
-import { BytesIter, isHexBytes } from '@1inch/byte-utils'
-import assert from 'assert'
+import { BytesIter } from '@1inch/byte-utils'
 import { Address } from './address'
 import { HexString } from './hex-string'
 
@@ -7,9 +6,7 @@ export class Interaction {
   constructor(
     public readonly target: Address,
     public readonly data: HexString,
-  ) {
-    assert(isHexBytes(data.toString()), 'Interaction data must be valid hex bytes')
-  }
+  ) {}
 
   /**
    * Create `Interaction` from bytes
@@ -18,8 +15,10 @@ export class Interaction {
    */
   public static decode(bytes: HexString): Interaction {
     const iter = BytesIter.HexString(bytes.toString())
+    // Raw bytes carry no EIP-55 checksum, so hex letter case must not affect `Address` validation
+    const target = new Address(iter.nextUint160().toLowerCase())
 
-    return new Interaction(new Address(iter.nextUint160()), new HexString(iter.rest()))
+    return new Interaction(target, new HexString(iter.rest()))
   }
 
   /**

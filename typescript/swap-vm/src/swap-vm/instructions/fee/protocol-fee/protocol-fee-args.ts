@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-import type { Address, HexString } from '@1inch/sdk-core'
+import { Bps, Percent, type Address, type HexString } from '@1inch/sdk-core'
 import { UINT_32_MAX } from '@1inch/byte-utils'
 import assert from 'assert'
 import { ProtocolFeeArgsCoder } from './protocol-fee-args-coder'
@@ -17,16 +17,17 @@ export class ProtocolFeeArgs implements IArgsData {
 
   /**
    * fee - 1e9 = 100% (uint32)
-   * to - address to send pulled tokens to (20 bytes)
+   * to - address to send pulled tokens to (20 bytes), may be zero only when fee is 0
    **/
   constructor(
     public readonly fee: bigint,
     public readonly to: Address,
   ) {
     assert(fee >= 0n && fee <= UINT_32_MAX, `Invalid fee: ${fee}. Must be a valid uint32`)
+    assert(fee < BigInt(FEE_100_PERCENT), `Fee out of range: ${fee}. Must be < ${FEE_100_PERCENT}`)
     assert(
-      fee <= BigInt(FEE_100_PERCENT),
-      `Fee out of range: ${fee}. Must be <= ${FEE_100_PERCENT}`,
+      fee === 0n || !to.isZero(),
+      'Invalid fee recipient (to). Must be non zero address when fee > 0',
     )
   }
 
@@ -39,24 +40,39 @@ export class ProtocolFeeArgs implements IArgsData {
 
   /**
    * Creates a ProtocolFeeArgs instance from percentage
-   * @param percent - Fee as percentage (e.g., 1 for 1%, 0.1 for 0.1%)
+   * @param percent - Fee as percentage (e.g., 1 for 1%, 0.1 for 0.1%), or a {@link Percent}
    * @param to - Address to receive the protocol fee
    * @returns ProtocolFeeArgs instance
    */
-  public static fromPercent(percent: number, to: Address): ProtocolFeeArgs {
-    return ProtocolFeeArgs.fromBps(percent * 100, to)
+  public static fromPercent(percent: Percent, to: Address): ProtocolFeeArgs
+
+  public static fromPercent(percent: number, to: Address): ProtocolFeeArgs
+
+  public static fromPercent(percent: number | Percent, to: Address): ProtocolFeeArgs {
+    if (percent instanceof Percent) {
+      return new ProtocolFeeArgs(percent.toScaledBigInt(), to)
+    }
+
+    return new ProtocolFeeArgs(Percent.fromNumber(percent).toScaledBigInt(), to)
   }
 
   /**
    * Creates a ProtocolFeeArgs instance from basis points
-   * @param bps - Fee in basis points (10000 bps = 100%)
+   * @param bps - Fee in basis points (10000 bps = 100%), or a {@link Bps}
    * @param to - Address to receive the protocol fee
    * @returns ProtocolFeeArgs instance
    */
-  public static fromBps(bps: number, to: Address): ProtocolFeeArgs {
-    const fee = BigInt(bps * 100000)
+  public static fromBps(bps: Bps, to: Address): ProtocolFeeArgs
 
-    return new ProtocolFeeArgs(fee, to)
+  public static fromBps(bps: number, to: Address): ProtocolFeeArgs
+
+  public static fromBps(bps: number | Bps, to: Address): ProtocolFeeArgs
+
+  public static fromBps(bps: number | Bps, to: Address): ProtocolFeeArgs {
+    return new ProtocolFeeArgs(
+      bps instanceof Bps ? bps.toScaledBigInt() : Bps.fromNumber(bps).toScaledBigInt(),
+      to,
+    )
   }
 
   toJSON(): Record<string, unknown> {
