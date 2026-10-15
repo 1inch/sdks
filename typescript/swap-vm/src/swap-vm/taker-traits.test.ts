@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-import { describe, it, expect } from 'vitest'
+import { afterEach, describe, it, expect, vi } from 'vitest'
 import { UINT_256_MAX, UINT_40_MAX } from '@1inch/byte-utils'
 import { Address, HexString, type DataFor } from '@1inch/sdk-core'
 import { TakerTraits } from './taker-traits'
@@ -21,9 +21,7 @@ function expectFluentChainResult(traits: TakerTraits, receiver: Address): void {
   expect(decoded.strictThreshold).toBe(true)
 }
 
-describe('TakerTraits', () => {
-  const mockReceiver = Address.fromBigInt(2n)
-
+function registerDefaultTraitsTests(): void {
   describe('default', () => {
     it('should create default traits with all flags off', () => {
       const traits = TakerTraits.default()
@@ -40,6 +38,12 @@ describe('TakerTraits', () => {
       expect(traits.customReceiver?.toString()).toBe(Address.ZERO_ADDRESS.toString())
     })
   })
+}
+
+describe('TakerTraits', () => {
+  const mockReceiver = Address.fromBigInt(2n)
+
+  registerDefaultTraitsTests()
 
   describe('fromParams', () => {
     it('should build traits with specified flags', () => {
@@ -764,6 +768,10 @@ describe('TakerTraits', () => {
   })
 
   describe('validate', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
     it('should validate exact input with minimum output threshold', () => {
       const threshold = 1000n
       const traits = TakerTraits.new({
@@ -806,10 +814,27 @@ describe('TakerTraits', () => {
       expect(() => traits.validate(500n, 1000n)).not.toThrow()
 
       expect(() => traits.validate(500n, 999n)).toThrow(
-        'TakerTraitsNonExactThresholdAmount: amountOut 999 != threshold 1000',
+        'TakerTraitsNonExactThresholdAmountOut: amountOut 999 != threshold 1000',
       )
       expect(() => traits.validate(500n, 1001n)).toThrow(
-        'TakerTraitsNonExactThresholdAmount: amountOut 1001 != threshold 1000',
+        'TakerTraitsNonExactThresholdAmountOut: amountOut 1001 != threshold 1000',
+      )
+    })
+
+    it('should validate strict threshold amount for exact output', () => {
+      const traits = TakerTraits.new({
+        exactIn: false,
+        strictThreshold: true,
+        threshold: 1000n,
+      })
+
+      expect(() => traits.validate(1000n, 500n)).not.toThrow()
+
+      expect(() => traits.validate(999n, 500n)).toThrow(
+        'TakerTraitsNonExactThresholdAmountIn: amountIn 999 != threshold 1000',
+      )
+      expect(() => traits.validate(1001n, 500n)).toThrow(
+        'TakerTraitsNonExactThresholdAmountIn: amountIn 1001 != threshold 1000',
       )
     })
 
@@ -820,6 +845,68 @@ describe('TakerTraits', () => {
 
       expect(() => traits.validate(1000n, 500n)).not.toThrow()
       expect(() => traits.validate(1n, 1n)).not.toThrow()
+    })
+
+    it('should require amountOut to be greater than zero', () => {
+      expect(() => TakerTraits.new({ exactIn: true }).validate(1000n, 0n)).toThrow(
+        'TakerTraitsAmountOutMustBeGreaterThanZero: amountOut 0',
+      )
+      expect(() => TakerTraits.new({ exactIn: false }).validate(1000n, 0n)).toThrow(
+        'TakerTraitsAmountOutMustBeGreaterThanZero: amountOut 0',
+      )
+      expect(() => TakerTraits.new({ exactIn: true }).validate(1000n, 1n)).not.toThrow()
+    })
+
+    it('should reject an expired deadline', () => {
+      const deadline = 1735689600n
+      const traits = TakerTraits.new({ deadline })
+
+      expect(() => traits.validate(1n, 1n, deadline - 1n)).not.toThrow()
+      expect(() => traits.validate(1n, 1n, deadline)).not.toThrow()
+      expect(() => traits.validate(1n, 1n, deadline + 1n)).toThrow(
+        'TakerTraitsDeadlineExpired: timestamp 1735689601 > deadline 1735689600',
+      )
+    })
+
+    it('should check the deadline against the current unix time in seconds by default', () => {
+      vi.useFakeTimers({ now: 1735689600999 })
+
+      expect(() => TakerTraits.new({ deadline: 1735689600n }).validate(1n, 1n)).not.toThrow()
+      expect(() => TakerTraits.new({ deadline: 1735689599n }).validate(1n, 1n)).toThrow(
+        'TakerTraitsDeadlineExpired: timestamp 1735689600 > deadline 1735689599',
+      )
+    })
+
+    it('should ignore the timestamp when no deadline is set', () => {
+      expect(() => TakerTraits.default().validate(1n, 1n, 2n ** 64n)).not.toThrow()
+    })
+
+    it('should throw for the first failing check in on-chain order for exact input', () => {
+      const deadline = 1735689600n
+      const traits = TakerTraits.new({ exactIn: true, threshold: 1000n, deadline })
+
+      expect(() => traits.validate(100n, 0n, deadline + 1n)).toThrow(
+        'TakerTraitsAmountOutMustBeGreaterThanZero',
+      )
+      expect(() => traits.validate(100n, 1n, deadline + 1n)).toThrow('TakerTraitsDeadlineExpired')
+      expect(() => traits.validate(100n, 1n, deadline)).toThrow(
+        'TakerTraitsInsufficientMinOutputAmount',
+      )
+      expect(() => traits.validate(100n, 1000n, deadline)).not.toThrow()
+    })
+
+    it('should throw for the first failing check in on-chain order for exact output', () => {
+      const deadline = 1735689600n
+      const traits = TakerTraits.new({ exactIn: false, threshold: 1000n, deadline })
+
+      expect(() => traits.validate(2000n, 0n, deadline + 1n)).toThrow(
+        'TakerTraitsAmountOutMustBeGreaterThanZero',
+      )
+      expect(() => traits.validate(2000n, 5n, deadline + 1n)).toThrow('TakerTraitsDeadlineExpired')
+      expect(() => traits.validate(2000n, 5n, deadline)).toThrow(
+        'TakerTraitsExceedingMaxInputAmount',
+      )
+      expect(() => traits.validate(1000n, 5n, deadline)).not.toThrow()
     })
   })
 
