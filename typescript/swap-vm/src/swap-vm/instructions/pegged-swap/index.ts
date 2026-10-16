@@ -4,11 +4,15 @@ export * from './opcodes'
 export { PeggedSwapArgs } from './pegged-swap-args'
 export type { PeggedTokenInfo } from './types'
 export { PeggedSwapCalculator } from './pegged-swap-calculator'
-export { linearWidthFromSymmetricRangePercent } from './pegged-swap-math/pegged-swap-math'
+export {
+  linearWidthFromSymmetricRangePercent,
+  symmetricRangePercentFromLinearWidth,
+} from './pegged-swap-math/pegged-swap-math'
 export { PeggedPrice } from './price'
 export type { PeggedInitialBalances, PeggedSwapCalculatorArgs } from './pegged-swap-calculator'
 export type {
   PeggedPriceJSON,
+  PeggedPriceLegacyJSON,
   PeggedPricePair,
   PeggedReservesInput,
   PeggedTokenRef,

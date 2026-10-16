@@ -1,8 +1,17 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
-import { add0x, BN, BytesBuilder, BytesIter, trim0x } from '@1inch/byte-utils'
+import {
+  add0x,
+  BN,
+  BytesBuilder,
+  BytesIter,
+  trim0x,
+  UINT_256_MAX,
+  UINT_40_MAX,
+} from '@1inch/byte-utils'
 import type { DataFor } from '@1inch/sdk-core'
 import { Address, HexString } from '@1inch/sdk-core'
+import { assert } from '../utils/assert'
 
 /**
  * TakerTraits encodes taker-specific parameters and flags for swap execution.
@@ -63,78 +72,87 @@ export class TakerTraits {
     public readonly useTransferFromAndAquaPush: boolean,
     /**
      * Minimum output amount (for exactIn) or maximum input amount (for exactOut).
-     * Set to 0n for no threshold.
+     * Must fit in uint256.
+     *
+     * ⚠️ This is the only slippage check enforced on-chain. `0n` (the default) leaves the
+     * threshold out of the encoded traits, which disables the check: the swap then accepts
+     * any `amountOut > 0`. Swaps should always set a threshold, e.g. the quoted amount
+     * adjusted by an explicit slippage tolerance.
      */
-    public readonly threshold: bigint = 0n,
+    public readonly threshold: bigint = TAKER_TRAITS_DEFAULTS.threshold,
     /**
      * Custom receiver address for the swap output.
      * Defaults to zero address (meaning taker receives funds).
      */
-    public readonly customReceiver: Address = Address.ZERO_ADDRESS,
+    public readonly customReceiver: Address = TAKER_TRAITS_DEFAULTS.customReceiver,
     /**
      * Optional expiration timestamp (uint40, Unix seconds). 0 = no deadline.
      * When non-zero, contract validates block.timestamp <= deadline (TakerTraitsDeadlineExpired otherwise).
      */
-    public readonly deadline: bigint = 0n,
+    public readonly deadline: bigint = TAKER_TRAITS_DEFAULTS.deadline,
     /**
      * Optional data passed to the maker's pre-transfer-in hook.
      */
-    public readonly preTransferInHookData: HexString = HexString.EMPTY,
+    public readonly preTransferInHookData: HexString = TAKER_TRAITS_DEFAULTS.preTransferInHookData,
     /**
      * Optional data passed to the maker's post-transfer-in hook.
      */
-    public readonly postTransferInHookData: HexString = HexString.EMPTY,
+    public readonly postTransferInHookData: HexString = TAKER_TRAITS_DEFAULTS.postTransferInHookData,
     /**
      * Optional data passed to the maker's pre-transfer-out hook.
      */
-    public readonly preTransferOutHookData: HexString = HexString.EMPTY,
+    public readonly preTransferOutHookData: HexString = TAKER_TRAITS_DEFAULTS.preTransferOutHookData,
     /**
      * Optional data passed to the maker's post-transfer-out hook.
      */
-    public readonly postTransferOutHookData: HexString = HexString.EMPTY,
+    public readonly postTransferOutHookData: HexString = TAKER_TRAITS_DEFAULTS.postTransferOutHookData,
     /**
      * Optional callback data for taker's pre-transfer-in callback.
      */
-    public readonly preTransferInCallbackData: HexString = HexString.EMPTY,
+    public readonly preTransferInCallbackData: HexString = TAKER_TRAITS_DEFAULTS.preTransferInCallbackData,
     /**
      * Optional callback data for taker's pre-transfer-out callback.
      */
-    public readonly preTransferOutCallbackData: HexString = HexString.EMPTY,
+    public readonly preTransferOutCallbackData: HexString = TAKER_TRAITS_DEFAULTS.preTransferOutCallbackData,
     /**
      * Optional arguments for VM instructions execution.
      */
-    public readonly instructionsArgs: HexString = HexString.EMPTY,
+    public readonly instructionsArgs: HexString = TAKER_TRAITS_DEFAULTS.instructionsArgs,
     /**
      * ECDSA signature for order validation (65 bytes typically).
      * Can be empty when using Aqua authentication.
      */
-    public readonly signature: HexString = HexString.EMPTY,
-  ) {}
+    public readonly signature: HexString = TAKER_TRAITS_DEFAULTS.signature,
+  ) {
+    TakerTraits.assertValueRanges({ threshold, deadline })
+  }
 
   /**
    * Creates a new TakerTraits instance with the specified data.
    * Provides default values for unspecified fields.
    */
   static new(data: Partial<DataFor<TakerTraits>> = {}): TakerTraits {
+    const d = { ...TAKER_TRAITS_DEFAULTS, ...applyUndefinedClears(data) }
+
     return new TakerTraits(
-      data.exactIn ?? true,
-      data.shouldUnwrap ?? false,
-      data.preTransferInCallbackEnabled ?? false,
-      data.preTransferOutCallbackEnabled ?? false,
-      data.strictThreshold ?? false,
-      data.firstTransferFromTaker ?? false,
-      data.useTransferFromAndAquaPush ?? true,
-      data.threshold,
-      data.customReceiver,
-      data.deadline,
-      data.preTransferInHookData,
-      data.postTransferInHookData,
-      data.preTransferOutHookData,
-      data.postTransferOutHookData,
-      data.preTransferInCallbackData,
-      data.preTransferOutCallbackData,
-      data.instructionsArgs,
-      data.signature,
+      d.exactIn,
+      d.shouldUnwrap,
+      d.preTransferInCallbackEnabled,
+      d.preTransferOutCallbackEnabled,
+      d.strictThreshold,
+      d.firstTransferFromTaker,
+      d.useTransferFromAndAquaPush,
+      d.threshold,
+      d.customReceiver,
+      d.deadline,
+      d.preTransferInHookData,
+      d.postTransferInHookData,
+      d.preTransferOutHookData,
+      d.postTransferOutHookData,
+      d.preTransferInCallbackData,
+      d.preTransferOutCallbackData,
+      d.instructionsArgs,
+      d.signature,
     )
   }
 
@@ -145,28 +163,14 @@ export class TakerTraits {
    * - No callbacks
    * - No custom receiver
    * - transferFromAndAquaPush enabled
+   * - No threshold (`0n`)
+   *
+   * ⚠️ Without a threshold the on-chain slippage check is disabled. That is fine for `quote`,
+   * but swaps should set one derived from the quote, e.g. for exactIn:
+   * `TakerTraits.default().with({ threshold: minAmountOut })`.
    */
   static default(): TakerTraits {
-    return TakerTraits.new({
-      exactIn: true,
-      shouldUnwrap: false,
-      preTransferInCallbackEnabled: false,
-      preTransferOutCallbackEnabled: false,
-      strictThreshold: false,
-      firstTransferFromTaker: false,
-      useTransferFromAndAquaPush: true,
-      threshold: 0n,
-      deadline: 0n,
-      customReceiver: Address.ZERO_ADDRESS,
-      preTransferInHookData: HexString.EMPTY,
-      postTransferInHookData: HexString.EMPTY,
-      preTransferOutHookData: HexString.EMPTY,
-      postTransferOutHookData: HexString.EMPTY,
-      preTransferInCallbackData: HexString.EMPTY,
-      preTransferOutCallbackData: HexString.EMPTY,
-      instructionsArgs: HexString.EMPTY,
-      signature: HexString.EMPTY,
-    })
+    return TakerTraits.new()
   }
 
   /**
@@ -176,6 +180,15 @@ export class TakerTraits {
    * - 2 bytes: uint16 flags
    * - Variable: data sections (threshold, to, deadline, hook data, callback data, etc.)
    * - Variable: signature
+   *
+   * Sections are interpreted the way the contract reads them: the threshold only from an
+   * exactly 32-byte section, the receiver only from 20 bytes and the deadline only from
+   * 5 bytes. Sections of any other length decode as absent.
+   *
+   * @throws Error if the section offsets decrease or point past the end of the data
+   * @throws Error if the traits have an on-chain meaning this class cannot represent:
+   * a 32-byte zero threshold, a 20-byte zero receiver, or callback data whose
+   * callback flag is not set
    */
   static decode(packed: HexString): TakerTraits {
     const iter = BytesIter.BigInt(packed.toString())
@@ -184,15 +197,24 @@ export class TakerTraits {
     const flags = new BN(iter.nextUint16())
 
     const dataStr = trim0x(packed.toString()).slice(44)
-    const sections: string[] = []
+    const dataLength = dataStr.length / 2
 
-    offsets.forEach((offset, i) => {
+    const sections = offsets.map((offset, i) => {
       const start = i === 0 ? 0 : offsets[i - 1]
-      sections.push(offset > start ? dataStr.slice(start * 2, offset * 2) : '')
+
+      assert(
+        offset >= start,
+        `Invalid TakerTraits: section offset ${offset} is lower than the previous offset ${start}`,
+      )
+      assert(
+        offset <= dataLength,
+        `Invalid TakerTraits: section offset ${offset} exceeds the data length ${dataLength}`,
+      )
+
+      return dataStr.slice(start * 2, offset * 2)
     })
 
-    const lastOffset = offsets[offsets.length - 1]
-    const signature = dataStr.length > lastOffset * 2 ? dataStr.slice(lastOffset * 2) : ''
+    const signature = dataStr.slice(offsets[offsets.length - 1] * 2)
 
     const [
       threshold,
@@ -207,15 +229,38 @@ export class TakerTraits {
       instructionsArgs,
     ] = sections
 
+    const thresholdValue = TakerTraits.readFixedSizeSection(threshold, 32)
+    const toValue = TakerTraits.readFixedSizeSection(to, 20)
+    const deadlineValue = TakerTraits.readFixedSizeSection(deadline, 5)
+    const preTransferInCallbackEnabled = Boolean(
+      flags.getBit(TakerTraits.HAS_PRE_TRANSFER_IN_CALLBACK_BIT_FLAG),
+    )
+    const preTransferOutCallbackEnabled = Boolean(
+      flags.getBit(TakerTraits.HAS_PRE_TRANSFER_OUT_CALLBACK_BIT_FLAG),
+    )
+
+    assert(
+      thresholdValue !== 0n,
+      'Unsupported TakerTraits: 32-byte zero threshold (enforced on-chain, but 0n means no threshold)',
+    )
+    assert(
+      toValue !== 0n,
+      'Unsupported TakerTraits: 20-byte zero receiver (address(0) on-chain, but zero means the taker)',
+    )
+    assert(
+      preTransferInCallbackEnabled || !preTransferInCallbackData,
+      'Unsupported TakerTraits: preTransferInCallbackData is set but its callback flag is not',
+    )
+    assert(
+      preTransferOutCallbackEnabled || !preTransferOutCallbackData,
+      'Unsupported TakerTraits: preTransferOutCallbackData is set but its callback flag is not',
+    )
+
     return TakerTraits.new({
       exactIn: Boolean(flags.getBit(TakerTraits.IS_EXACT_IN_BIT_FLAG)),
       shouldUnwrap: Boolean(flags.getBit(TakerTraits.SHOULD_UNWRAP_BIT_FLAG)),
-      preTransferInCallbackEnabled: Boolean(
-        flags.getBit(TakerTraits.HAS_PRE_TRANSFER_IN_CALLBACK_BIT_FLAG),
-      ),
-      preTransferOutCallbackEnabled: Boolean(
-        flags.getBit(TakerTraits.HAS_PRE_TRANSFER_OUT_CALLBACK_BIT_FLAG),
-      ),
+      preTransferInCallbackEnabled,
+      preTransferOutCallbackEnabled,
       strictThreshold: Boolean(flags.getBit(TakerTraits.IS_STRICT_THRESHOLD_BIT_FLAG)),
       firstTransferFromTaker: Boolean(
         flags.getBit(TakerTraits.IS_FIRST_TRANSFER_FROM_TAKER_BIT_FLAG),
@@ -223,9 +268,9 @@ export class TakerTraits {
       useTransferFromAndAquaPush: Boolean(
         flags.getBit(TakerTraits.USE_TRANSFER_FROM_AND_AQUA_PUSH_FLAG),
       ),
-      threshold: threshold ? BigInt(add0x(threshold)) : 0n,
-      customReceiver: to ? new Address(add0x(to)) : Address.ZERO_ADDRESS,
-      deadline: deadline ? BigInt(add0x(deadline)) : 0n,
+      threshold: thresholdValue ?? 0n,
+      customReceiver: toValue === undefined ? Address.ZERO_ADDRESS : Address.fromBigInt(toValue),
+      deadline: deadlineValue ?? 0n,
       preTransferInHookData: preTransferInHookData
         ? new HexString(add0x(preTransferInHookData))
         : HexString.EMPTY,
@@ -250,13 +295,67 @@ export class TakerTraits {
   }
 
   /**
-   * Creates a new instance with updated fields.
-   * Useful for creating modified versions of existing TakerTraits.
+   * Only a section of exactly `size` bytes holds a value, mirroring the contract's
+   * `TakerTraitsLib.threshold`/`to`/`deadline` length checks.
+   */
+  private static readFixedSizeSection(section: string, size: number): bigint | undefined {
+    return section.length === size * 2 ? BigInt(add0x(section)) : undefined
+  }
+
+  /**
+   * The contract reads the threshold only from an exactly 32-byte section and the
+   * deadline only from an exactly 5-byte section (uint40), so values outside these
+   * ranges cannot be encoded without changing their on-chain meaning.
+   * Fields that are not provided are skipped.
+   */
+  private static assertValueRanges(
+    data: Partial<Pick<DataFor<TakerTraits>, 'threshold' | 'deadline'>>,
+  ): void {
+    if (data.threshold !== undefined) {
+      assert(
+        data.threshold >= 0n && data.threshold <= UINT_256_MAX,
+        `Invalid threshold: ${data.threshold}. Must be >= 0 and <= UINT_256_MAX`,
+      )
+    }
+
+    if (data.deadline !== undefined) {
+      assert(
+        data.deadline >= 0n && data.deadline <= UINT_40_MAX,
+        `Invalid deadline: ${data.deadline}. Must be >= 0 and <= UINT_40_MAX`,
+      )
+    }
+  }
+
+  /**
+   * Mutate this instance in-place with a partial update and return it.
+   *
+   * Matches {@link MakerTraits.with}: fields from `data` are copied onto the receiver.
+   * A key set to `undefined` resets that field to the canonical default (e.g.
+   * `threshold: 0n`, `customReceiver: Address.ZERO_ADDRESS`) so {@link encode} keeps working.
+   * For fluent construction in tests and one-off tweaks, e.g. `TakerTraits.default().with({ threshold: minOut })`.
+   *
+   * To build a derived traits object without changing the original (e.g. reuse a base
+   * template for several receivers), use {@link TakerTraits.withNew} instead.
+   *
+   * @throws Error if `threshold` or `deadline` is out of range; the instance is left unchanged
    */
   public with(data: Partial<DataFor<TakerTraits>>): this {
-    Object.assign(this, data)
+    TakerTraits.assertValueRanges(data)
+    const next = TakerTraits.new({ ...this, ...applyUndefinedClears(data) })
+
+    Object.assign(this, next)
 
     return this
+  }
+
+  /**
+   * Returns a new {@link TakerTraits} with the given fields replaced. This instance is
+   * not modified, so it can be kept as a template for several derived traits.
+   *
+   * A key set to `undefined` resets that field to the canonical default, same as {@link with}.
+   */
+  public withNew(data: Partial<DataFor<TakerTraits>>): TakerTraits {
+    return TakerTraits.new({ ...this, ...applyUndefinedClears(data) })
   }
 
   /**
@@ -333,38 +432,113 @@ export class TakerTraits {
   }
 
   /**
-   * Validates the swap amounts against the threshold settings.
+   * Validates the swap amounts against these traits:
+   * 1. `amountOut` must be greater than zero
+   * 2. if a deadline is set, the timestamp must not be past it
+   * 3. if a threshold is set, it must be matched exactly (`strictThreshold`), or else be
+   *    the minimum `amountOut` (exactIn) or the maximum `amountIn` (exactOut)
+   *
    * @param amountIn - The input amount of the swap
    * @param amountOut - The output amount of the swap
-   * @throws Error if the amounts don't meet the threshold requirements
+   * @param timestamp - Unix time in seconds to check the deadline against.
+   * Defaults to the current time.
+   * @throws Error whose message starts with the name of the error the contract reverts with,
+   * e.g. `TakerTraitsInsufficientMinOutputAmount: amountOut 999 < threshold 1000`
    */
-  validate(amountIn: bigint, amountOut: bigint): void {
-    if (this.threshold === 0n) return
+  validate(amountIn: bigint, amountOut: bigint, timestamp?: bigint): void {
+    if (amountOut <= 0n) {
+      throw new Error(`TakerTraitsAmountOutMustBeGreaterThanZero: amountOut ${amountOut}`)
+    }
 
-    const threshold = this.threshold
+    this.validateDeadline(timestamp)
 
-    if (this.strictThreshold) {
-      const actual = this.exactIn ? amountOut : amountIn
-
-      if (actual !== threshold) {
-        throw new Error(
-          `TakerTraitsNonExactThresholdAmount: ${this.exactIn ? 'amountOut' : 'amountIn'} ${actual} != threshold ${threshold}`,
-        )
-      }
+    if (this.exactIn) {
+      this.validateExactIn(amountOut)
     } else {
-      if (this.exactIn) {
-        if (amountOut < threshold) {
-          throw new Error(
-            `TakerTraitsInsufficientMinOutputAmount: amountOut ${amountOut} < threshold ${threshold}`,
-          )
-        }
-      } else {
-        if (amountIn > threshold) {
-          throw new Error(
-            `TakerTraitsExceedingMaxInputAmount: amountIn ${amountIn} > threshold ${threshold}`,
-          )
-        }
-      }
+      this.validateExactOut(amountIn)
     }
   }
+
+  private validateDeadline(timestamp?: bigint): void {
+    if (this.deadline <= 0n) {
+      return
+    }
+
+    const now = timestamp ?? BigInt(Math.floor(Date.now() / 1000))
+
+    if (now > this.deadline) {
+      throw new Error(`TakerTraitsDeadlineExpired: timestamp ${now} > deadline ${this.deadline}`)
+    }
+  }
+
+  private validateExactIn(amountOut: bigint): void {
+    const { threshold } = this
+
+    if (threshold <= 0n) {
+      return
+    }
+
+    if (this.strictThreshold && amountOut !== threshold) {
+      throw new Error(
+        `TakerTraitsNonExactThresholdAmountOut: amountOut ${amountOut} != threshold ${threshold}`,
+      )
+    }
+
+    if (!this.strictThreshold && amountOut < threshold) {
+      throw new Error(
+        `TakerTraitsInsufficientMinOutputAmount: amountOut ${amountOut} < threshold ${threshold}`,
+      )
+    }
+  }
+
+  private validateExactOut(amountIn: bigint): void {
+    const { threshold } = this
+
+    if (threshold <= 0n) {
+      return
+    }
+
+    if (this.strictThreshold && amountIn !== threshold) {
+      throw new Error(
+        `TakerTraitsNonExactThresholdAmountIn: amountIn ${amountIn} != threshold ${threshold}`,
+      )
+    }
+
+    if (!this.strictThreshold && amountIn > threshold) {
+      throw new Error(
+        `TakerTraitsExceedingMaxInputAmount: amountIn ${amountIn} > threshold ${threshold}`,
+      )
+    }
+  }
+}
+
+const TAKER_TRAITS_DEFAULTS = {
+  exactIn: true,
+  shouldUnwrap: false,
+  preTransferInCallbackEnabled: false,
+  preTransferOutCallbackEnabled: false,
+  strictThreshold: false,
+  firstTransferFromTaker: false,
+  useTransferFromAndAquaPush: true,
+  threshold: 0n,
+  customReceiver: Address.ZERO_ADDRESS,
+  deadline: 0n,
+  preTransferInHookData: HexString.EMPTY,
+  postTransferInHookData: HexString.EMPTY,
+  preTransferOutHookData: HexString.EMPTY,
+  postTransferOutHookData: HexString.EMPTY,
+  preTransferInCallbackData: HexString.EMPTY,
+  preTransferOutCallbackData: HexString.EMPTY,
+  instructionsArgs: HexString.EMPTY,
+  signature: HexString.EMPTY,
+} as const satisfies Required<DataFor<TakerTraits>>
+
+function applyUndefinedClears(data: Partial<DataFor<TakerTraits>>): Partial<DataFor<TakerTraits>> {
+  return Object.fromEntries(
+    (Object.keys(data) as Array<keyof DataFor<TakerTraits>>).map((key) => {
+      const value = data[key]
+
+      return [key, value ?? (TAKER_TRAITS_DEFAULTS[key] as DataFor<TakerTraits>[typeof key])]
+    }),
+  ) as Partial<DataFor<TakerTraits>>
 }

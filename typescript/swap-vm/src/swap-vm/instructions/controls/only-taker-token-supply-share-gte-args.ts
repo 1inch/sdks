@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import type { Address, HexString } from '@1inch/sdk-core'
-import assert from 'assert'
 import { OnlyTakerTokenSupplyShareGteArgsCoder } from './only-taker-token-supply-share-gte-args-coder'
 import type { IArgsData } from '../types'
+import { assert } from '../../../utils/assert'
 
 const UINT_64_MAX = 0xffffffffffffffffn
 

@@ -2,9 +2,9 @@
 
 import type { HexString } from '@1inch/sdk-core'
 import { UINT_256_MAX } from '@1inch/byte-utils'
-import assert from 'assert'
 import { TWAPSwapArgsCoder } from './twap-swap-args-coder'
 import type { IArgsCoder, IArgsData } from '../types'
+import { assert } from '../../../utils/assert'
 
 /**
  * @notice TWAP Hook with exponential dutch auction and illiquidity handling
@@ -94,6 +94,13 @@ export class TWAPSwapArgs implements IArgsData {
     assert(
       minTradeAmountOut >= 0n && minTradeAmountOut <= UINT_256_MAX,
       `Invalid minTradeAmountOut: ${minTradeAmountOut}. Must be >= 0 and <= UINT_256_MAX`,
+    )
+    assert(balanceIn > 0n, `Invalid balanceIn: ${balanceIn}. Must be > 0`)
+    assert(balanceOut > 0n, `Invalid balanceOut: ${balanceOut}. Must be > 0`)
+    assert(duration > 0n, `Invalid duration: ${duration}. Must be > 0`)
+    assert(
+      priceBumpAfterIlliquidity >= 10n ** 18n,
+      `Invalid priceBumpAfterIlliquidity: ${priceBumpAfterIlliquidity}. Must be >= 1e18 (1e18 = no bump)`,
     )
   }
 

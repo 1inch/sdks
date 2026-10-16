@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
+import { Bps, HexString, Percent } from '@1inch/sdk-core'
 import { FlatFeeArgs } from './flat-fee-args'
 
 describe('FlatFeeArgs', () => {
@@ -15,13 +16,14 @@ describe('FlatFeeArgs', () => {
     expect(decoded.fee).toBe(fee)
   })
 
-  it('should handle maximum fee (100%)', () => {
-    const maxFee = 1000000000n
+  it('should handle maximum fee (just below 100%)', () => {
+    const maxFee = 999999999n
     const args = new FlatFeeArgs(maxFee)
 
     const encoded = FlatFeeArgs.CODER.encode(args)
-    const decoded = FlatFeeArgs.decode(encoded)
+    expect(encoded.toString()).toBe('0x3b9ac9ff')
 
+    const decoded = FlatFeeArgs.decode(encoded)
     expect(decoded.fee).toBe(maxFee)
   })
 
@@ -53,6 +55,7 @@ describe('FlatFeeArgs', () => {
 
     expect(() => new FlatFeeArgs(maxUint32 + 1n)).toThrow()
 
+    expect(() => new FlatFeeArgs(FEE_100_PERCENT)).toThrow('Fee out of range')
     expect(() => new FlatFeeArgs(FEE_100_PERCENT + 1n)).toThrow('Fee out of range')
   })
 
@@ -75,13 +78,22 @@ describe('FlatFeeArgs', () => {
     })
   })
 
-  it('should enforce fee limit (100%)', () => {
+  it('should enforce fee limit (below 100%)', () => {
     const FEE_100_PERCENT = 1000000000n
 
-    expect(() => new FlatFeeArgs(FEE_100_PERCENT)).not.toThrow()
+    expect(() => new FlatFeeArgs(FEE_100_PERCENT - 1n)).not.toThrow()
 
+    expect(() => new FlatFeeArgs(FEE_100_PERCENT)).toThrow(
+      'Fee out of range: 1000000000. Must be < 1000000000',
+    )
     expect(() => new FlatFeeArgs(FEE_100_PERCENT + 1n)).toThrow()
     expect(() => new FlatFeeArgs(2n * FEE_100_PERCENT)).toThrow()
+  })
+
+  it('should reject a 100% fee when decoding', () => {
+    expect(() => FlatFeeArgs.decode(new HexString('0x3b9aca00'))).toThrow(
+      'Fee out of range: 1000000000. Must be < 1000000000',
+    )
   })
 
   it('should create from basis points correctly', () => {
@@ -94,7 +106,7 @@ describe('FlatFeeArgs', () => {
       { bps: 250, expectedFee: 25000000n },
       { bps: 500, expectedFee: 50000000n },
       { bps: 1000, expectedFee: 100000000n },
-      { bps: 10000, expectedFee: 1000000000n },
+      { bps: 9999, expectedFee: 999900000n },
     ]
 
     testCases.forEach(({ bps, expectedFee }) => {
@@ -107,6 +119,8 @@ describe('FlatFeeArgs', () => {
       const decoded = FlatFeeArgs.decode(encoded)
       expect(decoded.fee).toBe(expectedFee)
     })
+
+    expect(() => FlatFeeArgs.fromBps(10000)).toThrow('Fee out of range')
   })
 
   it('should create from percent correctly and be consistent with fromBps', () => {
@@ -116,7 +130,7 @@ describe('FlatFeeArgs', () => {
       { percent: 1, expectedFee: 10000000n },
       { percent: 2.5, expectedFee: 25000000n },
       { percent: 10, expectedFee: 100000000n },
-      { percent: 100, expectedFee: 1000000000n },
+      { percent: 50, expectedFee: 500000000n },
     ]
 
     testCases.forEach(({ percent, expectedFee }) => {
@@ -124,6 +138,8 @@ describe('FlatFeeArgs', () => {
       expect(args).toBeInstanceOf(FlatFeeArgs)
       expect(args.fee).toBe(expectedFee)
     })
+
+    expect(() => FlatFeeArgs.fromPercent(100)).toThrow('Fee out of range')
 
     const percent1 = FlatFeeArgs.fromPercent(1)
     const bps100 = FlatFeeArgs.fromBps(100)
@@ -136,5 +152,43 @@ describe('FlatFeeArgs', () => {
     const percent10 = FlatFeeArgs.fromPercent(10)
     const bps1000 = FlatFeeArgs.fromBps(1000)
     expect(percent10.fee).toBe(bps1000.fee)
+  })
+
+  it('should create from fractional basis points and percent exactly', () => {
+    expect(FlatFeeArgs.fromBps(1.1).fee).toBe(110000n)
+    expect(FlatFeeArgs.fromBps(2.3).fee).toBe(230000n)
+    expect(FlatFeeArgs.fromBps(0.00001).fee).toBe(1n)
+    expect(FlatFeeArgs.fromPercent(0.011).fee).toBe(110000n)
+    expect(FlatFeeArgs.fromPercent(0.57).fee).toBe(5700000n)
+    expect(FlatFeeArgs.fromPercent(Percent.fromString('0.0000001')).fee).toBe(1n)
+
+    expect(FlatFeeArgs.CODER.encode(FlatFeeArgs.fromBps(1.1)).toString()).toBe('0x0001adb0')
+    expect(FlatFeeArgs.fromBps(Bps.fromNumber(1.1)).fee).toBe(FlatFeeArgs.fromBps(1.1).fee)
+    expect(FlatFeeArgs.fromPercent(Percent.fromNumber(0.57)).fee).toBe(
+      FlatFeeArgs.fromPercent(0.57).fee,
+    )
+  })
+
+  it('should reject a fraction longer than the bps and percent scales', () => {
+    expect(() => FlatFeeArgs.fromBps(1.234567)).toThrow('Must have at most 5 decimal places')
+    expect(() => FlatFeeArgs.fromBps(Bps.fromString('1.234567'))).toThrow(
+      'Must have at most 5 decimal places',
+    )
+    expect(() => FlatFeeArgs.fromPercent(0.00000001)).toThrow('Exponent notation is not allowed')
+    expect(() => FlatFeeArgs.fromPercent(Percent.fromString('1.23456789'))).toThrow(
+      'Must have at most 7 decimal places',
+    )
+  })
+
+  it('should reject non-finite and negative basis points and percent', () => {
+    expect(() => FlatFeeArgs.fromBps(NaN)).toThrow('Must be a finite number')
+    expect(() => FlatFeeArgs.fromPercent(Infinity)).toThrow('Must be a finite number')
+    expect(() => FlatFeeArgs.fromBps(-1)).toThrow('Must be non-negative')
+    expect(() => FlatFeeArgs.fromPercent(-0.1)).toThrow('Must be non-negative')
+  })
+
+  it('should reject basis points and percent above 100%', () => {
+    expect(() => FlatFeeArgs.fromBps(10000.00001)).toThrow('Fee out of range')
+    expect(() => FlatFeeArgs.fromPercent(100.1)).toThrow('Fee out of range')
   })
 })

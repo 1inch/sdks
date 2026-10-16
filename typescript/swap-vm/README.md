@@ -6,7 +6,7 @@ A TypeScript SDK for encoding, decoding, and interacting with the 1inch Swap VM 
 
 The Swap VM Protocol is a lightweight virtual machine designed for efficient and flexible token swapping on-chain. This SDK simplifies integration by providing:
 
-- **Transaction Building**: Build typed call data for `quote`, `swap`, and `hash` operations
+- **Transaction Building**: Build typed call data for `quote`, `swap`, `hash`, and `eip712Domain` operations
 - **Instruction System**: Comprehensive instruction set including swaps, liquidity concentration, fees, and controls
 - **Trait management**: Taker and maker traits builders with sensible defaults for standard swaps, plus fine-grained control whenever you need advanced order customization.
 
@@ -21,6 +21,9 @@ pnpm add @1inch/swap-vm-sdk
 ## Quick Start
 
 ### Provide liquidity
+
+`aqua.ship()` only records virtual balances for the strategy: the tokens stay in the maker's wallet and Aqua pulls them with `transferFrom` when swaps execute. The maker must keep the tokens in the wallet and approve the Aqua contract to spend each of them.
+
 ```typescript
 import {
   AQUA_SWAP_VM_CONTRACT_ADDRESSES,
@@ -32,6 +35,7 @@ import {
   instructions
 } from '@1inch/swap-vm-sdk'
 import { AquaProtocolContract, AQUA_CONTRACT_ADDRESSES } from '@1inch/aqua-sdk'
+import { encodeFunctionData, erc20Abi, maxUint256 } from 'viem'
 
 const chainId = NetworkEnum.ETHEREUM
 const aqua = new AquaProtocolContract(AQUA_CONTRACT_ADDRESSES[chainId])
@@ -41,11 +45,17 @@ const maker = '0xmaker_address'
 const USDC = new Address('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')
 const WETH = new Address('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')
 
-// Price range as P = tokenGt/tokenLt (1e18). E.g. 1500–3000 USDC per WETH → rawPriceMin = 1e18/3000, rawPriceMax = 1e18/1500
-const { ONE_E18 } = instructions.concentrate
+// Price range: 1500–3000 USDC per WETH. `Price.fromHuman` applies the token decimals and `toSqrt()`
+// returns the on-chain bound sqrt(P * 1e18), with P = tokenGt/tokenLt in token base units (1e18 fixed-point).
+// USDC < WETH by address, so P is WETH per USDC and the higher USDC price (3000) is the lower bound
+const { Price } = instructions.concentrate
+const usdcPerWeth = {
+  quoteToken: { address: USDC, decimals: 6n },
+  baseToken: { address: WETH, decimals: 18n }
+}
 const program = AquaXYCAmmStrategy.newConcentrate({
-  rawPriceMin: ONE_E18 / 3000n,
-  rawPriceMax: ONE_E18 / 1500n
+  sqrtPriceMin: Price.fromHuman('3000', usdcPerWeth).toSqrt(),
+  sqrtPriceMax: Price.fromHuman('1500', usdcPerWeth).toSqrt()
 }).build()
 
 const order = Order.new({
@@ -54,8 +64,21 @@ const order = Order.new({
   traits: MakerTraits.default()
 })
 
+// Aqua pulls the tokens from the maker's wallet when swaps execute, so it needs an allowance
+for (const token of [USDC, WETH]) {
+  await makerWallet.send({
+    to: token.toString(),
+    data: encodeFunctionData({
+      abi: erc20Abi,
+      functionName: 'approve',
+      args: [aqua.address.toString(), maxUint256]
+    }),
+    value: 0n
+  })
+}
+
 const tx = aqua.ship({
-  app: new Address(swapVMAddress),
+  app: swapVMAddress,
   strategy: order.encode(),
   amountsAndTokens: [
     {
@@ -93,7 +116,7 @@ const USDC = new Address('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')
 const WETH = new Address('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')
 
 const encodedOrder = '0x...' // fetched from ship event or from api
-const order = Order.parse(new HexString(encodedOrder))
+const order = Order.decode(new HexString(encodedOrder))
 
 const srcAmount = 100n * 10n ** 6n
 const swapParams = {
@@ -114,8 +137,15 @@ const [_, dstAmount] = decodeFunctionResult({
 
 console.log('dstAmount', dstAmount)
 
+// Slippage protection: the swap reverts if it would deliver less than the quote minus 0.5%
+const slippageBps = 50n
+const minDstAmount = (dstAmount * (10_000n - slippageBps)) / 10_000n
+
 // Swap
-const swapTx = swapVM.swap(swapParams)
+const swapTx = swapVM.swap({
+  ...swapParams,
+  takerTraits: TakerTraits.default().with({ threshold: minDstAmount })
+})
 await taker.send(swapTx)
 ```
 
@@ -126,8 +156,8 @@ await taker.send(swapTx)
 Get a quote for a swap.
 
 ```typescript
-const quoteTx = swapVm.quote({
-  order: Order.parse('0x...'),
+const quoteTx = swapVM.quote({
+  order: Order.decode(new HexString('0x...')),
   tokenIn: new Address('0x...'),
   tokenOut: new Address('0x...'),
   amount: 1000000000000000000n,
@@ -149,38 +179,88 @@ const quoteTx = swapVm.quote({
 Execute a swap transaction.
 
 ```typescript
-const swapTx = swapVm.swap({
-  order: Order.parse('0x...'),
+// quotedAmountOut: amountOut returned by `quote` for the same order, tokens and amount
+const slippageBps = 50n // 0.5%
+const minAmountOut = (quotedAmountOut * (10_000n - slippageBps)) / 10_000n
+
+const swapTx = swapVM.swap({
+  order: Order.decode(new HexString('0x...')),
   tokenIn: new Address('0x...'),
   tokenOut: new Address('0x...'),
   amount: 1000000000000000000n,
-  takerTraits: TakerTraits.default(),
+  takerTraits: TakerTraits.new({ exactIn: true, threshold: minAmountOut }),
 })
 ```
 
 **Parameters:**
 - All parameters from `quote`
+- `takerTraits.threshold` - Slippage bound checked on-chain: minimum `amountOut` for exact-in swaps, maximum `amountIn` for exact-out swaps. `0n` (the default) disables the check, see [Slippage protection](#slippage-protection)
 
 **Returns:** `CallInfo` object with encoded transaction data
+
+### Slippage protection
+
+`TakerTraits.threshold` is the only slippage check the router enforces, and it defaults to `0n`. With `0n` the threshold is left out of the encoded taker traits and the router skips the check, so the swap succeeds as long as `amountOut > 0`. Such a swap can be sandwiched, and it accepts whatever the order returns at execution time, even if that is far below the quote.
+
+Set a threshold for every swap, derived from a fresh quote and an explicit slippage tolerance:
+
+- Exact-in (`exactIn: true`, `amount` is the input amount): `threshold` is the minimum `amountOut`, for example `quotedAmountOut * (10_000n - slippageBps) / 10_000n`. Below it, the swap reverts with `TakerTraitsInsufficientMinOutputAmount`.
+- Exact-out (`exactIn: false`, `amount` is the output amount): `threshold` is the maximum `amountIn`, for example `quotedAmountIn * (10_000n + slippageBps) / 10_000n`. Above it, the swap reverts with `TakerTraitsExceedingMaxInputAmount`.
+
+With `strictThreshold: true`, the swap must match `threshold` exactly instead.
 
 ### Hash Order
 
 Calculate the hash of an order (view).
 
 ```typescript
-const order = new Order({
+const order = Order.new({
   maker: new Address('0x...'),
   traits: MakerTraits.default(),
-  program: new HexString('0x...'),
+  program: new SwapVmProgram('0x...'),
 })
 
-const hashOrderTx = swapVm.hashOrder(order)
+const hashOrderTx = swapVM.hashOrder(order)
 ```
 
 **Parameters:**
 - `order` - The order to hash
 
 **Returns:** `CallInfo` object with encoded transaction data for the `hash` order function
+
+### EIP-712 domain (signature-based orders)
+
+Orders authorized by a maker signature (`useAquaInsteadOfSignature: false`) are hashed as EIP-712 typed data `Order(address maker,uint256 traits,bytes data)`, so `order.hash(domain)` needs the EIP-712 domain of the router that executes the order. Aqua orders (`MakerTraits.default()`) are hashed as `keccak256(order.encode())` and ignore the domain.
+
+The domain must match the router exactly. A hash computed with another `name`, `version`, `chainId` or `verifyingContract` still looks valid, but the router rejects its signature with `BadSignature`. The deployed `AquaSwapVMRouter` contracts all use the name `1inch SwapVM v1.0`, and the version is `1.0.2` on every chain except Monad, Cronos, HyperEVM and Arc, where it is `1.0`.
+
+For the deployed routers, take the domain from the SDK:
+
+```typescript
+import { Address, getAquaSwapVmEip712Domain, MakerTraits, NetworkEnum, Order } from '@1inch/swap-vm-sdk'
+
+const order = Order.new({
+  maker: new Address('0x...'),
+  traits: MakerTraits.default().with({ useAquaInsteadOfSignature: false }),
+  program, // SwapVmProgram built with a program builder
+})
+
+// { chainId, name, version, verifyingContract }
+const domain = getAquaSwapVmEip712Domain(NetworkEnum.ETHEREUM)
+const orderHash = order.hash(domain)
+```
+
+For any other router, read the domain from the contract (`eip712Domain()`, EIP-5267):
+
+```typescript
+import { Address, HexString, SwapVMContract } from '@1inch/swap-vm-sdk'
+
+const swapVM = new SwapVMContract(new Address('0x...')) // router address
+const { data } = await publicClient.call(swapVM.eip712Domain()) // viem PublicClient
+const domain = SwapVMContract.decodeEip712DomainResult(new HexString(data!))
+
+const orderHash = order.hash(domain)
+```
 
 ## Event Parsing
 
@@ -208,14 +288,15 @@ The Swap VM uses a comprehensive instruction system for building swap programs.
 
 🔎 **Instruction coverage vs. deployment**
 
-- The **SDK** exposes the **full instruction set** (see `_allInstructions` in [`src/swap-vm/instructions/index.ts`](./src/swap-vm/instructions/index.ts)) and can safely **encode/decode every core opcode** defined by the protocol.
-- The **currently deployed `AquaSwapVMRouter` contracts** support **only the Aqua subset** of these instructions (see `aquaInstructions` in the same file).
+- The **SDK** ships two opcode tables in [`src/swap-vm/instructions/index.ts`](./src/swap-vm/instructions/index.ts): `_allInstructions` (the `SwapVMRouter` layout, `Opcodes.sol`) and `aquaInstructions` (the `AquaSwapVMRouter` layout, `AquaOpcodes.sol`). It can **encode/decode every opcode in these tables**; any other instruction needs a custom opcode table (see "Custom instruction sets & `ProgramBuilder`" below).
+- `ORACLE_PRICE_ADJUSTER_1D` is **in neither table**, and no router opcode table includes it: the SDK only ships its args and opcode definition (`instructions.oraclePriceAdjuster`), so `RegularProgramBuilder` and `AquaProgramBuilder` cannot encode or decode it.
+- The **currently deployed `AquaSwapVMRouter` contracts** support **only the Aqua instruction set** (`aquaInstructions`): a subset of `_allInstructions` plus `ONLY_TX_ORIGIN_TOKEN_BALANCE_NON_ZERO`, which only the Aqua table has.
 - Any program that uses instructions **outside `aquaInstructions`** will **not be executable on current Aqua deployments**, even though encoding/decoding will succeed.
 - After the **`Fusaka` Ethereum hardfork**, a full `SwapVM` deployment is planned; at that point, programs using the complete `_allInstructions` set will be executable on-chain on Ethereum.
 
 💡 **Gotcha**: When designing programs intended to run on today’s on-chain Aqua instances, treat `aquaInstructions` as the authoritative list of **runtime-available** opcodes, and the rest of the instruction set as **future / generic Swap VM** capabilities.
 
-Available instruction categories in the full Swap VM instruction set include:
+Instructions in the SDK opcode tables, by category (all of them are in `_allInstructions` unless noted):
 
 ### Balances
 - `STATIC_BALANCES_XD` - Initialize static token balances
@@ -234,11 +315,13 @@ Available instruction categories in the full Swap VM instruction set include:
 - `ONLY_TAKER_TOKEN_BALANCE_NON_ZERO` - Guard: only execute if taker token balance is non-zero
 - `ONLY_TAKER_TOKEN_BALANCE_GTE` - Guard: only execute if balance >= threshold
 - `ONLY_TAKER_TOKEN_SUPPLY_SHARE_GTE` - Guard: only execute if supply share >= threshold
+- `ONLY_TX_ORIGIN_TOKEN_BALANCE_NON_ZERO` - Guard: only execute if `tx.origin` token balance is non-zero (Aqua table only: `aquaInstructions` and the deployed `AquaSwapVMRouter` contracts)
 - `SALT` - Add randomness to order hash
 
 ### Trading instructions
 - `XYC_SWAP_XD` - XYC swap for multi-dimensional pools
 - `CONCENTRATE_GROW_LIQUIDITY_2D` - Concentrate liquidity in 2-token pools (sqrtPriceMin/sqrtPriceMax, P = tokenGt/tokenLt, 1e18)
+- `PEGGED_SWAP_GROW_PRICE_RANGE_2D` - Square-root linear swap curve for pegged assets in 2-token pools
 - `DECAY_XD` - Apply decay calculation
 - `LIMIT_SWAP_1D` - Execute limit order swap
 - `LIMIT_SWAP_ONLY_FULL_1D` - Execute limit order only if fully fillable
@@ -246,13 +329,18 @@ Available instruction categories in the full Swap VM instruction set include:
 - `ADJUST_MIN_RATE_1D` - Adjust minimum rate dynamically
 - `DUTCH_AUCTION_BALANCE_IN_1D` - Dutch auction based on available input balance
 - `DUTCH_AUCTION_BALANCE_OUT_1D` - Dutch auction based on desired output balance
-- `ORACLE_PRICE_ADJUSTER_1D` - Adjust prices based on oracle data
 - `BASE_FEE_ADJUSTER_1D` - Adjust for network base fees
 - `TWAP` - Time-weighted average price swap
 - `EXTRUCTION` - External contract instruction
 
 ### Fee instructions
 - `FLAT_FEE_AMOUNT_IN_XD` - Flat fee based on input amount
+- `PROTOCOL_FEE_AMOUNT_IN_XD` - Protocol fee on input, transferred from the maker to the fee recipient
+- `AQUA_PROTOCOL_FEE_AMOUNT_IN_XD` - Protocol fee on input, pulled from the maker's Aqua balance
+- `DYNAMIC_PROTOCOL_FEE_AMOUNT_IN_XD` - Protocol fee on input, with fee and recipient read from an external fee provider
+- `AQUA_DYNAMIC_PROTOCOL_FEE_AMOUNT_IN_XD` - Dynamic protocol fee on input, pulled from the maker's Aqua balance
+
+Experimental fee instructions (`FeeExperimental.sol`, not recommended for production, not in `aquaInstructions`):
 - `FLAT_FEE_AMOUNT_OUT_XD` - Flat fee based on output amount
 - `PROGRESSIVE_FEE_IN_XD` - Progressive fee applied on input
 - `PROGRESSIVE_FEE_OUT_XD` - Progressive fee applied on output
@@ -275,11 +363,26 @@ The generic [`ProgramBuilder`](./src/swap-vm/programs/program-builder.ts):
 - `ProgramBuilder.add(ix)` validates that the instruction’s opcode is present in the provided `ixsSet`.  
   - If you accidentally mix instructions from a different set, it throws with the list of supported opcode IDs.
 - `ProgramBuilder.decode(program)` uses the same `ixsSet` to map opcode indices back to instruction definitions, so your **off-chain opcode table must match the on-chain contract layout**.
+  - Decoding is relative to the builder's opcode table: the same bytes can mean different instructions under different tables (e.g. byte `0x16` is `xycSwapXD` in `_allInstructions` but a reserved slot in `aquaInstructions`). Always decode a program with the table of the router it targets, e.g. `AquaProgramBuilder.decode(program)` for `AquaSwapVMRouter` programs.
+  - `decode` throws on opcode bytes that are missing from the table or map to a reserved `EMPTY_OPCODE` slot, and on instructions whose args do not re-encode to exactly the original bytes. Programs containing debug opcodes decode only on a builder with `withDebug()` enabled.
 
 This makes it safe to:
 
 - Deploy your own `SwapVM`-style contract with a custom opcode mapping.
 - Use `ProgramBuilder` with your custom `ixsSet` to construct and parse programs for that deployment, without changing the rest of the SDK.
+
+**Control flow is not validated**: `jump`, `jumpIfTokenIn` and `jumpIfTokenOut` targets are absolute byte offsets into the built program, and on-chain execution is bounded only by gas, so making a program terminate is up to the maker. `build()` accepts backward jumps (which can loop until the transaction runs out of gas), targets that are not an instruction start, and instructions that no execution path reaches. Call `lint()` on a builder (for a built program, `AquaProgramBuilder.decode(program).lint()`) to get these issues as warnings, without throwing:
+
+```typescript
+new AquaProgramBuilder()
+  .jump({ nextPC: 0n }) // jumps to itself
+  .xycSwapXD()
+  .lint()
+// [
+//   { code: 'backward-jump', instructionIndex: 0, message: 'Instruction 0 (Controls.jump) at offset 0 jumps back to offset 0, so execution can loop until it runs out of gas' },
+//   { code: 'unreachable-instruction', instructionIndex: 1, message: 'Instruction 1 (XYCSwap.xycSwapXD) at offset 4 is unreachable from the program start' },
+// ]
+```
 
 ### Recommended builder for Aqua strategies
 
@@ -317,6 +420,18 @@ Strategies are thin wrappers around a program builder:
 
 Because the strategy owns the builder, you can keep the strategy API stable even if the underlying instruction sequence evolves.
 
+### Salt and strategy hash uniqueness
+
+Aqua tracks a maker's balances per strategy hash (`order.hash()`, the `keccak256` of the encoded order), and `ship()` accepts new tokens for a hash that already holds balances. Without a salt, the hash depends only on the maker, the traits and the strategy parameters, so shipping identical parameters for two token pairs puts both pairs under one hash and lets takers swap across them. Give each shipped strategy its own salt:
+
+```typescript
+const program = AquaXYCAmmStrategy.new().withFeeTokenIn(5).withRandomSalt().build()
+```
+
+- `withRandomSalt()` draws a uint64 salt from `globalThis.crypto.getRandomValues`; `withSalt(salt)` sets your own value (`0n` included).
+- A random salt cannot be recomputed from the parameters: store it (or keep the shipped strategy bytes or hash) to recompute the strategy hash for docking.
+- No salt is added by default, so `build()` stays deterministic for the same parameters.
+
 ### Creating your own strategy
 
 To define a custom strategy:
@@ -336,6 +451,7 @@ For example:
 ```typescript
 import type { SwapVmProgram } from '@1inch/swap-vm-sdk'
 import { AquaProgramBuilder, instructions, Address, Order, MakerTraits } from '@1inch/swap-vm-sdk'
+import { parseUnits } from 'viem'
 const { concentrate, fee } = instructions
 
 /**
@@ -358,7 +474,8 @@ export class SimpleAmmStrategy {
 
   /**
    * Sets the concentrated liquidity price range.
-   * Prices are P = tokenGt/tokenLt in 1e18 fixed-point (e.g. WETH per USDC when USDC < WETH).
+   * Prices are P = tokenGt/tokenLt in 1e18 fixed-point, as a ratio of token base units
+   * (e.g. WETH wei per USDC unit when USDC < WETH), so they depend on both tokens' decimals.
    */
   public withPriceRange(rawPriceMin: bigint, rawPriceMax: bigint): this {
     this.rawPriceMin = rawPriceMin
@@ -404,12 +521,17 @@ export class SimpleAmmStrategy {
   }
 }
 
-// Example usage (price range: e.g. 1500–3000 USDC per WETH → P = WETH per USDC = 1/3000 .. 1/1500 in 1e18):
+// Example usage: 1500–3000 USDC per WETH. USDC < WETH by address, so each raw price is
+// (1 WETH in wei) * 1e18 / (price in USDC units), and the higher USDC price (3000) is the lower bound
 
 const { ONE_E18 } = concentrate
+const oneWeth = parseUnits('1', 18)
 
 const strategy = new SimpleAmmStrategy(USDC, WETH)
-  .withPriceRange(ONE_E18 / 3000n, ONE_E18 / 1500n) // 1500–3000 USDC per WETH
+  .withPriceRange(
+    (oneWeth * ONE_E18) / parseUnits('3000', 6), // rawPriceMin: 3000 USDC per WETH
+    (oneWeth * ONE_E18) / parseUnits('1500', 6), // rawPriceMax: 1500 USDC per WETH
+  )
   .withFeeTokenIn(5) // 5 bps taker fee on input (optional)
 
 const program = strategy.build()
@@ -443,10 +565,7 @@ export class FlatFeeArgs implements IArgsData {
 
   constructor(public readonly fee: bigint) {
     assert(fee >= 0n && fee <= UINT_32_MAX, `Invalid fee: ${fee}. Must be a valid uint32`)
-    assert(
-      fee <= BigInt(FEE_100_PERCENT),
-      `Fee out of range: ${fee}. Must be <= ${FEE_100_PERCENT}`,
-    )
+    assert(fee < BigInt(FEE_100_PERCENT), `Fee out of range: ${fee}. Must be < ${FEE_100_PERCENT}`)
   }
 
   /**
@@ -457,6 +576,12 @@ export class FlatFeeArgs implements IArgsData {
     const fee = BigInt(bps * 100000)
 
     return new FlatFeeArgs(fee)
+  }
+
+  toJSON(): Record<string, unknown> {
+    return {
+      fee: this.fee.toString(),
+    }
   }
 }
 ```
@@ -510,7 +635,7 @@ To make your instruction **usable at runtime**, you must place it at the correct
 ```typescript
 export const myInstructionSet: Opcode<IArgsData>[] = [
   /* ... previous opcodes ... */
-  fee.flatFeeXD,
+  flatFeeXD,
   /* ... */
 ]
 ```
@@ -523,18 +648,23 @@ The SDK includes pre-configured contract addresses of `AquaSwapVMRouter` for the
 
 | Network | Chain ID | Address |
 |---------|----------|---------|
-| Ethereum | 1 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://etherscan.io/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
-| BNB Chain | 56 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://bscscan.com/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
-| Polygon | 137 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://polygonscan.com/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
-| Arbitrum | 42161 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://arbiscan.io/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
-| Avalanche | 43114 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](http://snowscan.xyz/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
-| Gnosis | 100 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://gnosisscan.io/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
-| Coinbase Base | 8453 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://basescan.org/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
-| Optimism | 10 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://optimistic.etherscan.io/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
-| zkSync Era | 324 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://era.zksync.network/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
-| Linea | 59144 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://lineascan.build/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
-| Unichain | 1301 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://uniscan.xyz/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
-| Sonic | 146 | [0xdfd05fe230bfe7b212878414270c72c8345506fa](https://sonicscan.org/address/0xdfd05fe230bfe7b212878414270c72c8345506fa) |
+| Ethereum | 1 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://etherscan.io/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| BNB Chain | 56 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://bscscan.com/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| Polygon | 137 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://polygonscan.com/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| Arbitrum | 42161 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://arbiscan.io/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| Avalanche | 43114 | [0x111111338c5091e8440b67b168bae16a668ac0de](http://snowscan.xyz/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| Gnosis | 100 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://gnosisscan.io/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| Coinbase Base | 8453 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://basescan.org/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| Optimism | 10 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://optimistic.etherscan.io/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| zkSync Era | 324 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://era.zksync.network/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| Linea | 59144 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://lineascan.build/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| Unichain | 130 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://uniscan.xyz/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| Sonic | 146 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://sonicscan.org/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| Robinhood Chain | 4663 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://robinhoodchain.blockscout.com/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| Monad | 143 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://monadscan.com/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| Cronos | 25 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://explorer.cronos.com/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| HyperEVM | 999 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://hyperevmscan.io/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
+| Arc | 5042 | [0x111111338c5091e8440b67b168bae16a668ac0de](https://explorer.arc.io/address/0x111111338c5091e8440b67b168bae16a668ac0de) |
 
 Access addresses using:
 
@@ -553,23 +683,25 @@ The SDK exports:
 
 - **[`SwapVMContract`](./src/swap-vm-contract/swap-vm-contract.ts)** - Main contract class for encoding, decoding, and building transactions
 - **[`AQUA_SWAP_VM_CONTRACT_ADDRESSES`](./src/swap-vm-contract/constants.ts)** - Pre-configured contract addresses by network
+- **[`AQUA_SWAP_VM_EIP712_DOMAINS`, `getAquaSwapVmEip712Domain`](./src/swap-vm-contract/constants.ts)** - EIP-712 domain of the deployed routers by network, for hashing signature-based orders
 - **[`SwappedEvent`](./src/swap-vm-contract/events/swapped-event.ts)** - Event class for parsing swapped events
 - **[`Order`](./src/swap-vm/order.ts)** - Order data structure
 - **[`MakerTraits`](./src/swap-vm/maker-traits.ts)** - Maker-side configuration and flags
 - **[`TakerTraits`](./src/swap-vm/taker-traits.ts)** - Taker-side configuration and flags
 - **[`ABI`](./src/abi/)** - Contract ABI exports
-- **Strategies** - [`AquaAMMStrategy`](./src/swap-vm/strategies/aqua-amm-strategy.ts) (base), [`AquaXYCAmmStrategy`](./src/swap-vm/strategies/aqua-xyc-amm-strategy.ts) (use `new()` or `newConcentrate({ rawPriceMin, rawPriceMax })` / `{ sqrtPriceMin, sqrtPriceMax }`), [`AquaPeggedAmmStrategy`](./src/swap-vm/strategies/aqua-pegged-amm-strategy.ts)
+- **Strategies** - [`AquaAMMStrategy`](./src/swap-vm/strategies/aqua-amm-strategy.ts) (base), [`AquaXYCAmmStrategy`](./src/swap-vm/strategies/aqua-xyc-amm-strategy.ts) (use `new()` or `newConcentrate({ sqrtPriceMin, sqrtPriceMax })` with `Price.toSqrt()` bounds; `newConcentrate({ rawPriceMin, rawPriceMax })` rejects raw prices below 1e5), [`AquaPeggedAmmStrategy`](./src/swap-vm/strategies/aqua-pegged-amm-strategy.ts)
 - **[Instructions](./src/swap-vm/instructions/)** - Comprehensive instruction system:
   - `controls` - Flow control instructions
   - `balances` - Balance manipulation instructions
   - `invalidators` - Invalidation instructions
   - `xycSwap` - XYC swap instructions
-  - `concentrate` - Liquidity concentration (e.g. `ConcentrateGrowLiquidity2DArgs.fromSqrtPrices` / `fromRawPrices`; P = tokenGt/tokenLt in 1e18)
+  - `concentrate` - Liquidity concentration (e.g. `ConcentrateGrowLiquidity2DArgs.fromPrices` / `fromSqrtPrices`, exact; `fromRawPrices` takes P = tokenGt/tokenLt in 1e18 and rejects values below 1e5)
+  - `peggedSwap` - Pegged-asset swap curve instructions (`stableSwap` is a deprecated alias)
   - `decay` - Decay calculation instructions
   - `limitSwap` - Limit order instructions
   - `minRate` - Minimum rate guard instructions
   - `dutchAuction` - Dutch auction instructions
-  - `oraclePriceAdjuster` - Oracle-based price adjustment
+  - `oraclePriceAdjuster` - Oracle-based price adjustment (args and opcode definition only, not in `_allInstructions` or `aquaInstructions`)
   - `baseFeeAdjuster` - Base fee adjustment
   - `twapSwap` - Time-weighted average price instructions
   - `extruction` - External instruction call

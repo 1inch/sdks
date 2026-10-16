@@ -47,7 +47,13 @@ describe('JumpArgsCoder', () => {
   it('should convert to JSON', () => {
     const args = new JumpArgs(42n)
     expect(args.toJSON()).toEqual({
-      nextPC: 42n,
+      nextPC: '42',
     })
+  })
+
+  it('should decode through JumpArgs.decode', () => {
+    const encoded = coder.encode(new JumpArgs(7n))
+
+    expect(JumpArgs.decode(encoded).nextPC).toBe(7n)
   })
 })

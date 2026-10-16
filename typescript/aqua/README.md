@@ -95,7 +95,7 @@ const dockTx = aqua.dock({
 **Parameters:**
 - `app` - Address of the application contract
 - `strategyHash` - Keccak256 hash of the strategy bytes
-- `tokens` - Array of token addresses to withdraw
+- `tokens` - Array of all token addresses of the strategy, whose virtual balances are set to zero
 
 **Returns:** `CallInfo` object with encoded transaction data
 
@@ -188,18 +188,23 @@ The SDK includes pre-configured contract addresses for the following networks:
 
 | Network | Chain ID | Address |
 |---------|----------|---------|
-| Ethereum | 1 | [0x4a055aa172c98ec32de118b9b5b6ac8b4099a580](https://etherscan.io/address/0x4a055aa172c98ec32de118b9b5b6ac8b4099a580) |
-| BNB Chain | 56 | [0x4a055aa172c98ec32de118b9b5b6ac8b4099a580](https://bscscan.com/address/0x4a055aa172c98ec32de118b9b5b6ac8b4099a580) |
-| Polygon | 137 | [0x4a055aa172c98ec32de118b9b5b6ac8b4099a580](https://polygonscan.com/address/0x4a055aa172c98ec32de118b9b5b6ac8b4099a580) |
-| Arbitrum | 42161 | [0x4a055aa172c98ec32de118b9b5b6ac8b4099a580](https://arbiscan.io/address/0x4a055aa172c98ec32de118b9b5b6ac8b4099a580) |
-| Avalanche | 43114 | [0x4a055aa172c98ec32de118b9b5b6ac8b4099a580](http://snowscan.xyz/address/0x4a055aa172c98ec32de118b9b5b6ac8b4099a580) |
-| Gnosis | 100 | [0x4a055aa172c98ec32de118b9b5b6ac8b4099a580](https://gnosisscan.io/address/0x4a055aa172c98ec32de118b9b5b6ac8b4099a580) |
-| Coinbase Base | 8453 | [0x4a055aa172c98ec32de118b9b5b6ac8b4099a580](https://basescan.org/address/0x4a055aa172c98ec32de118b9b5b6ac8b4099a580) |
-| Optimism | 10 | [0x4a055aa172c98ec32de118b9b5b6ac8b4099a580](https://optimistic.etherscan.io/address/0x4a055aa172c98ec32de118b9b5b6ac8b4099a580) |
-| zkSync Era | 324 | [0x4a055aa172c98ec32de118b9b5b6ac8b4099a580](https://era.zksync.network/address/0x4a055aa172c98ec32de118b9b5b6ac8b4099a580) |
-| Linea | 59144 | [0x4a055aa172c98ec32de118b9b5b6ac8b4099a580](https://lineascan.build/address/0x4a055aa172c98ec32de118b9b5b6ac8b4099a580) |
-| Unichain | 1301 | [0x4a055aa172c98ec32de118b9b5b6ac8b4099a580](https://uniscan.xyz/address/0x4a055aa172c98ec32de118b9b5b6ac8b4099a580) |
-| Sonic | 146 | [0x4a055aa172c98ec32de118b9b5b6ac8b4099a580](https://sonicscan.org/address/0x4a055aa172c98ec32de118b9b5b6ac8b4099a580) |
+| Ethereum | 1 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://etherscan.io/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| BNB Chain | 56 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://bscscan.com/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| Polygon | 137 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://polygonscan.com/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| Arbitrum | 42161 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://arbiscan.io/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| Avalanche | 43114 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](http://snowscan.xyz/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| Gnosis | 100 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://gnosisscan.io/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| Coinbase Base | 8453 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://basescan.org/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| Optimism | 10 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://optimistic.etherscan.io/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| zkSync Era | 324 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://era.zksync.network/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| Linea | 59144 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://lineascan.build/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| Unichain | 130 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://uniscan.xyz/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| Sonic | 146 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://sonicscan.org/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| Robinhood Chain | 4663 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://robinhoodchain.blockscout.com/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| Monad | 143 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://monadscan.com/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| Cronos | 25 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://explorer.cronos.com/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| HyperEVM | 999 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://hyperevmscan.io/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
+| Arc | 5042 | [0x1111113ccf1426a8e30e2bff5e005d929bf6a90a](https://explorer.arc.io/address/0x1111113ccf1426a8e30e2bff5e005d929bf6a90a) |
 
 Access addresses using:
 
@@ -235,10 +240,11 @@ The SDK exports:
 
 ### Example 1: Ship Liquidity to [XYCSwap.sol](https://github.com/1inch/aqua/blob/0637013a51cd56851f7b143a1f4500fdc93726cc/src/apps/XYCSwap.sol) aqua app
 
-Initialize a liquidity strategy by depositing tokens into Aqua's virtual balance system.
+Initialize a liquidity strategy by setting its virtual balances in Aqua. `ship` does not transfer tokens: they stay in the maker's wallet and Aqua pulls them with `transferFrom` when swaps execute, so the maker must hold the tokens and approve the Aqua contract to spend each of them.
 
-```typescriptimport { AquaProtocolContract, Address, HexString, AQUA_CONTRACT_ADDRESSES, NetworkEnum } from '@1inch/aqua-sdk'
-import { encodeAbiParameters, parseUnits, http, createWalletClient, isHex } from 'viem'
+```typescript
+import { AquaProtocolContract, Address, HexString, AQUA_CONTRACT_ADDRESSES, NetworkEnum } from '@1inch/aqua-sdk'
+import { encodeAbiParameters, parseUnits, http, createWalletClient, isHex, erc20Abi, maxUint256 } from 'viem'
 import { privateKeyToAccount, privateKeyToAddress } from 'viem/accounts'
 import { mainnet } from 'viem/chains'
 import assert from 'assert'
@@ -300,15 +306,24 @@ const shipTx = aqua.ship({
   ]
 })
 
-// Send transaction
 const wallet = createWalletClient({
   chain: mainnet,
   transport: http(),
   account: privateKeyToAccount(makerPrivateKey)
 })
 
-await wallet.sendTransaction(shipTx)
+// Aqua pulls the tokens from the maker's wallet when swaps execute, so it needs an allowance
+for (const token of [USDC, WETH] as const) {
+  await wallet.writeContract({
+    address: token,
+    abi: erc20Abi,
+    functionName: 'approve',
+    args: [aqua.address.toString(), maxUint256]
+  })
+}
 
+// Send transaction
+await wallet.sendTransaction(shipTx)
 ```
 
 **Full test example:** [tests/aqua.spec.ts - should ship](https://github.com/1inch/sdks/blob/master/typescript/aqua/tests/aqua.spec.ts#L27)
@@ -437,7 +452,7 @@ await wallet.waitForTransactionReceipt({ hash: swapTx })
 
 ### Example 3: Dock Liquidity
 
-Withdraw all liquidity from a strategy and close it.
+Close a strategy by setting all of its virtual balances to zero. `dock` does not transfer tokens: they are already in the maker's wallet.
 
 ```typescript
 import { AquaProtocolContract, Address, HexString, AQUA_CONTRACT_ADDRESSES, NetworkEnum } from '@1inch/aqua-sdk'
@@ -459,8 +474,8 @@ const strategy = '0x' // parsed from ship events or fetched from api
 // Initialize Aqua contract
 const aqua = new AquaProtocolContract(AQUA_CONTRACT_ADDRESSES[NetworkEnum.ETHEREUM])
 
-// Create ship transaction
-const shipTx = aqua.dock({
+// Create dock transaction
+const dockTx = aqua.dock({
   app: new Address(app),
   strategyHash: AquaProtocolContract.calculateStrategyHash(new HexString(strategy)),
   tokens: [new Address(USDC), new Address(WETH)]
@@ -473,9 +488,9 @@ const wallet = createWalletClient({
   account: privateKeyToAccount(makerPrivateKey)
 })
 
-await wallet.sendTransaction(shipTx)
+await wallet.sendTransaction(dockTx)
 
-// After transaction is confirmed, all virtual balances are withdrawn
+// After the transaction is confirmed, the strategy's virtual balances are zero
 // and the strategy is closed
 ```
 
