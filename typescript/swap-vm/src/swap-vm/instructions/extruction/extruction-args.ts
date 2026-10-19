@@ -3,9 +3,15 @@
 import type { Address, HexString } from '@1inch/sdk-core'
 import { ExtructionArgsCoder } from './extruction-args-coder'
 import type { IArgsCoder, IArgsData } from '../types'
+import { assert } from '../../../utils/assert'
 
 /**
  * Arguments for extruction instruction to call external contract logic
+ *
+ * `target` is called in both `quote()` (`IStaticExtruction`) and `swap()` (`IExtruction`) and can
+ * change control flow and swap amounts. Both implementations must be deterministic and return the
+ * same results for the same inputs, and the target should be immutable (non-upgradeable).
+ * Takers/resolvers must validate the target before routing to a strategy that uses it.
  * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Extruction.sol#L33
  **/
 export class ExtructionArgs implements IArgsData {
@@ -18,7 +24,9 @@ export class ExtructionArgs implements IArgsData {
   constructor(
     public readonly target: Address,
     public readonly extructionArgs: HexString,
-  ) {}
+  ) {
+    assert(!target.isZero(), 'Invalid target. Must be non zero address')
+  }
 
   /**
    * Decodes hex data into ExtructionArgs instance

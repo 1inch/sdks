@@ -40,6 +40,11 @@
         "{workspaceRoot}/typescript/eslint.config.mjs"
       ]
     },
+    "type-check": {
+      "dependsOn": [
+        "^build"
+      ]
+    },
     "test:e2e": {
       "inputs": [
         "default",

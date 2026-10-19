@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
-import { HexString } from '@1inch/sdk-core'
+import { Address, HexString } from '@1inch/sdk-core'
 import { LimitSwapDirectionArgs } from './limit-swap-direction-args'
 
 describe('LimitSwapDirectionArgs', () => {
@@ -42,5 +42,22 @@ describe('LimitSwapDirectionArgs', () => {
     const hex2 = new HexString('0x00')
     const decoded2 = LimitSwapDirectionArgs.decode(hex2)
     expect(decoded2.makerDirectionLt).toBe(false)
+  })
+
+  it('should reject direction bytes other than 0x00 and 0x01', () => {
+    expect(() => LimitSwapDirectionArgs.decode(new HexString('0x02'))).toThrow(
+      'Invalid makerDirectionLt byte: 0x02. Must be 0x00 or 0x01',
+    )
+    expect(() => LimitSwapDirectionArgs.decode(new HexString('0xff'))).toThrow(
+      'Invalid makerDirectionLt byte: 0xff. Must be 0x00 or 0x01',
+    )
+  })
+
+  it('should derive direction from token addresses', () => {
+    const tokenA = new Address('0x0000000000000000000000000000000000000001')
+    const tokenB = new Address('0x0000000000000000000000000000000000000002')
+
+    expect(LimitSwapDirectionArgs.fromTokens(tokenA, tokenB).makerDirectionLt).toBe(true)
+    expect(LimitSwapDirectionArgs.fromTokens(tokenB, tokenA).makerDirectionLt).toBe(false)
   })
 })

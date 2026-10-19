@@ -25,6 +25,7 @@ import { Opcode } from '../src/swap-vm/instructions/opcode.js'
 
 import type { PricePair } from '../src/swap-vm/instructions/concentrate'
 import { Price, PriceRange, TokenReserve } from '../src/swap-vm/instructions/concentrate'
+import { PeggedPrice, PeggedSwapCalculator } from '../src/swap-vm/instructions/pegged-swap'
 
 describe('SwapVM', () => {
   let forkNode: ReadyEvmFork
@@ -129,6 +130,41 @@ describe('SwapVM', () => {
     })
 
     expect(calculatedHash.toString()).toEqual(hashFromContract)
+  })
+
+  test('should calculate signature-based order hash with EIP-712 domain read from router', async () => {
+    const swapVM = new SwapVMContract(new Address(forkNode.addresses.swapVMAquaRouter))
+    const order = Order.new({
+      maker: new Address(liqProviderAddress),
+      traits: MakerTraits.default().with({
+        useAquaInsteadOfSignature: false,
+        customReceiver: new Address(swapperAddress),
+        preTransferInHook: new Interaction(
+          new Address(forkNode.addresses.makerHooks),
+          new HexString(toHex('preTransferIn')),
+        ),
+      }),
+      program: AquaXYCAmmStrategy.new().build(),
+    })
+
+    const domainResult = await forkNode.provider.call(swapVM.eip712Domain())
+    const domain = SwapVMContract.decodeEip712DomainResult(new HexString(domainResult.data!))
+
+    expect(domain).toEqual({
+      chainId: forkNode.chainId,
+      name: 'TestAquaSwapVMRouter',
+      version: '1.0',
+      verifyingContract: swapVM.address,
+    })
+
+    const hashResult = await forkNode.provider.call(swapVM.hashOrder(order))
+    const hashFromContract = decodeFunctionResult({
+      abi: SWAP_VM_ABI,
+      functionName: 'hash',
+      data: hashResult.data!,
+    })
+
+    expect(order.hash(domain).toString()).toEqual(hashFromContract)
   })
 
   test('should swap by AquaXYCAmmStrategy', async () => {
@@ -319,7 +355,7 @@ describe('SwapVM', () => {
 
     const price = +formatUnits(srcAmount, 6) / +formatUnits(dstAmount, 18)
 
-    expect(price).to.equal(2500.0002639315903)
+    expect(price).to.equal(2500.000263931884)
   })
 
   test('should swap by AquaXYCAmmStrategy Concentrated (2000 - 3000 range) with 2500 spot price (WETH -> USDC)', async () => {
@@ -652,7 +688,7 @@ describe('SwapVM', () => {
 
     const price = +formatUnits(srcAmount, 6) / +formatUnits(dstAmount, 18)
 
-    expect(price).to.equal(2500.000263885709)
+    expect(price).to.equal(2500.0002639317904)
   })
 
   test('should swap by AquaXYCAmmStrategy Concentrated (2000 - 3000 range) with 2500 spot price (USDT -> WBTC)', async () => {
@@ -966,7 +1002,7 @@ describe('SwapVM', () => {
 
     const price = +formatUnits(srcAmount, 6) / +formatUnits(dstAmount, 18)
 
-    expect(price).to.equal(2462.2959342765034)
+    expect(price).to.equal(2462.295934276742)
   })
 
   test('should swap by AquaPeggedAmmStrategy 1bps flat fees USDC -> DAI', async () => {
@@ -978,30 +1014,47 @@ describe('SwapVM', () => {
 
     const USDC = new Address(ADDRESSES.USDC)
     const DAI = new Address(ADDRESSES.DAI)
+    const LINEAR_WIDTH = 8n * 10n ** 26n
+
+    const peggedCalculator = PeggedSwapCalculator.new({
+      tokenA: { address: DAI, decimals: 18 },
+      tokenB: { address: USDC, decimals: 6 },
+    })
+
+    const spot = PeggedPrice.fromHuman('1', {
+      quoteToken: { address: USDC, decimals: 6 },
+      baseToken: { address: DAI, decimals: 18 },
+    })
+
+    const initialBalances = peggedCalculator.computeFixedAllocation(
+      spot,
+      DAI,
+      parseUnits('100000', 18),
+    )
 
     const amountsAndTokens = [
       {
-        amount: parseUnits('100000', 6),
+        amount: initialBalances.reserveGt,
         token: USDC,
       },
       {
-        amount: parseUnits('100000', 18),
+        amount: initialBalances.reserveLt,
         token: DAI,
       },
     ]
 
     const program = AquaPeggedAmmStrategy.new({
       tokenA: {
-        address: amountsAndTokens[0].token,
+        address: USDC,
         decimals: 6,
-        reserve: amountsAndTokens[0].amount,
+        reserve: initialBalances.reserveGt,
       },
       tokenB: {
-        address: amountsAndTokens[1].token,
+        address: DAI,
         decimals: 18,
-        reserve: amountsAndTokens[1].amount,
+        reserve: initialBalances.reserveLt,
       },
-      linearWidth: 8n * 10n ** 26n,
+      linearWidth: LINEAR_WIDTH,
     })
       .withFeeTokenIn(1)
       .build()

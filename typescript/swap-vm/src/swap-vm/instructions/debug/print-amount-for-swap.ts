@@ -15,8 +15,9 @@ class PrintAmountForSwapArgsCoder implements IArgsCoder<PrintAmountForSwapArgs> 
 }
 
 /**
- * Debug instruction to print amount for swap
- * @see Debug._printAmountForSwap in Solidity
+ * Arguments of the `printAmountForSwap` debug opcode
+ * @deprecated The SwapVM `Debug` contract has no printAmountForSwap instruction, so no router
+ * can execute this opcode
  */
 export class PrintAmountForSwapArgs extends DebugArgs {
   public static readonly CODER: IArgsCoder<PrintAmountForSwapArgs> =

@@ -13,4 +13,19 @@ export default [
       'license-header/header': ['error', './license-header.txt'],
     },
   },
+  {
+    files: ['./src/**', './tests/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: ['assert', 'assert/strict', 'node:assert', 'node:assert/strict'].map((name) => ({
+            name,
+            message:
+              "Node's assert module is not available in every runtime the SDK targets. Use `assert` from src/utils/assert instead.",
+          })),
+        },
+      ],
+    },
+  },
 ]

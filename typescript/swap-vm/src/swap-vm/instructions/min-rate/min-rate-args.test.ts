@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-SwapVM-1.1
 
 import { describe, it, expect } from 'vitest'
-import { HexString } from '@1inch/sdk-core'
+import { Address, HexString } from '@1inch/sdk-core'
 import { UINT_64_MAX } from '@1inch/byte-utils'
 import { MinRateArgs } from './min-rate-args'
 
@@ -55,5 +55,18 @@ describe('MinRateArgs', () => {
     const decoded = MinRateArgs.decode(hex)
     expect(decoded.rateLt).toBe(1000n)
     expect(decoded.rateGt).toBe(1n)
+  })
+
+  it('should order rates by token address in fromTokens', () => {
+    const tokenA = new Address('0x0000000000000000000000000000000000000001')
+    const tokenB = new Address('0x0000000000000000000000000000000000000002')
+
+    const forward = MinRateArgs.fromTokens(tokenA, tokenB, 10n, 20n)
+    const reverse = MinRateArgs.fromTokens(tokenB, tokenA, 20n, 10n)
+
+    expect(forward.rateLt).toBe(10n)
+    expect(forward.rateGt).toBe(20n)
+    expect(reverse.rateLt).toBe(10n)
+    expect(reverse.rateGt).toBe(20n)
   })
 })

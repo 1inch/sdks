@@ -4,6 +4,8 @@ export * from './opcodes'
 export { ConcentrateGrowLiquidity2DArgs, ONE_E18 } from './concentrate-grow-liquidity-2d-args'
 export {
   computeLiquidityFromAmounts,
+  computeLiquidityFromLt,
+  computeLiquidityFromGt,
   computeBalances,
   computeLiquidityAndPrice,
 } from './concentrate-liquidity-math/concentrate-liquidity-math'
@@ -20,4 +22,4 @@ export type {
   PriceBounds,
   ConcentratedLiquidityInfo,
 } from './concentrate-liquidity-calculator/types'
-export * from './bigint-sqrt'
+export { bigintSqrt } from '../utils/bigint-sqrt'

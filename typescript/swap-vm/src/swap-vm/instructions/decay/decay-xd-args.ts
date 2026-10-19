@@ -2,9 +2,9 @@
 
 import type { HexString } from '@1inch/sdk-core'
 import { UINT_16_MAX } from '@1inch/byte-utils'
-import assert from 'assert'
 import { DecayXDArgsCoder } from './decay-xd-args-coder'
 import type { IArgsCoder, IArgsData } from '../types'
+import { assert } from '../../../utils/assert'
 
 /**
  * Arguments for decayXD instruction with decay period
@@ -18,6 +18,7 @@ export class DecayXDArgs implements IArgsData {
       decayPeriod >= 0n && decayPeriod <= UINT_16_MAX,
       `Invalid decayPeriod value: ${decayPeriod}. Must be a valid uint16`,
     )
+    assert(decayPeriod > 0n, `Invalid decayPeriod value: ${decayPeriod}. Must be > 0`)
   }
 
   /**

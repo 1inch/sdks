@@ -4,6 +4,7 @@ import { JumpArgs } from './jump-args'
 import { JumpIfTokenArgs } from './jump-if-token-args'
 import { DeadlineArgs } from './deadline-args'
 import { OnlyTakerTokenBalanceNonZeroArgs } from './only-taker-token-balance-non-zero-args'
+import { OnlyTxOriginTokenBalanceNonZeroArgs } from './only-tx-origin-token-balance-non-zero-args'
 import { OnlyTakerTokenBalanceGteArgs } from './only-taker-token-balance-gte-args'
 import { OnlyTakerTokenSupplyShareGteArgs } from './only-taker-token-supply-share-gte-args'
 import { SaltArgs } from './salt-args'
@@ -37,6 +38,16 @@ export const onlyTakerTokenBalanceNonZero: Opcode<OnlyTakerTokenBalanceNonZeroAr
   Symbol('Controls.onlyTakerTokenBalanceNonZero'),
   OnlyTakerTokenBalanceNonZeroArgs.CODER,
 )
+
+/**
+ * Requires tx.origin to hold any amount of specified token (supports NFTs)
+ * @see https://github.com/1inch/swap-vm/blob/main/src/instructions/Controls.sol#L77
+ **/
+export const onlyTxOriginTokenBalanceNonZero: Opcode<OnlyTxOriginTokenBalanceNonZeroArgs> =
+  new Opcode(
+    Symbol('Controls.onlyTxOriginTokenBalanceNonZero'),
+    OnlyTxOriginTokenBalanceNonZeroArgs.CODER,
+  )
 
 /**
  * Requires taker to hold at least specified amount of token
