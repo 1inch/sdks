@@ -44,7 +44,7 @@
   },
   "packageManager": "pnpm@10.22.0",
   "volta": {
-    "node": "22.13.1"
+    "node": "22.23.4"
   },
   "dependencies": {
     "@1inch/byte-utils": "3.0.0"
