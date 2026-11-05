@@ -15,7 +15,11 @@ export class HexString {
   }
 
   static fromBigInt(bigInt: bigint, name?: string): HexString {
-    return new HexString(`0x${bigInt.toString(16)}`, name)
+    const hex = bigInt.toString(16)
+    // Pad to whole bytes: the constructor rejects odd-length hex, e.g. 1n -> 0x1
+    const even = hex.padStart(hex.length + (hex.length % 2), '0')
+
+    return new HexString(`0x${even}`, name)
   }
 
   static fromUnknown(val: unknown, name?: string): HexString {

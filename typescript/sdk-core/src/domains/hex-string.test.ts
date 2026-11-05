@@ -9,6 +9,19 @@ describe('HexString Unit Test', () => {
     expect(hexString.toString()).toEqual('0xffffffffffffffffffffffffffffffffffffffff')
   })
 
+  test.each([
+    [0n, '0x00'],
+    [1n, '0x01'],
+    [15n, '0x0f'],
+    [256n, '0x0100'],
+    [2n ** 160n - 1n, '0xffffffffffffffffffffffffffffffffffffffff'],
+  ])('should create from bigint %s padded to whole bytes', (value, expected) => {
+    const hexString = HexString.fromBigInt(value)
+
+    expect(hexString.toString()).toEqual(expected)
+    expect(hexString.toBigInt()).toEqual(value)
+  })
+
   test('should not create from bigint because string is not valid address', async () => {
     expect(() => HexString.fromBigInt(BigInt('qqq'))).toThrow()
   })
@@ -134,6 +147,7 @@ describe('HexString Unit Test', () => {
     const fromString = HexString.fromUnknown('0xaa')
 
     expect(fromBigInt.toString()).toBe('0xff')
+    expect(HexString.fromUnknown(1n).toString()).toBe('0x01')
     expect(fromString.toString()).toBe('0xaa')
     expect(() => HexString.fromUnknown(123)).toThrow('Invalid hex string')
     expect(() => HexString.fromUnknown(true, 'value')).toThrow('Invalid hex string value')
