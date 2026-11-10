@@ -13,7 +13,7 @@ jobs:
           fetch-depth: 0 # Need full history for affected commands
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -22,7 +22,7 @@ jobs:
           cache: pnpm
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+        uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1.9.2
 
       - name: Install Dependencies
         run: pnpm install
