@@ -82,8 +82,8 @@ jobs:
 
           PREID_ARGS=()
           if [ "${{ inputs.bump }}" = "prerelease" ] && [ -n "$PREID" ]; then
-            if [[ ! "$PREID" =~ ^[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*$ ]]; then
-              echo "::error::preid must be a semver prerelease identifier (letters, digits, hyphens, dots)"
+            if [[ ! "$PREID" =~ ^[0-9A-Za-z][0-9A-Za-z-]*(\.[0-9A-Za-z-]+)*$ ]]; then
+              echo "::error::preid must be a semver prerelease identifier: letters, digits, hyphens and dots, starting with a letter or digit"
               exit 1
             fi
             PREID_ARGS=(--preid "$PREID")
