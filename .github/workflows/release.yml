@@ -53,7 +53,7 @@ jobs:
           fetch-tags: true
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -76,12 +76,17 @@ jobs:
         id: version
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          PREID: ${{ inputs.preid }}
         run: |
           SPECIFIER="${{ inputs.bump }}"
 
-          PREID_FLAG=""
-          if [ "${{ inputs.bump }}" = "prerelease" ] && [ -n "${{ inputs.preid }}" ]; then
-            PREID_FLAG="--preid ${{ inputs.preid }}"
+          PREID_ARGS=()
+          if [ "${{ inputs.bump }}" = "prerelease" ] && [ -n "$PREID" ]; then
+            if [[ ! "$PREID" =~ ^[0-9A-Za-z][0-9A-Za-z-]*(\.[0-9A-Za-z-]+)*$ ]]; then
+              echo "::error::preid must be a semver prerelease identifier: letters, digits, hyphens and dots, starting with a letter or digit"
+              exit 1
+            fi
+            PREID_ARGS=(--preid "$PREID")
           fi
 
           DRY_RUN_FLAG=""
@@ -91,7 +96,7 @@ jobs:
 
           npx nx release "$SPECIFIER" \
             --projects="${{ inputs.project }}" \
-            $PREID_FLAG \
+            "${PREID_ARGS[@]}" \
             $DRY_RUN_FLAG \
             --skip-publish \
             --verbose
@@ -133,7 +138,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -177,7 +182,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
       - name: Setup Node
         uses: actions/setup-node@v6
